@@ -24,4 +24,4 @@ else
     export LD_LIBRARY_PATH=$BONSAIDIR:$LD_LIBRARY_PATH
 fi
 
-source /root/HyperK/env-WCSim.sh
+
