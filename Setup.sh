@@ -2,11 +2,11 @@
 
 #Application path location of applicaiton
 
-ToolDAQapp=`pwd`
+ToolDAQapp=$(realpath $(dirname $BASH_SOURCE))
 
 source /root/HyperK/root/bin/thisroot.sh
 
-echo "" > Build.h
+echo "" > $ToolDAQapp/Build.h
 
 if [ -z "$WCSIMDIR" ]; then
     echo "Setup WCSim (i.e. set \$WCSIMDIR) before setting up TriggerApplication";
@@ -20,7 +20,7 @@ export LD_LIBRARY_PATH=${ToolDAQapp}/lib:${ToolDAQapp}/ToolDAQ/zeromq-4.0.7/lib:
 if [ -z "$BONSAIDIR" ]; then
     echo "Running without BONSAI";
 else
-    echo "#define BONSAIEXISTS" >> Build.h
+    echo "#define BONSAIEXISTS" >> $ToolDAQapp/Build.h
     export LD_LIBRARY_PATH=$BONSAIDIR:$LD_LIBRARY_PATH
 fi
 
