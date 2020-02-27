@@ -6,7 +6,13 @@ FROM hkdaq/triggerapplication:base
 ### Run the following commands as super user (root):
 USER root
 
-Run cd /root/HyperK/; source /root/HyperK/env-WCSim.sh; cd WCSim; git pull; make clean; make rootcint; make; cd /TriggerApplication; source Setup.sh; make update; make; echo "source /root/HyperK/env-WCSim.sh" >>  /TriggerApplication/Setup.sh
+#Setup HK prerequisites & get latest version of WCSim
+WORKDIR /root/HyperK/WCSim
+#RUN source /root/HyperK/env-WCSim.sh; git pull; make clean; make rootcint; make;
+
+#Setup TriggerApplication
+WORKDIR /TriggerApplication/
+RUN source ./Setup.sh; make update; make;
 
 ### Open terminal
-CMD ["/bin/bash"]
+ENTRYPOINT source /TriggerApplication/Setup.sh && /bin/bash
