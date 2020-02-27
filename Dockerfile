@@ -8,7 +8,7 @@ USER root
 
 #Setup HK prerequisites & get latest version of WCSim
 WORKDIR /root/HyperK/WCSim
-#RUN source /root/HyperK/env-WCSim.sh; git pull; make clean; make rootcint; make;
+RUN source /root/HyperK/env-WCSim.sh; git pull; make clean; make rootcint; make;
 
 #Setup TriggerApplication
 WORKDIR /TriggerApplication/
