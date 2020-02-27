@@ -23,7 +23,7 @@ if (tool=="pass_all") ret=new pass_all;
 
 if (tool=="ReconFilter") ret=new ReconFilter;
 if (tool=="ReconReset") ret=new ReconReset;
-#ifdef //EBONSAIEXISTS
+#ifdef EBONSAIEXISTS
 if (tool=="EnergeticBONSAI") ret=new EnergeticBONSAI;
 #endif //EBONSAIEXISTS
 return ret;
