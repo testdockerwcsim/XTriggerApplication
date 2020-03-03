@@ -106,19 +106,22 @@ TODO: setup to allow multiple types of PMT in the ID (e.g. 20" + mPMT hybrid geo
 
 ### SubSample
 
-Stores (in vectors) digit time and PMTID. Optionally, store digit charge
+Stores (in vectors) relative digit time and PMTID. Optionally, store digit charge.
 
 Vectors must be complete at time of creating the SubSample (i.e. there is no `AddDigit()` method)
 
+All digit times are relative to the `m_timestamp`. When comparing times between
+different SubSamples, this needs to be taken into account. Since `m_timestamp`
+and `m_time` have different units, one needs to use the constant
+`timestamp_to_relative_time` to convert between the two.
+
 #### Important data members
 ```
+timestamp_t m_timestamp;
 std::vector<int> m_PMTid;
-std::vector<float> m_time;
+std::vector<relative_time_t> m_time;
 std::vector<float> m_charge;
-std::vector<int> m_time_int;
-std::vector<int> m_charge_int;
 ```
-* Note `m_charge` and `m_charge_int` store the same information, in floating/integer formats respectively. Same for `m_time`
 
 #### Important methods
 

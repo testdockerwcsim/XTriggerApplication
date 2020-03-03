@@ -1,30 +1,33 @@
 #include "SubSample.h"
-
 #include <cassert>
 
-SubSample::SubSample(std::vector<int> PMTid,std::vector<float> time)
+SubSample::SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time)
 {
   assert(PMTid.size() == time.size());
-  m_PMTid=PMTid;
-  m_time=time;
-  //fill the int versions
-  m_time_int.resize(m_time.size());
-  for(unsigned int i = 0; i < m_time.size(); i++) {
-    m_time_int[i] = m_time[i];
+  m_PMTid  = PMTid;
+  m_time   = time;
+  std::vector<float> charge;
+  for (int i; i<PMTid.size(); ++i){
+    charge.push_back(0);
   }
+  m_charge = charge;
+  m_timestamp = 0;
 }
 
-SubSample::SubSample(std::vector<int> PMTid, std::vector<float> time, std::vector<float> charge)
+SubSample::SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time, std::vector<float> charge)
 {
   assert(PMTid.size() == time.size() && PMTid.size() == charge.size());
   m_PMTid  = PMTid;
   m_time   = time;
   m_charge = charge;
-  //fill the int versions
-  m_time_int.resize(m_time.size());
-  m_charge_int.resize(m_time.size());
-  for(unsigned int i = 0; i < m_time.size(); i++) {
-    m_time_int[i] = m_time[i];
-    m_charge_int[i] = m_charge[i];
-  }
+  m_timestamp = 0;
+}
+
+SubSample::SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time, std::vector<float> charge, timestamp_t timestamp)
+{
+  assert(PMTid.size() == time.size() && PMTid.size() == charge.size());
+  m_PMTid  = PMTid;
+  m_time   = time;
+  m_charge = charge;
+  m_timestamp = timestamp;
 }
