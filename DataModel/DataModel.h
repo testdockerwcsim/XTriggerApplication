@@ -49,10 +49,11 @@ class DataModel {
   TriggerInfo IDTriggers;
   TriggerInfo ODTriggers;
 
+  __attribute__((deprecated))
+  bool triggeroutput;
+
   ReconInfo RecoInfo;
   std::map<std::string, ReconInfo*> RecoInfoMap;
-
-  bool triggeroutput;
 
   double IDPMTDarkRate;
   double ODPMTDarkRate;
