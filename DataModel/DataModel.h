@@ -27,19 +27,15 @@ class DataModel {
 
 
  public:
-  
-  DataModel();
 
-  //TTree* GetTTree(std::string name);
-  //void AddTTree(std::string name,TTree *tree);
-  //void DeleteTTree(std::string name);
+  DataModel();
 
   ReconInfo * GetFilter(std::string name, bool can_create);
 
   Store vars;
   BoostStore CStore;
   std::map<std::string,BoostStore*> Stores;
-  
+
   Logging *Log;
 
   zmq::context_t* context;
@@ -62,7 +58,7 @@ class DataModel {
   double ODPMTDarkRate;
   int IDNPMTs;
   int ODNPMTs;
-  
+
   TChain * WCSimGeomTree;
   TChain * WCSimOptionsTree;
   TChain * WCSimEventTree;
@@ -73,18 +69,11 @@ class DataModel {
   WCSimRootEvent * IDWCSimEvent_Triggered;
   WCSimRootEvent * ODWCSimEvent_Triggered;
 
-
   bool HasOD;
   bool IsMC;
 
  private:
 
-
-  
-  //std::map<std::string,TTree*> m_trees; 
-  
-  
-  
 };
 
 
