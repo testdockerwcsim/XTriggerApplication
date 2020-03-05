@@ -6,11 +6,7 @@ SubSample::SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time)
   assert(PMTid.size() == time.size());
   m_PMTid  = PMTid;
   m_time   = time;
-  std::vector<float> charge;
-  for (int i; i<PMTid.size(); ++i){
-    charge.push_back(0);
-  }
-  m_charge = charge;
+  m_charge = std::vector<float>(PMTid.size(), 0.);
   m_timestamp = 0;
 }
 
