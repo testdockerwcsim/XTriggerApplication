@@ -34,6 +34,8 @@ class SubSample{
   /// Calculate the time difference to between a relative times in this SubSample and a realtive time in another SubSample
   relative_time_t TimeDifference(relative_time_t this_time, SubSample& other_sample, relative_time_t other_time);
 
+  /// Sort all digits in the SubSample by their time
+  void SortByTime();
 };
 
 #endif

@@ -34,3 +34,25 @@ relative_time_t SubSample::TimeDifference(relative_time_t this_time, SubSample& 
   relative_time_t sub_sample_difference = static_cast<relative_time_t>(m_timestamp - other_sample.m_timestamp)
                                           * timestamp_to_relative_time;
 }
+
+void SubSample::SortByTime(){
+  //algorithm borrowed from WCSimWCDigi::SortArrayByHitTime()
+  int i, j;
+  relative_time_t save_time;
+  int save_PMTid;
+  double save_charge;
+
+  for (i = 1; i < m_PMTid.size(); ++i) {
+    save_time       = m_time[i];
+    save_PMTid      = m_PMTid[i];
+    save_charge     = m_charge[i];
+    for (j = i; j > 0 && m_time[j-1] > save_time; j--) {
+      m_time[j]     = m_time[j-1];
+      m_PMTid[j]    = m_PMTid[j-1];
+      m_charge[j]   = m_charge[j-1];
+    }//j
+    m_time[j]     = save_time;
+    m_PMTid[j]    = save_PMTid;
+    m_charge[j]   = save_charge;
+  }//i
+}
