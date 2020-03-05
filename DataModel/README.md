@@ -22,21 +22,8 @@ Vectors must be complete at time of creating the SubSample (i.e. there is no `Ad
 
 All digit times are relative to the `m_timestamp`. When comparing times between
 different SubSamples, this needs to be taken into account. Since `m_timestamp`
-and `m_time` have different units, one needs to use the constant
-`timestamp_to_relative_time` to convert between the two.
-
-#### Important data members
-```
-timestamp_t m_timestamp;
-std::vector<int> m_PMTid;
-std::vector<relative_time_t> m_time;
-std::vector<float> m_charge;
-```
-
-#### Important methods
-
-```
-```
+and `m_time` have different units, one should use the method `TimeDifference`
+to calculate time differences between relative times in different SubSamples.
 
 ### TriggerInfo
 

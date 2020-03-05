@@ -11,9 +11,6 @@ typedef float relative_time_t;
 /// Type for absolute timestamps of a SubSample. Unit = ms
 typedef int64_t timestamp_t;
 
-/// Factor between unit of timestamp and hit times
-const relative_time_t timestamp_to_relative_time = 1e6; //  = 1 ms/ns
-
 class SubSample{
 
  public:
@@ -31,6 +28,11 @@ class SubSample{
   std::vector<relative_time_t> m_time;
   /// Vector of charges for all hits in SubSample. Unit: ?
   std::vector<float> m_charge;
+
+  /// Calculate the time difference to between two relative times in this SubSample
+  relative_time_t TimeDifference(relative_time_t this_time, relative_time_t other_time) {return this_time - other_time;};
+  /// Calculate the time difference to between a relative times in this SubSample and a realtive time in another SubSample
+  relative_time_t TimeDifference(relative_time_t this_time, SubSample& other_sample, relative_time_t other_time);
 
 };
 
