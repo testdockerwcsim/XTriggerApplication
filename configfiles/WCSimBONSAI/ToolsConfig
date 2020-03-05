@@ -1,5 +1,5 @@
 wcsim1 WCSimReader configfiles/WCSimBONSAI/WCSimReaderToolConfig
-nhits1 nhits configfiles/WCSimBONSAI/nhitsToolConfig
+nhits1 NHits configfiles/WCSimBONSAI/NHitsToolConfig
 out1 DataOut configfiles/WCSimBONSAI/DataOutToolConfig
 bonsai1 BONSAI configfiles/WCSimBONSAI/BONSAIToolConfig
 reconout ReconDataOut configfiles/WCSimBONSAI/ReconDataOutToolConfig
