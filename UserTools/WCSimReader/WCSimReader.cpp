@@ -297,6 +297,7 @@ template <typename T> bool WCSimReader::CompareVariable(T v1, T v2, const char *
   else {
     ss << "WARN: Difference between strings " << v1 << " and " << v2 << " for variable " << tag;
     StreamToLog(WARN);
+    return true;
   }
 }
 
