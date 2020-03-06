@@ -32,9 +32,6 @@ class NHits: public Tool {
   /// CPU version of the NDigits algorithm
   void AlgNDigits(const SubSample * samples);
 
-  /// An arbitrary long time to use in loop, ns
-  static const relative_time_t s_LONG_TIME = (2 << 31) - 1;
-
   int m_verbose;
 
   std::stringstream m_ss;
