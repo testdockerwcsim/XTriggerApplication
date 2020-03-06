@@ -59,3 +59,70 @@ void SubSample::SortByTime(){
     m_charge[j]   = save_charge;
   }//i
 }
+
+std::vector<SubSample> SubSample::Split(SubSample::timestamp_t target_width, SubSample::timestamp_t target_overlap){
+  // SubSample width in relative units
+  relative_time_t relative_width = static_cast<relative_time_t>(target_width)
+                                            * s_TIMESTAMP_TO_RELATIVE_TIME;
+  relative_time_t relative_overlap = static_cast<relative_time_t>(target_overlap)
+                                            * s_TIMESTAMP_TO_RELATIVE_TIME;
+
+  // Distance between SubSamples
+  timestamp_t timestamp_stride = target_width - target_overlap;
+  relative_time_t relative_stride = static_cast<relative_time_t>(relative_stride)
+                                            * s_TIMESTAMP_TO_RELATIVE_TIME;
+
+  // Ensure everything is sorted
+  SortByTime();
+
+  // The vector of samples to be returned
+  std::vector<SubSample> split_samples;
+
+  // Temporary information for storing digits that will be added to the samples
+  std::vector<float> temp_charge;
+  std::vector<int> temp_PMTid;
+  std::vector<relative_time_t> temp_time;
+  timestamp_t temp_timestamp = m_timestamp;
+
+  // Set first SubSample timestamp according to first digit time
+  // Make sure hit times are not negative:
+  while ( TimeDifference(m_time.at(0), temp_timestamp, 0.) < 0.){
+    temp_timestamp -= timestamp_stride;
+  }
+  // Make sure first SubSample is not empty
+  while ( TimeDifference(m_time.at(0), temp_timestamp, 0.) > relative_stride){
+    temp_timestamp += timestamp_stride;
+  }
+
+  // Add digits to new SubSamples
+  for (int i = 0; i < m_time.size(); ++i){
+    if (TimeDifference(m_time.at(i), temp_timestamp, 0.) < relative_width){
+      // Add digit to thin time window to current SubSample
+      temp_time.push_back(m_time[i]);
+      temp_charge.push_back(m_charge[i]);
+      temp_PMTid.push_back(m_PMTid[i]);
+    } else {
+      // Digit outside target window
+      // Save current SubSample and rewind to prepare a new one at the overlap position
+      split_samples.push_back(SubSample(temp_PMTid, temp_time, temp_charge, temp_timestamp));
+      // Reset temporary vectors
+      temp_PMTid.clear();
+      temp_time.clear();
+      temp_charge.clear();
+      // Update timestamp
+      while ( not (TimeDifference(m_time.at(i), temp_timestamp, 0.) < relative_width) ){
+        temp_timestamp += timestamp_stride;
+      }
+      // Rewind index to cover overlap
+      while ( TimeDifference(m_time.at(i), temp_timestamp, 0.) > 0. ){
+        --i;
+        // This will stop when `i` is just outside the new time window
+        // Then `i` will get increased by one at the end of the loop
+      }
+    }
+  }
+  // Add final SubSample
+  split_samples.push_back(SubSample(temp_PMTid, temp_time, temp_charge, temp_timestamp));
+
+  return split_samples;
+}

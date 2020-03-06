@@ -42,6 +42,9 @@ class SubSample{
 
   /// Sort all digits in the SubSample by their time
   void SortByTime();
+
+  /// Split SubSample into multiple overlapping ones
+  std::vector<SubSample> Split(timestamp_t target_width, timestamp_t target_overlap);
 };
 
 #endif
