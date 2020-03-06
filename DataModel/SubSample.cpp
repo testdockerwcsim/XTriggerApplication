@@ -1,7 +1,7 @@
 #include "SubSample.h"
 #include <cassert>
 
-SubSample::SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time)
+SubSample::SubSample(std::vector<int> PMTid, std::vector<SubSample::relative_time_t> time)
 {
   assert(PMTid.size() == time.size());
   m_PMTid  = PMTid;
@@ -10,7 +10,7 @@ SubSample::SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time)
   m_timestamp = 0;
 }
 
-SubSample::SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time, std::vector<float> charge)
+SubSample::SubSample(std::vector<int> PMTid, std::vector<SubSample::relative_time_t> time, std::vector<float> charge)
 {
   assert(PMTid.size() == time.size() && PMTid.size() == charge.size());
   m_PMTid  = PMTid;
@@ -19,7 +19,7 @@ SubSample::SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time, 
   m_timestamp = 0;
 }
 
-SubSample::SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time, std::vector<float> charge, timestamp_t timestamp)
+SubSample::SubSample(std::vector<int> PMTid, std::vector<SubSample::relative_time_t> time, std::vector<float> charge, SubSample::timestamp_t timestamp)
 {
   assert(PMTid.size() == time.size() && PMTid.size() == charge.size());
   m_PMTid  = PMTid;
@@ -28,11 +28,14 @@ SubSample::SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time, 
   m_timestamp = timestamp;
 }
 
-relative_time_t SubSample::TimeDifference(relative_time_t this_time, SubSample& other_sample, relative_time_t other_time){
-  /// Factor between unit of timestamp and hit times
-  const relative_time_t timestamp_to_relative_time = 1e6; //  = 1 ms/ns
-  relative_time_t sub_sample_difference = static_cast<relative_time_t>(m_timestamp - other_sample.m_timestamp)
-                                          * timestamp_to_relative_time;
+SubSample::relative_time_t SubSample::TimeDifference(SubSample::relative_time_t this_time, SubSample::timestamp_t other_timestamp, SubSample::relative_time_t other_time){
+  relative_time_t sub_sample_difference = static_cast<relative_time_t>(m_timestamp - other_timestamp)
+                                          * s_TIMESTAMP_TO_RELATIVE_TIME;
+  return (this_time - other_time) + sub_sample_difference;
+}
+
+SubSample::relative_time_t SubSample::TimeDifference(SubSample::relative_time_t this_time, SubSample& other_sample, SubSample::relative_time_t other_time){
+  return TimeDifference(this_time, other_sample.m_timestamp, other_time);
 }
 
 void SubSample::SortByTime(){

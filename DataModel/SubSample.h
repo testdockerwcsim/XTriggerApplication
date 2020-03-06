@@ -5,21 +5,25 @@
 #include <vector>
 #include <stdint.h>
 
-/// Type for relative hit times within a SubSample. Unit = ns
-typedef float relative_time_t;
-
-/// Type for absolute timestamps of a SubSample. Unit = ms
-typedef int64_t timestamp_t;
-
 class SubSample{
 
  public:
+
+  /// Type for relative hit times within a SubSample. Unit = ns
+  typedef float relative_time_t;
+
+  /// Type for absolute timestamps of a SubSample. Unit = us
+  typedef int64_t timestamp_t;
+
+  /// Factor between unit of timestamp and hit times
+  static const relative_time_t s_TIMESTAMP_TO_RELATIVE_TIME = 1e3; //  = 1 us/ns
+
   SubSample() {};
   SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time);
   SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time, std::vector<float> charge);
   SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time, std::vector<float> charge, timestamp_t timestamp);
 
-  /// Timestamp of the whole SubSample. Unit: ms
+  /// Timestamp of the whole SubSample. Unit: us
   timestamp_t m_timestamp;
 
   /// Vector of PMT IDs for all hits in SubSample
@@ -31,6 +35,8 @@ class SubSample{
 
   /// Calculate the time difference to between two relative times in this SubSample
   relative_time_t TimeDifference(relative_time_t this_time, relative_time_t other_time) {return this_time - other_time;};
+  /// Calculate the time difference to between a relative times in this SubSample and a time relative to another timestamp
+  relative_time_t TimeDifference(relative_time_t this_time, timestamp_t other_timestamp, relative_time_t other_time);
   /// Calculate the time difference to between a relative times in this SubSample and a realtive time in another SubSample
   relative_time_t TimeDifference(relative_time_t this_time, SubSample& other_sample, relative_time_t other_time);
 
