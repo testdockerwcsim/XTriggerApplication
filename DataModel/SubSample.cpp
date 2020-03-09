@@ -69,7 +69,7 @@ std::vector<SubSample> SubSample::Split(SubSample::timestamp_t target_width, Sub
 
   // Distance between SubSamples
   timestamp_t timestamp_stride = target_width - target_overlap;
-  relative_time_t relative_stride = static_cast<relative_time_t>(relative_stride)
+  relative_time_t relative_stride = static_cast<relative_time_t>(timestamp_stride)
                                             * s_TIMESTAMP_TO_RELATIVE_TIME;
 
   // Ensure everything is sorted
@@ -96,9 +96,10 @@ std::vector<SubSample> SubSample::Split(SubSample::timestamp_t target_width, Sub
 
   // Add digits to new SubSamples
   for (int i = 0; i < m_time.size(); ++i){
-    if (TimeDifference(m_time.at(i), temp_timestamp, 0.) < relative_width){
+    relative_time_t time_in_window = TimeDifference(m_time.at(i), temp_timestamp, 0.);
+    if (time_in_window < relative_width){
       // Add digit to thin time window to current SubSample
-      temp_time.push_back(m_time[i]);
+      temp_time.push_back(time_in_window);
       temp_charge.push_back(m_charge[i]);
       temp_PMTid.push_back(m_PMTid[i]);
     } else {
