@@ -42,6 +42,12 @@ bool PrepareSubSamples::Execute(){
     StreamToLog(DEBUG2);
     std::vector<SubSample> temp_samples = it->Split(m_sample_width, m_sample_overlap);
     new_samples.insert(new_samples.end(), temp_samples.begin(), temp_samples.end());
+    ss << "DEBUG:   Created " << temp_samples.size() << " samples at times (timestamp unit != hit time unit):";
+    StreamToLog(DEBUG3);
+    for (std::vector<SubSample>::iterator it2 = temp_samples.begin(); it2 != temp_samples.end(); ++it2){
+      ss << "DEBUG:   " << it2->m_timestamp << " First hit: " << it2->m_time.at(0);
+    }
+    StreamToLog(DEBUG3);
   }
   m_data->IDSamples = new_samples;
 
@@ -52,8 +58,17 @@ bool PrepareSubSamples::Execute(){
     StreamToLog(DEBUG2);
     std::vector<SubSample> temp_samples = it->Split(m_sample_width, m_sample_overlap);
     new_samples.insert(new_samples.end(), temp_samples.begin(), temp_samples.end());
+    ss << "DEBUG:   Created " << temp_samples.size() << " samples at times (timestamp unit != hit time unit):";
+    StreamToLog(DEBUG3);
+    for (std::vector<SubSample>::iterator it2 = temp_samples.begin(); it2 != temp_samples.end(); ++it2){
+      ss << "DEBUG:   " << it2->m_timestamp << " First hit: " << it2->m_time.at(0);
+    }
+    StreamToLog(DEBUG3);
   }
   m_data->ODSamples = new_samples;
+
+  ss << "DEBUG: Exiting PrepareSubSamples::Execute";
+  StreamToLog(DEBUG1);
 
   return true;
 }
