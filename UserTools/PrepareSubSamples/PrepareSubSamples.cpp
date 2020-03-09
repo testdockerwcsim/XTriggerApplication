@@ -45,7 +45,7 @@ bool PrepareSubSamples::Execute(){
     ss << "DEBUG:   Created " << temp_samples.size() << " samples at times (timestamp unit != hit time unit):";
     StreamToLog(DEBUG3);
     for (std::vector<SubSample>::iterator it2 = temp_samples.begin(); it2 != temp_samples.end(); ++it2){
-      ss << "DEBUG:   " << it2->m_timestamp << " First hit: " << it2->m_time.at(0);
+      ss << "DEBUG:   " << it2->m_timestamp << " First hit: " << (it2->m_time.size()==0 ? -999 : it2->m_time.at(0));
     }
     StreamToLog(DEBUG3);
   }
@@ -61,7 +61,7 @@ bool PrepareSubSamples::Execute(){
     ss << "DEBUG:   Created " << temp_samples.size() << " samples at times (timestamp unit != hit time unit):";
     StreamToLog(DEBUG3);
     for (std::vector<SubSample>::iterator it2 = temp_samples.begin(); it2 != temp_samples.end(); ++it2){
-      ss << "DEBUG:   " << it2->m_timestamp << " First hit: " << it2->m_time.at(0);
+      ss << "DEBUG:   " << it2->m_timestamp << " First hit: " << (it2->m_time.size()==0 ? -999 : it2->m_time.at(0));
     }
     StreamToLog(DEBUG3);
   }

@@ -61,6 +61,12 @@ void SubSample::SortByTime(){
 }
 
 std::vector<SubSample> SubSample::Split(SubSample::timestamp_t target_width, SubSample::timestamp_t target_overlap){
+
+  // If the sample is empty, just return a copy of self
+  if (m_time.size() == 0){
+    return std::vector<SubSample>(1, *this);
+  }
+
   // SubSample width in relative units
   relative_time_t relative_width = static_cast<relative_time_t>(target_width)
                                             * s_TIMESTAMP_TO_RELATIVE_TIME;
