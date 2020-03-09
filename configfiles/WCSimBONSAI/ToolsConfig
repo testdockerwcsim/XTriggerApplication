@@ -1,4 +1,5 @@
 wcsim1 WCSimReader configfiles/WCSimBONSAI/WCSimReaderToolConfig
+prepare1 PrepareSubSamples configfiles/WCSimBONSAI/PrepareSubSamplesConfig
 nhits1 NHits configfiles/WCSimBONSAI/NHitsToolConfig
 out1 DataOut configfiles/WCSimBONSAI/DataOutToolConfig
 bonsai1 BONSAI configfiles/WCSimBONSAI/BONSAIToolConfig
