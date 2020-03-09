@@ -2,7 +2,7 @@
 
 #Application path location of applicaiton
 
-ToolDAQapp=$(realpath $(dirname $BASH_SOURCE))
+ToolDAQapp=$(readlink -f $(dirname $BASH_SOURCE))
 
 source /root/HyperK/root/bin/thisroot.sh
 
