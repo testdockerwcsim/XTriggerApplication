@@ -32,7 +32,7 @@ BonsaiInclude = -I$(BONSAIDIR)/bonsai
 BonsaiLib = -L$(BONSAIDIR) -lWCSimBonsai
 
 EBonsaiInclude = -I$(EBONSAIDIR)
-EBonsaiLib = -L$(EBONSAIDIR) -lWCSimBonsai
+EBonsaiLib = -L$(EBONSAIDIR) -lWCSimEBonsai
 
 all: lib/libStore.so lib/libLogging.so lib/libDataModel.so include/Tool.h lib/libMyTools.so lib/libServiceDiscovery.so lib/libToolChain.so main RemoteControl  NodeDaemon
 
