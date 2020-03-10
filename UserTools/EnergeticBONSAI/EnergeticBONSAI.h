@@ -31,6 +31,11 @@ class EnergeticBONSAI: public Tool {
   unsigned int m_nhits_min;
   unsigned int m_nhits_max;
 
+  ReconInfo * m_input_filter;
+  std::string m_input_filter_name;
+
+  int         m_n_working_pmts;
+  std::string m_detector_name;
 
   int m_verbose;
 

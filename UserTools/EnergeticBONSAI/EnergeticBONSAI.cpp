@@ -20,7 +20,9 @@ bool EnergeticBONSAI::Initialise(std::string configfile, DataModel &data){
   WCSimRootGeom * geo = 0;
   m_data->WCSimGeomTree->SetBranchAddress("wcsimrootgeom", &geo);
   m_data->WCSimGeomTree->GetEntry(0);
-  m_ebonsai = new WCSimEBonsai(detectorname, geo, ebonsai_verbose);
+  m_variables.Get("detector_name", m_detector_name);
+  Log("TODO: detector_name should come from the geometry, rather than the parameter file", WARN, m_verbose);
+  m_ebonsai = new WCSimEBonsai(m_detector_name.c_str(), geo, ebonsai_verbose);
 
   //override any energetic BONSAI assumptions
   m_ebonsai->SetDarkRate(m_data->IDPMTDarkRate);
@@ -39,13 +41,13 @@ bool EnergeticBONSAI::Initialise(std::string configfile, DataModel &data){
   m_ebonsai->SetNWorkingPMTs(m_n_working_pmts);
 
   //Get the reconstructed events filter you want to save
-  if(!m_variables.Get("input_filter_name", fInputFilterName)) {
+  if(!m_variables.Get("input_filter_name", m_input_filter_name)) {
     Log("INFO: input_filter_name not given. Using ALL", WARN, m_verbose);
-    fInputFilterName = "ALL";
+    m_input_filter_name = "ALL";
   }
-  fInFilter  = m_data->GetFilter(fInputFilterName, false);
-  if(!fInFilter) {
-    m_ss << "FATAL: no filter named " << fInputFilterName << " found. Returning false";
+  m_input_filter  = m_data->GetFilter(m_input_filter_name, false);
+  if(!m_input_filter) {
+    m_ss << "FATAL: no filter named " << m_input_filter_name << " found. Returning false";
     StreamToLog(FATAL);
     return false;
   }
@@ -66,8 +68,15 @@ bool EnergeticBONSAI::Execute(){
 
   Log("DEBUG: EnergeticBONSAI::Execute() Starting", DEBUG1, m_verbose);
 
-  for (int itrigger = 0 ; itrigger < m_data->IDWCSimEvent_Triggered->GetNumberOfEvents(); itrigger++) {
-    m_trigger = m_data->IDWCSimEvent_Triggered->GetTrigger(itrigger);
+  for(int ireco = 0; ireco < m_input_filter->GetNRecons(); ireco++) {
+    //get the vertex
+    Pos3D vertex = m_input_filter->GetVertex(ireco);
+    m_vertex[0] = vertex.x;
+    m_vertex[1] = vertex.y;
+    m_vertex[2] = vertex.z;
+
+    //get the trigger this reconstructed object is associated with
+    m_trigger = m_data->IDWCSimEvent_Triggered->GetTrigger(m_input_filter->GetTriggerNum(ireco));
 
     //clear the previous triggers' digit information
     m_in_PMTIDs->clear();
@@ -104,22 +113,21 @@ bool EnergeticBONSAI::Execute(){
     }//idigi
     int digits_found = nhits_slots - n_not_found;
     if(m_in_nhits != digits_found) {
-      m_ss << "WARN: BONSAI expected " << m_in_nhits << " digits. Found " << digits_found;
+      m_ss << "WARN: Energetic BONSAI expected " << m_in_nhits << " digits. Found " << digits_found;
       StreamToLog(WARN);
       m_in_nhits = digits_found;
     }
     
-    m_ss << "DEBUG: BONSAI running over " << m_in_nhits << " digits";
+    m_ss << "DEBUG: Energetic BONSAI running over " << m_in_nhits << " digits";
     StreamToLog(DEBUG1);
 
-    Pos3D vertex = fInFilter->GetVertex(irecon);
-    m_vertex[0] = vertex.x;
-    m_vertex[1] = vertex.y;
-    m_vertex[2] = vertex.z;
-    m_ebonsai->GetEnergy(*m_in_Ts, *m_in_PMTIDs, &(m_vertex[0]));
+    //get the energy
+    double energy = m_ebonsai->GetEnergy(*m_in_Ts, *m_in_PMTIDs, &(m_vertex[0]));
 
-    //TODO: loop over reco object, not triggers; sort filter member variables (including renaming to m_); clear variables / cleanup
-  }//itrigger
+    m_ss << "INFO: Energetic BONSAI reconstructed energy " << energy;
+    StreamToLog(INFO);
+
+  }//ireco
 
   Log("DEBUG: EnergeticBONSAI::Execute() Finished", DEBUG1, m_verbose);
 
@@ -131,6 +139,10 @@ bool EnergeticBONSAI::Execute(){
 bool EnergeticBONSAI::Finalise(){
 
   Log("DEBUG: EnergeticBONSAI::Finalise() Starting", DEBUG1, m_verbose);
+
+  delete m_ebonsai;
+  delete m_in_PMTIDs;
+  delete m_in_Ts;
 
   Log("DEBUG: EnergeticBONSAI::Finalise() Finished", DEBUG1, m_verbose);
 
