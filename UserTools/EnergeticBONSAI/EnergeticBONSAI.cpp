@@ -4,7 +4,6 @@ EnergeticBONSAI::EnergeticBONSAI():Tool(){}
 
 
 bool EnergeticBONSAI::Initialise(std::string configfile, DataModel &data){
-  Log("DEBUG: EnergeticBONSAI::Initialise() Starting", DEBUG1, m_verbose);
 
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
@@ -13,6 +12,8 @@ bool EnergeticBONSAI::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("verbose", m_verbose);
 
   m_data= &data;
+
+  Log("DEBUG: EnergeticBONSAI::Initialise() Starting", DEBUG1, m_verbose);
 
   //setup energetic BONSAI with the geometry info
   int ebonsai_verbose = 0;
