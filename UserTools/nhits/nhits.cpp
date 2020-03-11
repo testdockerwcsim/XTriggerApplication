@@ -78,13 +78,13 @@ bool nhits::Execute(){
 
   std::vector<SubSample> & samples = fTriggerOD ? (m_data->ODSamples) : (m_data->IDSamples);
 
-  printf(" qqq data samples size %d \n", samples.size());
+  printf(" data samples size %d \n", samples.size());
 
   for( std::vector<SubSample>::const_iterator is=samples.begin(); is!=samples.end(); ++is){
 #ifdef GPU   
   //  the_output =   GPU_daq::nhits_execute();
   the_output =   GPU_daq::nhits_execute(is->m_PMTid, is->m_time);
-  printf(" qqq qqq look at %d of size %d \n", is - samples.begin(), samples.size());
+  printf(" look at %d of size %d \n", is - samples.begin(), samples.size());
 #else
   AlgNDigits(&(*is));
 #endif
@@ -141,10 +141,10 @@ void nhits::AlgNDigits(const SubSample * sample)
     for(unsigned int idigit = 0; idigit < ndigits; idigit++) {
       //int tube   = sample->m_PMTid.at(idigit);
       //float charge = sample->m_charge.at(idigit);
-#if 0
+#if 1
       float digit_time = sample->m_time.at(idigit);
 #else
-      // qqq degrade info from float to int to match GPU run
+      // F. Nova degrade info from float to int to match GPU run
       int digit_time = (int)sample->m_time.at(idigit);
 #endif
       //hit in trigger window?
@@ -154,17 +154,18 @@ void nhits::AlgNDigits(const SubSample * sample)
       }
     }//loop over Digits
 
-    printf(" interval (%d, %f) has %d hits \n", window_start_time, window_start_time + fTriggerSearchWindow, n_digits);
+    //  F. Nova verbose output
+    //    printf(" interval (%d, %f) has %d hits \n", window_start_time, window_start_time + fTriggerSearchWindow, n_digits);
 
     //if over threshold, issue trigger
     if(n_digits > fTriggerThreshold) {
       //The trigger time is the time of the first hit above threshold
       std::sort(digit_times.begin(), digit_times.end());
-#if 0
+#if 1
       triggertime = digit_times[fTriggerThreshold];
       triggertime -= (int)triggertime % 5;
 #else
-      // qqq degrade time info to be in the middle of the window
+      // F. Nova degrade time info to be in the middle of the window
       triggertime = window_start_time + fTriggerSearchWindow;
 #endif
       triggerfound = true;
@@ -174,7 +175,7 @@ void nhits::AlgNDigits(const SubSample * sample)
 			   triggertime,
 			   std::vector<float>(1, n_digits));
 
-      printf(" QQQ  %d %d \n", (int)triggertime, n_digits);
+      printf(" trigger! time  %d n hits %d \n", (int)triggertime, n_digits);
     }
 
     if(n_digits)
