@@ -111,6 +111,7 @@ void nhits::AlgNDigits(const SubSample * sample)
   float firsthit = +nhits::kALongTime;
   float lasthit  = -nhits::kALongTime;
   for(unsigned int idigit = 0; idigit < ndigits; idigit++) {
+    //    ss << " input " << idigit << " PMT " <<  sample->m_PMTid.at(idigit)<< " time " << sample->m_time.at(idigit) << "\n";
     float digit_time = sample->m_time.at(idigit);
     //get the time of the last hit (to make the loop shorter)
     if(digit_time > lasthit)
@@ -140,7 +141,12 @@ void nhits::AlgNDigits(const SubSample * sample)
     for(unsigned int idigit = 0; idigit < ndigits; idigit++) {
       //int tube   = sample->m_PMTid.at(idigit);
       //float charge = sample->m_charge.at(idigit);
+#if 0
       float digit_time = sample->m_time.at(idigit);
+#else
+      // qqq degrade info from float to int to match GPU run
+      int digit_time = (int)sample->m_time.at(idigit);
+#endif
       //hit in trigger window?
       if(digit_time >= window_start_time && digit_time <= (window_start_time + fTriggerSearchWindow)) {
 	n_digits++;
@@ -148,18 +154,27 @@ void nhits::AlgNDigits(const SubSample * sample)
       }
     }//loop over Digits
 
+    printf(" interval (%d, %f) has %d hits \n", window_start_time, window_start_time + fTriggerSearchWindow, n_digits);
+
     //if over threshold, issue trigger
     if(n_digits > fTriggerThreshold) {
       //The trigger time is the time of the first hit above threshold
       std::sort(digit_times.begin(), digit_times.end());
+#if 0
       triggertime = digit_times[fTriggerThreshold];
       triggertime -= (int)triggertime % 5;
+#else
+      // qqq degrade time info to be in the middle of the window
+      triggertime = window_start_time + fTriggerSearchWindow;
+#endif
       triggerfound = true;
       Triggers->AddTrigger(kTriggerNDigits,
 			   triggertime - fTriggerSaveWindowPre, 
 			   triggertime + fTriggerSaveWindowPost,
 			   triggertime,
 			   std::vector<float>(1, n_digits));
+
+      printf(" QQQ  %d %d \n", (int)triggertime, n_digits);
     }
 
     if(n_digits)

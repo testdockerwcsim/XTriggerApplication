@@ -1,4 +1,3 @@
-#include "../Build.h"
 #include "DummyTool/DummyTool.cpp"
 #include "TriggerOutput/TriggerOutput.cpp"
 #include "WCSimASCIReader/WCSimASCIReader.cpp"
@@ -6,9 +5,7 @@
 #include "test_vertices/test_vertices.cpp"
 #include "WCSimReader/WCSimReader.cpp"
 #include "DataOut/DataOut.cpp"
-#ifdef BONSAIEXISTS
 #include "BONSAI/BONSAI.cpp"
-#endif //BONSAIEXISTS
 #include "ReconDataOut/ReconDataOut.cpp"
 #include "dimfit/dimfit.cpp"
 #include "ReconRandomiser/ReconRandomiser.cpp"

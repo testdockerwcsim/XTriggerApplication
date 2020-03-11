@@ -110,10 +110,8 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
   m_data->IDNPMTs = fWCGeo->GetWCNumPMT();
   if(m_data->HasOD) {
     m_data->ODPMTDarkRate = fWCOpt->GetPMTDarkRate("OD");
-    m_data->ODNPMTs = fWCGeo->GetODWCNumPMT();
-  } else {
-    m_data->ODPMTDarkRate = 0;
-    m_data->ODNPMTs = 0;
+    std::cerr << "Number of OD PMTs not currently saved; uncomment this line after PR #253 merged" << std::endl;
+    //m_data->ODNPMTs = fWCGeo->GetODWCNumPMT();
   }
 
   return true;
