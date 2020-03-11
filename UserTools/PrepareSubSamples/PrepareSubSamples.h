@@ -33,6 +33,7 @@ class PrepareSubSamples: public Tool {
 
   enum LogLevel {FATAL=-1, ERROR=0, WARN=1, INFO=2, DEBUG1=3, DEBUG2=4, DEBUG3=5};
 
+  std::vector<SubSample> SplitSubSampleVector(std::vector<SubSample> &samples);
 
 };
 

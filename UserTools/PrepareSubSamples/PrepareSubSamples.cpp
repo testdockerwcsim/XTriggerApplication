@@ -29,6 +29,26 @@ bool PrepareSubSamples::Initialise(std::string configfile, DataModel &data){
   return true;
 }
 
+std::vector<SubSample> PrepareSubSamples::SplitSubSampleVector(std::vector<SubSample> &samples){
+  std::vector<SubSample> new_samples;
+  for (std::vector<SubSample>::iterator it = samples.begin(); it != samples.end(); ++it){
+    ss << "DEBUG: Sorting sample";
+    StreamToLog(DEBUG2);
+    it->SortByTime();
+    ss << "DEBUG: Splitting sample";
+    StreamToLog(DEBUG2);
+    std::vector<SubSample> temp_samples = it->Split(m_sample_width, m_sample_overlap);
+    new_samples.insert(new_samples.end(), temp_samples.begin(), temp_samples.end());
+    ss << "DEBUG:   Created " << temp_samples.size() << " samples at times (timestamp unit != hit time unit):";
+    StreamToLog(DEBUG3);
+    for (std::vector<SubSample>::iterator it2 = temp_samples.begin(); it2 != temp_samples.end(); ++it2){
+      ss << "DEBUG:   " << it2->m_timestamp << " First hit: " << (it2->m_time.size()==0 ? -999 : it2->m_time.at(0));
+    }
+    StreamToLog(DEBUG3);
+  }
+  return new_samples;
+};
+
 
 bool PrepareSubSamples::Execute(){
 
@@ -36,36 +56,14 @@ bool PrepareSubSamples::Execute(){
   StreamToLog(DEBUG1);
 
   // Split ID samples
-  std::vector<SubSample> new_samples;
-  for (std::vector<SubSample>::iterator it = m_data->IDSamples.begin(); it != m_data->IDSamples.end(); ++it){
-    ss << "DEBUG: Splitting ID sample";
-    StreamToLog(DEBUG2);
-    std::vector<SubSample> temp_samples = it->Split(m_sample_width, m_sample_overlap);
-    new_samples.insert(new_samples.end(), temp_samples.begin(), temp_samples.end());
-    ss << "DEBUG:   Created " << temp_samples.size() << " samples at times (timestamp unit != hit time unit):";
-    StreamToLog(DEBUG3);
-    for (std::vector<SubSample>::iterator it2 = temp_samples.begin(); it2 != temp_samples.end(); ++it2){
-      ss << "DEBUG:   " << it2->m_timestamp << " First hit: " << (it2->m_time.size()==0 ? -999 : it2->m_time.at(0));
-    }
-    StreamToLog(DEBUG3);
-  }
-  m_data->IDSamples = new_samples;
+  ss << "DEBUG: Preparing " << m_data->IDSamples.size() << " ID samples";
+  StreamToLog(DEBUG1);
+  m_data->IDSamples = SplitSubSampleVector(m_data->IDSamples);
 
   // Split OD samples
-  new_samples.clear();
-  for (std::vector<SubSample>::iterator it = m_data->ODSamples.begin(); it != m_data->ODSamples.end(); ++it){
-    ss << "DEBUG: Splitting OD sample";
-    StreamToLog(DEBUG2);
-    std::vector<SubSample> temp_samples = it->Split(m_sample_width, m_sample_overlap);
-    new_samples.insert(new_samples.end(), temp_samples.begin(), temp_samples.end());
-    ss << "DEBUG:   Created " << temp_samples.size() << " samples at times (timestamp unit != hit time unit):";
-    StreamToLog(DEBUG3);
-    for (std::vector<SubSample>::iterator it2 = temp_samples.begin(); it2 != temp_samples.end(); ++it2){
-      ss << "DEBUG:   " << it2->m_timestamp << " First hit: " << (it2->m_time.size()==0 ? -999 : it2->m_time.at(0));
-    }
-    StreamToLog(DEBUG3);
-  }
-  m_data->ODSamples = new_samples;
+  ss << "DEBUG: Preparing " << m_data->ODSamples.size() << " OD samples";
+  StreamToLog(DEBUG1);
+  m_data->ODSamples = SplitSubSampleVector(m_data->ODSamples);
 
   ss << "DEBUG: Exiting PrepareSubSamples::Execute";
   StreamToLog(DEBUG1);
