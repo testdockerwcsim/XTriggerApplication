@@ -19,9 +19,12 @@ class SubSample{
   static const relative_time_t s_TIMESTAMP_TO_RELATIVE_TIME = 1e3; //  = 1 us/ns
 
   SubSample() {};
-  SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time);
-  SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time, std::vector<float> charge);
-  SubSample(std::vector<int> PMTid, std::vector<relative_time_t> time, std::vector<float> charge, timestamp_t timestamp);
+  SubSample(
+    std::vector<int> PMTid,
+    std::vector<relative_time_t> time,
+    std::vector<float> charge = std::vector<float>(),
+    timestamp_t timestamp = 0
+  );
 
   /// Timestamp of the whole SubSample. Unit: us
   timestamp_t m_timestamp;

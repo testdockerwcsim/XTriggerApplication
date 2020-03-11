@@ -1,27 +1,15 @@
 #include "SubSample.h"
 #include <cassert>
 
-SubSample::SubSample(std::vector<int> PMTid, std::vector<SubSample::relative_time_t> time)
-{
-  assert(PMTid.size() == time.size());
-  m_PMTid  = PMTid;
-  m_time   = time;
-  m_charge = std::vector<float>(PMTid.size(), 0.);
-  m_timestamp = 0;
-}
-
-SubSample::SubSample(std::vector<int> PMTid, std::vector<SubSample::relative_time_t> time, std::vector<float> charge)
-{
-  assert(PMTid.size() == time.size() && PMTid.size() == charge.size());
-  m_PMTid  = PMTid;
-  m_time   = time;
-  m_charge = charge;
-  m_timestamp = 0;
-}
-
 SubSample::SubSample(std::vector<int> PMTid, std::vector<SubSample::relative_time_t> time, std::vector<float> charge, SubSample::timestamp_t timestamp)
 {
+  // If charge vector is empty, fill with 0s
+  if (charge.size() == 0){
+    charge =  std::vector<float>(PMTid.size(), 0.);
+  }
+  // Check that all vectors are same size
   assert(PMTid.size() == time.size() && PMTid.size() == charge.size());
+  // Assign values
   m_PMTid  = PMTid;
   m_time   = time;
   m_charge = charge;
