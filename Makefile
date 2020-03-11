@@ -1,5 +1,5 @@
-#CUDA_HOME=/usr/local/cuda
-CUDA_HOME=/usr/local/cuda-8.0
+CUDA_HOME=/usr/local/cuda
+#CUDA_HOME=/usr/local/cuda-8.0
 CUDAINC = -I$(CUDA_HOME)/include 
 CUDALIB = -L$(CUDA_HOME)/lib64 -lcudart -lcuda -lcudadevrt
 
@@ -13,8 +13,8 @@ ZMQInclude= -I $(ToolDAQPath)/zeromq-4.0.7/include/
 BoostLib= -L $(ToolDAQPath)/boost_1_66_0/install/lib -lboost_date_time -lboost_serialization -lboost_iostreams
 BoostInclude= -I $(ToolDAQPath)/boost_1_66_0/install/include
 
-DataModelInclude = $(RootInclude) $(WCSimInclude)
-DataModelLib =  $(RootLib) $(WCSimLib)
+DataModelInclude = $(RootInclude) $(WCSimInclude) $(BonsaiInclude)
+DataModelLib =  $(RootLib) $(WCSimLib) $(BonsaiLib)
 
 MyToolsInclude = 
 MyToolsLib = 
@@ -84,7 +84,7 @@ lib/libMyTools.so: UserTools/*/* UserTools/* | include/Tool.h lib/libDataModel.s
 	@echo "\n*************** Making " $@ "****************"
 	cp UserTools/*/*.h include/
 	cp UserTools/Factory/*.h include/
-	g++ -g -fPIC -shared  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude) $(BonsaiLib) $(BonsaiInclude)
+	g++ -g -fPIC -shared  UserTools/Factory/Factory.cpp -I include -L lib -lStore -lDataModel -lLogging -o lib/libMyTools.so $(MyToolsInclude) $(MyToolsLib) $(DataModelInclude) $(DataModelLib) $(ZMQLib) $(ZMQInclude) $(BoostLib) $(BoostInclude)
 
 lib/libMyToolsGPU.so: UserTools/*/* UserTools/* UserTools/CUDA/GPU_link.o | include/Tool.h lib/libDataModel.so lib/libLogging.so lib/libStore.so
 	@echo "\n*************** Making " $@ "****************"

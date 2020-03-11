@@ -22,21 +22,12 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
 
 
   
-  std::string PMTFile;
   std::string DetectorFile;
   std::string ParameterFile;
   
 
-  m_variables.Get("PMTFile",PMTFile);
   m_variables.Get("DetectorFile",DetectorFile);
   m_variables.Get("ParameterFile",ParameterFile);
-  
-  //  gpu_daq_initialize(PMTFile,DetectorFile,ParameterFile);
-
-#ifdef GPU
-  //  GPU_daq::nhits_initialize();
-  GPU_daq::nhits_initialize_ToolDAQ(PMTFile,DetectorFile,ParameterFile);
-#endif
 
   // can acess variables directly like this and would be good if you could impliment in your code
 
@@ -46,7 +37,7 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("pretrigger_save_window",       fTriggerSaveWindowPre);
   m_variables.Get("posttrigger_save_window",      fTriggerSaveWindowPost);
   m_variables.Get("trigger_od",                   fTriggerOD);
-
+  
   bool adjust_for_noise;
   m_variables.Get("trigger_threshold_adjust_for_noise", adjust_for_noise);
   if(adjust_for_noise) {
@@ -62,36 +53,61 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
        << " (" << npmts << " total PMTs)";
     StreamToLog(INFO);
     ss << "INFO: Updating the NDigits threshold, from " << fTriggerThreshold
-       << " to " << fTriggerThreshold + round(average_occupancy) << std::endl;
+       << " to " << fTriggerThreshold + round(average_occupancy) 
+       << " in window " << fTriggerSaveWindowPre << " to " << fTriggerSaveWindowPost
+       << " with fTriggerOD " << fTriggerOD
+       << std::endl;
     StreamToLog(INFO);
     fTriggerThreshold += round(average_occupancy);    
   }
+
+#ifdef GPU
+  //  GPU_daq::nhits_initialize();
+
+  std::vector<int> tube_no;
+  std::vector<float> tube_x;
+  std::vector<float> tube_y;
+  std::vector<float> tube_z;
+  for( std::vector<PMTInfo>::const_iterator ip=m_data->IDGeom.begin(); ip!=m_data->IDGeom.end(); ip++){
+    tube_no.push_back(ip->m_tubeno);
+    tube_x.push_back(ip->m_x);
+    tube_y.push_back(ip->m_y);
+    tube_z.push_back(ip->m_z);
+  }
+
+  GPU_daq::nhits_initialize_ToolDAQ(ParameterFile,tube_no,tube_x,tube_y,tube_z,fTriggerSearchWindow, fTriggerSearchWindowStep, fTriggerThreshold, fTriggerSaveWindowPre, fTriggerSaveWindowPost);
+#endif
+
+
 
   return true;
 }
 
 
 bool nhits::Execute(){
-  int the_output;
-
-  //do stuff with m_data->Samples
 
   std::vector<SubSample> & samples = fTriggerOD ? (m_data->ODSamples) : (m_data->IDSamples);
 
-  printf(" data samples size %d \n", samples.size());
-
   for( std::vector<SubSample>::const_iterator is=samples.begin(); is!=samples.end(); ++is){
 #ifdef GPU   
-  //  the_output =   GPU_daq::nhits_execute();
-  the_output =   GPU_daq::nhits_execute(is->m_PMTid, is->m_time);
-  printf(" look at %d of size %d \n", is - samples.begin(), samples.size());
+
+    std::vector<int> trigger_ns;
+    std::vector<int> trigger_ts;
+    GPU_daq::nhits_execute(is->m_PMTid, is->m_time_int, &trigger_ns, &trigger_ts);
+    for(int i=0; i<trigger_ns.size(); i++){
+      m_data->IDTriggers.AddTrigger(kTriggerNDigits,
+				    trigger_ts[i] - fTriggerSaveWindowPre, 
+				    trigger_ts[i] + fTriggerSaveWindowPost,
+				    trigger_ts[i],
+				    std::vector<float>(1, trigger_ns[i]));
+
+      printf(" trigger! time  %d nhits %d \n", trigger_ts[i], trigger_ns[i]);
+    }
 #else
   AlgNDigits(&(*is));
 #endif
   }
 
-  //  the_output = CUDAFunction(samples.at(0).m_PMTid, samples.at(0).m_time);
-  m_data->triggeroutput=(bool)the_output;
 
   return true;
 }
@@ -105,13 +121,11 @@ void nhits::AlgNDigits(const SubSample * sample)
   ss << "DEBUG: nhits::AlgNDigits(). Number of entries in input digit collection: " << ndigits;
   StreamToLog(DEBUG1);
   
-  TriggerInfo * Triggers = fTriggerOD ? &(m_data->ODTriggers) : &(m_data->IDTriggers);
-
   //Loop over each digit
   float firsthit = +nhits::kALongTime;
   float lasthit  = -nhits::kALongTime;
   for(unsigned int idigit = 0; idigit < ndigits; idigit++) {
-    //    ss << " input " << idigit << " PMT " <<  sample->m_PMTid.at(idigit)<< " time " << sample->m_time.at(idigit) << "\n";
+    //    ss << " input " << idigit << " PMT " <<  sample->m_PMTid.at(idigit)<< " time " << sample->m_time.at(idigit) ;
     float digit_time = sample->m_time.at(idigit);
     //get the time of the last hit (to make the loop shorter)
     if(digit_time > lasthit)
@@ -144,7 +158,7 @@ void nhits::AlgNDigits(const SubSample * sample)
 #if 1
       float digit_time = sample->m_time.at(idigit);
 #else
-      // F. Nova degrade info from float to int to match GPU run
+      //F. Nova degrade info from float to int to match GPU run
       int digit_time = (int)sample->m_time.at(idigit);
 #endif
       //hit in trigger window?
@@ -153,9 +167,8 @@ void nhits::AlgNDigits(const SubSample * sample)
 	digit_times.push_back(digit_time);
       }
     }//loop over Digits
-
-    //  F. Nova verbose output
-    //    printf(" interval (%d, %f) has %d hits \n", window_start_time, window_start_time + fTriggerSearchWindow, n_digits);
+    //F. Nova verbose output
+    //printf("interval (%d, %f) has %d hits \n", window_start_time, window_start_time + fTriggerSearchWindow, n_digits);
 
     //if over threshold, issue trigger
     if(n_digits > fTriggerThreshold) {
@@ -165,17 +178,15 @@ void nhits::AlgNDigits(const SubSample * sample)
       triggertime = digit_times[fTriggerThreshold];
       triggertime -= (int)triggertime % 5;
 #else
-      // F. Nova degrade time info to be in the middle of the window
+      //F. Nova degrade time info to be in the middle of the window
       triggertime = window_start_time + fTriggerSearchWindow;
 #endif
       triggerfound = true;
-      Triggers->AddTrigger(kTriggerNDigits,
-			   triggertime - fTriggerSaveWindowPre, 
-			   triggertime + fTriggerSaveWindowPost,
-			   triggertime,
-			   std::vector<float>(1, n_digits));
-
-      printf(" trigger! time  %d n hits %d \n", (int)triggertime, n_digits);
+      m_data->IDTriggers.AddTrigger(kTriggerNDigits,
+				    triggertime - fTriggerSaveWindowPre, 
+				    triggertime + fTriggerSaveWindowPost,
+				    triggertime,
+				    std::vector<float>(1, n_digits));
     }
 
     if(n_digits)
@@ -197,7 +208,7 @@ void nhits::AlgNDigits(const SubSample * sample)
 
   }//sliding trigger window while loop
   
-  ss << "INFO: Found " << Triggers->m_N << " NDigit trigger(s) from " << (fTriggerOD ? "OD" : "ID");
+  ss << "INFO: Found " << m_data->IDTriggers.m_N << " NDigit triggers";
   StreamToLog(INFO);
 }
 

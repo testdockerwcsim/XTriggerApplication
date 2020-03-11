@@ -129,7 +129,7 @@ int GPU_daq::nhits_initialize(){
 
 }
 
-int GPU_daq::nhits_initialize_ToolDAQ(std::string PMTFile, std::string DetectorFile, std::string ParameterFile){
+int GPU_daq::nhits_initialize_ToolDAQ(std::string ParameterFile,std::vector<int> tube_no,std::vector<float> tube_x,std::vector<float> tube_y,std::vector<float> tube_z, int fTriggerSearchWindow, int fTriggerSearchWindowStep, int fTriggerThreshold, int fTriggerSaveWindowPre, int fTriggerSaveWindowPost){
 
   int argc = 0;
   const char* n_argv[] = {};
@@ -155,7 +155,7 @@ int GPU_daq::nhits_initialize_ToolDAQ(std::string PMTFile, std::string DetectorF
   elapsed_threads_candidates = 0; elapsed_candidates_memory_dev = 0; elapsed_candidates_kernel = 0;
   elapsed_candidates_copy_host = 0; choose_candidates = 0; elapsed_coalesce = 0; elapsed_gates = 0; elapsed_free = 0; elapsed_total = 0;
   elapsed_tofs_free = 0; elapsed_reset = 0;
-  use_verbose = false;
+  use_verbose = true;
 
 
   ////////////////////
@@ -177,52 +177,24 @@ int GPU_daq::nhits_initialize_ToolDAQ(std::string PMTFile, std::string DetectorF
   //  if( !read_the_pmts() ) return 0;
   {
     printf(" --- read pmts \n");
-    //n_PMTs = read_number_of_pmts();
-    {
-      FILE *f=fopen(PMTFile.c_str(), "r");
-      if (f == NULL){
-	printf(" cannot read pmts file %s \n", PMTFile.c_str());
-	fclose(f);
-	return 0;
-      }
-      
-      unsigned int n_pmts = 0;
-      
-      for (char c = getc(f); c != EOF; c = getc(f))
-	if (c == '\n')
-	  n_pmts ++;
-      
-      fclose(f);
-      n_PMTs = n_pmts;
-      
+    n_PMTs = tube_no.size();
+    if( n_PMTs != tube_x.size() ||
+	n_PMTs != tube_y.size() ||
+	n_PMTs != tube_z.size() ){
+      printf(" pmt problem: n_PMTs %d xs %d ys %d zs %d \n", n_PMTs, tube_x.size(), tube_y.size(), tube_z.size());
+      return 0;
     }
-    if( !n_PMTs ) return false;
+      
+    if( !n_PMTs ) return 0;
     printf(" detector contains %d PMTs \n", n_PMTs);
     PMT_x = (double *)malloc(n_PMTs*sizeof(double));
     PMT_y = (double *)malloc(n_PMTs*sizeof(double));
     PMT_z = (double *)malloc(n_PMTs*sizeof(double));
-    //if( !read_pmts() ) return false;
-    {
-      FILE *f=fopen(PMTFile.c_str(), "r");
-      
-      double x, y, z;
-      unsigned int id;
-      for( unsigned int i=0; i<n_PMTs; i++){
-	if( fscanf(f, "%d %lf %lf %lf", &id, &x, &y, &z) != 4 ){
-	  printf(" problem scanning pmt %d \n", i);
-	  fclose(f);
-	  return false;
-	}
-	PMT_x[id-1] = x;
-	PMT_y[id-1] = y;
-	PMT_z[id-1] = z;
-      }
-      
-      fclose(f);
-
+    for( unsigned int i=0; i<n_PMTs; i++){
+      PMT_x[i] = tube_x[i];
+      PMT_y[i] = tube_y[i];
+      PMT_z[i] = tube_z[i];
     }
-    //print_pmts();
-    
   }
   if( use_timing )
     elapsed_pmts = stop_c_clock();
@@ -241,68 +213,39 @@ int GPU_daq::nhits_initialize_ToolDAQ(std::string PMTFile, std::string DetectorF
     speed_light_water = 29.9792/1.3330; // speed of light in water, cm/ns
     //double speed_light_water = 22.490023;
     
-    double dark_rate = read_value_from_file("dark_rate", parameter_file); // Hz
-    distance_between_vertices = read_value_from_file("distance_between_vertices", parameter_file); // cm
-    wall_like_distance = read_value_from_file("wall_like_distance", parameter_file); // units of distance between vertices
-    time_step_size = read_value_from_file("nhits_step_size", parameter_file); // ns
-    nhits_window = read_value_from_file("nhits_window", parameter_file); // ns
-    int extra_threshold = (int)(dark_rate*n_PMTs*nhits_window*1.e-9); // to account for dark current occupancy
-    extra_threshold = 0;
-    water_like_threshold_number_of_pmts = read_value_from_file("water_like_threshold_number_of_pmts", parameter_file) + extra_threshold;
-    wall_like_threshold_number_of_pmts = read_value_from_file("wall_like_threshold_number_of_pmts", parameter_file) + extra_threshold;
-    coalesce_time = read_value_from_file("coalesce_time", parameter_file); // ns
-    trigger_gate_up = read_value_from_file("trigger_gate_up", parameter_file); // ns
-    trigger_gate_down = read_value_from_file("trigger_gate_down", parameter_file); // ns
+    //    time_step_size = read_value_from_file("nhits_step_size", parameter_file); // ns
+    time_step_size = fTriggerSearchWindowStep;
+    //    nhits_window = read_value_from_file("nhits_window", parameter_file); // ns
+    nhits_window = fTriggerSearchWindow;
+    //    trigger_gate_up = read_value_from_file("trigger_gate_up", parameter_file); // ns
+    trigger_gate_up = fTriggerSaveWindowPost;
+    //    trigger_gate_down = read_value_from_file("trigger_gate_down", parameter_file); // ns
+    trigger_gate_down = - fTriggerSaveWindowPre;
     max_n_hits_per_job = read_value_from_file("max_n_hits_per_job", parameter_file);
     output_txt = (bool)read_value_from_file("output_txt", parameter_file);
     correct_mode = read_value_from_file("correct_mode", parameter_file);
     number_of_kernel_blocks_3d.y = read_value_from_file("num_blocks_y", parameter_file);
     number_of_threads_per_block_3d.y = read_value_from_file("num_threads_per_block_y", parameter_file);
     number_of_threads_per_block_3d.x = read_value_from_file("num_threads_per_block_x", parameter_file);
-    nhits_threshold_min = read_value_from_file("nhits_threshold_min", parameter_file);
-    nhits_threshold_max = read_value_from_file("nhits_threshold_max", parameter_file);
+    //    nhits_threshold_min = read_value_from_file("nhits_threshold_min", parameter_file);
+    //    nhits_threshold_max = read_value_from_file("nhits_threshold_max", parameter_file);
+    nhits_threshold_min = fTriggerThreshold;
+    nhits_threshold_max = fTriggerThreshold;
   }
   if( use_verbose ){
     printf(" --- user parameters \n");
-    printf(" distance between test vertices = %f cm \n", distance_between_vertices);
     printf(" time step size = %d ns \n", time_step_size);
-    printf(" water_like_threshold_number_of_pmts = %d \n", water_like_threshold_number_of_pmts);
-    printf(" coalesce_time = %f ns \n", coalesce_time);
     printf(" trigger_gate_up = %f ns \n", trigger_gate_up);
     printf(" trigger_gate_down = %f ns \n", trigger_gate_down);
     printf(" max_n_hits_per_job = %d \n", max_n_hits_per_job);
+    printf(" nhits_window = %d \n", nhits_window);
+    printf(" nhits_threshold_min = %d, max = %d \n", nhits_threshold_min, nhits_threshold_max);
   }
   if( use_timing )
     elapsed_parameters = stop_c_clock();
 
 
 
-
-  /////////////////////
-  // read detector ////
-  /////////////////////
-  // set: detector_height, detector_radius, pmt_radius
-  if( use_timing )
-    start_c_clock();
-  //if( !read_the_detector() ) return 0;
-  {
-    printf(" --- read detector \n");
-    //    if( !read_detector() ) return false;
-    {
-      FILE *f=fopen(DetectorFile.c_str(), "r");
-      double pmt_radius;
-      if( fscanf(f, "%lf %lf %lf", &detector_height, &detector_radius, &pmt_radius) != 3 ){
-	printf(" problem scanning detector \n");
-	fclose(f);
-	return 0;
-      }
-      
-      fclose(f);
-    }
-    printf(" detector height %f cm, radius %f cm \n", detector_height, detector_radius);
-  }
-  if( use_timing )
-    elapsed_detector = stop_c_clock();
 
 
 
@@ -529,7 +472,7 @@ int GPU_daq::nhits_execute(){
   return 1;
 }
 
-int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time){
+int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time, std::vector<int> * trigger_ns, std::vector<int> * trigger_ts){
 
   start_total_cuda_clock();
 
@@ -554,9 +497,10 @@ int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time){
     // set: n_hits, host_ids, host_times, time_offset, n_time_bins
     // use: time_offset, n_test_vertices
     // memcpy: constant_n_time_bins, constant_n_hits
+    int earliest_time = 0;
     if( use_timing )
       start_c_clock();
-    if( !read_the_input_ToolDAQ(PMTid, time) ){
+    if( !read_the_input_ToolDAQ(PMTid, time, &earliest_time) ){
       if( use_timing )
 	elapsed_input += stop_c_clock();
       n_events ++;
@@ -622,10 +566,10 @@ int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time){
     ////////////////////
     if( use_timing )
       start_cuda_clock();
-    unsigned int start_time = 0;
+    unsigned int start_time = earliest_time;
     unsigned int min_time = 0;
 
-    printf(" --- execute kernel nhits \n");
+    printf(" --- execute kernel nhits starting from time %d \n", start_time);
     while(start_time <= the_max_time) {
       memset(triggerfound, false, nthresholds*sizeof(bool));
       checkCudaErrors(cudaMemset(device_n_pmts_nhits, 0, 1*sizeof(unsigned int)));
@@ -641,6 +585,9 @@ int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time){
 
       min_time = the_max_time+1;
 
+      // F. Nova verbose output
+      //      printf(" interval (%d, %d) has %d hits \n", start_time, start_time + nhits_window, host_n_pmts_nhits[0]);
+
       for(unsigned int u=0; u<nthresholds; u++){
 	if( start_times[u] <= start_time ){ // initially true as both zero
 
@@ -651,6 +598,12 @@ int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time){
 	    triggerfound[u] = true;
 	    ntriggers[u] ++;
 	    //	    printf(" trigger! n triggers %d \n", ntriggers[u]);
+
+	    // F. Nova verbose output
+	    //printf(" found trigger in interval (%d, %d) with %d hits \n", start_time, start_time + nhits_window, host_n_pmts_nhits[0]);
+	    trigger_ns->push_back(host_n_pmts_nhits[0]);
+	    trigger_ts->push_back(start_time + nhits_window - time_step_size);
+
 	  }
 	  
 	  if( triggerfound[u] )

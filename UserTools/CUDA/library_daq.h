@@ -795,7 +795,7 @@ bool read_the_input(){
   return true;
 }
 
-bool read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<int> times){
+bool read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<int> times, int * earliest_time){
 
   printf(" --- read input \n");
   n_hits = PMTids.size();
@@ -818,6 +818,7 @@ bool read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<int> times){
       time = int(floor(times[i]));
       host_times[i] = time;
       host_ids[i] = PMTids[i];
+      //      printf(" input %d PMT %d time %d \n", i, host_ids[i], host_times[i]);
       if( time > max ) max = time;
       if( time < min ) min = time;
     }
@@ -825,7 +826,9 @@ bool read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<int> times){
       time_offset -= min;
     }
     the_max_time = max;
+    *earliest_time = min - min % time_step_size;
   }
+
 
   //time_offset = 600.; // set to constant to match trevor running
   n_time_bins = int(floor((the_max_time + time_offset)/time_step_size))+1; // floor returns the integer below
