@@ -16,13 +16,13 @@ SubSample::SubSample(std::vector<int> PMTid, std::vector<SubSample::relative_tim
   m_timestamp = timestamp;
 }
 
-SubSample::relative_time_t SubSample::TimeDifference(SubSample::relative_time_t this_time, SubSample::timestamp_t other_timestamp, SubSample::relative_time_t other_time){
+SubSample::relative_time_t SubSample::TimeDifference(SubSample::relative_time_t this_time, SubSample::timestamp_t other_timestamp, SubSample::relative_time_t other_time) const {
   relative_time_t sub_sample_difference = static_cast<relative_time_t>(m_timestamp - other_timestamp)
                                           * s_TIMESTAMP_TO_RELATIVE_TIME;
   return (this_time - other_time) + sub_sample_difference;
 }
 
-SubSample::relative_time_t SubSample::TimeDifference(SubSample::relative_time_t this_time, SubSample& other_sample, SubSample::relative_time_t other_time){
+SubSample::relative_time_t SubSample::TimeDifference(SubSample::relative_time_t this_time, SubSample& other_sample, SubSample::relative_time_t other_time) const {
   return TimeDifference(this_time, other_sample.m_timestamp, other_time);
 }
 
@@ -48,7 +48,17 @@ void SubSample::SortByTime(){
   }//i
 }
 
-std::vector<SubSample> SubSample::Split(SubSample::timestamp_t target_width, SubSample::timestamp_t target_overlap){
+bool SubSample::IsSortedByTime() const {
+  int size = m_time.size();
+  for (int i=0; i<size-1; ++i){
+    if (m_time[i] > m_time[i+1]){
+      return false;
+    }
+  }
+  return true;
+}
+
+std::vector<SubSample> SubSample::Split(SubSample::timestamp_t target_width, SubSample::timestamp_t target_overlap) const {
 
   // If the sample is empty, just return a copy of self
   if (m_time.size() == 0){
@@ -67,7 +77,7 @@ std::vector<SubSample> SubSample::Split(SubSample::timestamp_t target_width, Sub
                                             * s_TIMESTAMP_TO_RELATIVE_TIME;
 
   // Ensure everything is sorted
-  SortByTime();
+  assert(IsSortedByTime());
 
   // The vector of samples to be returned
   std::vector<SubSample> split_samples;

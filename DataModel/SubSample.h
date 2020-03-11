@@ -37,17 +37,19 @@ class SubSample{
   std::vector<float> m_charge;
 
   /// Calculate the time difference to between two relative times in this SubSample
-  relative_time_t TimeDifference(relative_time_t this_time, relative_time_t other_time) {return this_time - other_time;};
+  relative_time_t TimeDifference(relative_time_t this_time, relative_time_t other_time) const {return this_time - other_time;};
   /// Calculate the time difference to between a relative times in this SubSample and a time relative to another timestamp
-  relative_time_t TimeDifference(relative_time_t this_time, timestamp_t other_timestamp, relative_time_t other_time);
+  relative_time_t TimeDifference(relative_time_t this_time, timestamp_t other_timestamp, relative_time_t other_time) const;
   /// Calculate the time difference to between a relative times in this SubSample and a realtive time in another SubSample
-  relative_time_t TimeDifference(relative_time_t this_time, SubSample& other_sample, relative_time_t other_time);
+  relative_time_t TimeDifference(relative_time_t this_time, SubSample& other_sample, relative_time_t other_time) const;
 
   /// Sort all digits in the SubSample by their time
   void SortByTime();
+  /// Check whether all hits are in time order
+  bool IsSortedByTime() const;
 
   /// Split SubSample into multiple overlapping ones
-  std::vector<SubSample> Split(timestamp_t target_width, timestamp_t target_overlap);
+  std::vector<SubSample> Split(timestamp_t target_width, timestamp_t target_overlap) const;
 };
 
 #endif
