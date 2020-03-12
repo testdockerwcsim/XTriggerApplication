@@ -129,10 +129,6 @@ bool dimfit::Execute(){
       StreamToLog(INFO);
     }
 
-    //increment the sliding time window
-    tloop += time_window_step_ns;
-    tloopend = tloop + time_window_ns;
-
     //compare nclusters to nclusters warning thresholds
     NClustersWarning_t nclusters_warning = kNClustersUndefined;
     if     (nclusters > nclusters_golden_warning) nclusters_warning = kNClustersGolden;
@@ -145,6 +141,10 @@ bool dimfit::Execute(){
     
     SNWarningParams supernova_warning_parameters(nclusters,fDim,nclusters_warning);
     m_data->SupernovaWarningParameters.push_back(supernova_warning_parameters);
+
+    //increment the sliding time window
+    tloop += time_window_step_ns;
+    tloopend = tloop + time_window_ns;
 
   }//while(tloop < tend)
 
