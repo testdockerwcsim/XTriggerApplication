@@ -23,7 +23,9 @@ bool EnergeticBONSAI::Initialise(std::string configfile, DataModel &data){
   m_data->WCSimGeomTree->GetEntry(0);
   m_variables.Get("detector_name", m_detector_name);
   Log("TODO: detector_name should come from the geometry, rather than the parameter file", WARN, m_verbose);
-  m_ebonsai = new WCSimEBonsai(m_detector_name.c_str(), geo, ebonsai_verbose);
+  m_overwrite_nearest = false;
+  m_variables.Get("overwrite_nearest_neighbours", m_overwrite_nearest);
+  m_ebonsai = new WCSimEBonsai(m_detector_name.c_str(), geo, m_overwrite_nearest, ebonsai_verbose);
 
   //override any energetic BONSAI assumptions
   m_ebonsai->SetDarkRate(m_data->IDPMTDarkRate);
