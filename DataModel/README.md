@@ -25,6 +25,12 @@ different SubSamples, this needs to be taken into account. Since `m_timestamp`
 and `m_time` have different units, one should use the method `TimeDifference`
 to calculate time differences between relative times in different SubSamples.
 
+### TimeDelta
+
+Universal class to store bothe long and short time information. These are used
+for trigger times that are aware of the timestamp realtive to which they were
+created.
+
 ### TriggerInfo
 
 Stores `m_N` triggers, with information including `TriggerType_t`, readout window start/end times, the trigger time, and additional trigger information `std::vector<float>`
