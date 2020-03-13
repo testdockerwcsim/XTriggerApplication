@@ -73,17 +73,17 @@ std::vector<SubSample> SubSample::Split(TimeDelta target_width, TimeDelta target
 
   // Set first SubSample timestamp according to first digit time
   // Make sure hit times are not negative:
-  while ( (m_time.at(0) * TimeDelta::ns - temp_timestamp) < TimeDelta(0.) ){
+  while ( m_timestamp + TimeDelta(m_time.at(0)) - temp_timestamp < TimeDelta(0.) ){
     temp_timestamp -= target_stride;
   }
   // Make sure first SubSample is not empty
-  while ( (m_time.at(0) * TimeDelta::ns - temp_timestamp) > target_stride ){
+  while ( m_timestamp + TimeDelta(m_time.at(0)) - temp_timestamp > target_stride ){
     temp_timestamp += target_stride;
   }
 
   // Add digits to new SubSamples
   for (int i = 0; i < m_time.size(); ++i){
-    TimeDelta time_in_window = (m_time.at(i) * TimeDelta::ns - temp_timestamp);
+    TimeDelta time_in_window = m_timestamp + TimeDelta(m_time.at(i)) - temp_timestamp;
     if (time_in_window < target_width){
       // Add digit to thin time window to current SubSample
       temp_time.push_back(time_in_window / TimeDelta::ns);
@@ -98,11 +98,11 @@ std::vector<SubSample> SubSample::Split(TimeDelta target_width, TimeDelta target
       temp_time.clear();
       temp_charge.clear();
       // Update timestamp
-      while ( not ((m_time.at(i) * TimeDelta::ns - temp_timestamp) < target_width) ){
+      while ( not (m_timestamp + TimeDelta(m_time.at(i)) - temp_timestamp < target_width) ){
         temp_timestamp += target_stride;
       }
       // Rewind index to cover overlap
-      while ( (m_time.at(i) * TimeDelta::ns - temp_timestamp) > TimeDelta(0.) ){
+      while ( m_timestamp + TimeDelta(m_time.at(i)) - temp_timestamp > TimeDelta(0.) ){
         --i;
         // This will stop when `i` is just outside the new time window
         // Then `i` will get increased by one at the end of the loop
