@@ -70,5 +70,11 @@ TimeDelta operator*(double factor, const TimeDelta& old_delta);
 double operator/(const TimeDelta& left_delta, const TimeDelta& right_delta);
 TimeDelta operator+(const TimeDelta& left_delta, const TimeDelta& right_delta);
 TimeDelta operator-(const TimeDelta& left_delta, const TimeDelta& right_delta);
+bool operator<(const TimeDelta& left_delta, const TimeDelta& right_delta);
+bool operator<=(const TimeDelta& left_delta, const TimeDelta& right_delta);
+bool operator>(const TimeDelta& left_delta, const TimeDelta& right_delta);
+bool operator>=(const TimeDelta& left_delta, const TimeDelta& right_delta);
+bool operator==(const TimeDelta& left_delta, const TimeDelta& right_delta);
+bool operator!=(const TimeDelta& left_delta, const TimeDelta& right_delta);
 
 #endif

@@ -47,6 +47,39 @@ TimeDelta operator-(const TimeDelta& left_delta, const TimeDelta& right_delta){
   return left_delta + (-1.0 * right_delta);
 }
 
+bool operator==(const TimeDelta& left_delta, const TimeDelta& right_delta){
+  TimeDelta A(left_delta);
+  TimeDelta B(right_delta);
+  A.Normalize();
+  B.Normalize();
+  return (A.m_long_time == B.m_long_time) and (A.m_short_time == B.m_short_time);
+}
+
+bool operator<(const TimeDelta& left_delta, const TimeDelta& right_delta){
+  TimeDelta A(left_delta);
+  TimeDelta B(right_delta);
+  A.Normalize();
+  B.Normalize();
+  return (A.m_long_time < B.m_long_time)
+      or ((A.m_long_time == B.m_long_time) and (A.m_short_time < B.m_short_time));
+}
+
+bool operator<=(const TimeDelta& left_delta, const TimeDelta& right_delta){
+  return (left_delta < right_delta) or (left_delta == right_delta);
+}
+
+bool operator>(const TimeDelta& left_delta, const TimeDelta& right_delta){
+  return not (left_delta <= right_delta);
+}
+
+bool operator>=(const TimeDelta& left_delta, const TimeDelta& right_delta){
+  return not (left_delta < right_delta);
+}
+
+bool operator!=(const TimeDelta& left_delta, const TimeDelta& right_delta){
+  return not (left_delta == right_delta);
+}
+
 // Unit constants
 const TimeDelta TimeDelta::ps = TimeDelta(0.001);
 const TimeDelta TimeDelta::ns = TimeDelta(1.0);
