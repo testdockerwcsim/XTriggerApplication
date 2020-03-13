@@ -363,7 +363,7 @@ SubSample WCSimReader::GetDigits()
   //loop over the digits
   std::vector<int> PMTid;
   std::vector<float> charge;
-  std::vector<SubSample::relative_time_t> time;
+  std::vector<TimeDelta::short_time_t> time;
   for(int idigi = 0; idigi < fEvt->GetNcherenkovdigihits(); idigi++) {
     //get a digit
     TObject *element = (fEvt->GetCherenkovDigiHits())->At(idigi);

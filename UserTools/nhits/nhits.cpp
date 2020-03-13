@@ -104,7 +104,7 @@ void NHits::AlgNDigits(const SubSample * sample)
     // if # of digits in window over threshold, issue trigger
     int n_digits_in_window = current_digit - first_digit_in_window + 1; // +1 because difference is 0 when first digit is the only digit in window
     if( n_digits_in_window > m_trigger_threshold) {
-      SubSample::relative_time_t triggertime = sample->m_time[current_digit];
+      TimeDelta::short_time_t triggertime = sample->m_time[current_digit];
       m_ss << "DEBUG: Found NHits trigger in SubSample at " << triggertime;
       StreamToLog(DEBUG2);
       m_ss << "DEBUG: Advancing search by posttrigger_save_window " << m_trigger_save_window_post;

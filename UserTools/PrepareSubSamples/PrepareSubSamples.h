@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "TimeDelta.h"
 
 class PrepareSubSamples: public Tool {
 
@@ -19,8 +20,8 @@ class PrepareSubSamples: public Tool {
 
  private:
 
-  SubSample::timestamp_t m_sample_width;
-  SubSample::timestamp_t m_sample_overlap;
+  TimeDelta m_sample_width;
+  TimeDelta m_sample_overlap;
 
   int verbose;
 

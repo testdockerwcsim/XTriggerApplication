@@ -16,13 +16,13 @@ bool PrepareSubSamples::Initialise(std::string configfile, DataModel &data){
   ss << "DEBUG: In PrepareSubSamples::Initialise";
   StreamToLog(DEBUG1);
 
-  m_variables.Get("sample_width", m_sample_width);
-  m_variables.Get("sample_overlap", m_sample_overlap);
+  double temp_width, temp_overlap;
+  m_variables.Get("sample_width", temp_width);
+  m_variables.Get("sample_overlap", temp_overlap);
 
-  // Configuration is in ns, timestamps are in different unit
-  // Convert here
-  m_sample_width /= SubSample::s_TIMESTAMP_TO_RELATIVE_TIME;
-  m_sample_overlap /= SubSample::s_TIMESTAMP_TO_RELATIVE_TIME;
+  // Configuration is in ns
+  m_sample_width = temp_width * TimeDelta::ns;
+  m_sample_overlap = temp_overlap * TimeDelta::ns;
 
   ss << "DEBUG: Leaving PrepareSubSamples::Initialise";
   StreamToLog(DEBUG1);
@@ -42,7 +42,7 @@ std::vector<SubSample> PrepareSubSamples::SplitSubSampleVector(std::vector<SubSa
     ss << "DEBUG:   Created " << temp_samples.size() << " samples at times (timestamp unit != hit time unit):";
     StreamToLog(DEBUG3);
     for (std::vector<SubSample>::iterator it2 = temp_samples.begin(); it2 != temp_samples.end(); ++it2){
-      ss << "DEBUG:   " << it2->m_timestamp << " First hit: " << (it2->m_time.size()==0 ? -999 : it2->m_time.at(0));
+      ss << "DEBUG:   " << it2->m_timestamp / TimeDelta::s << " First hit: " << (it2->m_time.size()==0 ? -999 : it2->m_time.at(0));
     }
     StreamToLog(DEBUG3);
   }
