@@ -4,6 +4,7 @@
 TimeDelta::TimeDelta(double naive_ns){
   m_long_time = 0;
   m_short_time = naive_ns;
+  Normalize();
 }
 
 void TimeDelta::Normalize(){
