@@ -7,12 +7,18 @@ FROM hkdaq/triggerapplication:base
 USER root
 
 #Setup HK prerequisites & get latest version of WCSim
-WORKDIR /root/HyperK/WCSim
-RUN source /root/HyperK/env-WCSim.sh; git pull; make clean; make rootcint; make;
+WORKDIR $WCSIMDIR
+RUN source ../env-WCSim.sh; git pull; make clean; make rootcint; make;
 
-#Setup TriggerApplication
+#Get TriggerApplication
+WORKDIR /
+RUN git clone https://github.com/HKDAQ/TriggerApplication.git;
 WORKDIR /TriggerApplication/
-RUN source ./Setup.sh; make update; make;
+RUN ln -s /TriggerApplicationPreReq ToolDAQ
+
+# Compile TriggerApp
+ENV TrigGERAppinDOCKer indubitably
+RUN source ./Setup.sh; make clean; make update; make;
 
 ### Open terminal
 ENTRYPOINT source /TriggerApplication/Setup.sh && /bin/bash

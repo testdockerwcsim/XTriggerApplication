@@ -29,19 +29,17 @@ RUN yum install -y \
     && yum clean all \
     && rm -rf /var/cache/yum
 
-# Get TriggerApp
+# Get TriggerApp prerequists script
 WORKDIR /
-RUN git clone https://github.com/HKDAQ/TriggerApplication.git ;
+RUN mkdir TriggerApplicationPreReq
+WORKDIR /TriggerApplicationPreReq
+RUN wget https://raw.githubusercontent.com/HKDAQ/TriggerApplication/Application/GetToolDAQ.sh
 
 # Get ToolDAQ prerequisites
 WORKDIR /TriggerApplication
 RUN ./GetToolDAQ.sh --ToolDAQ_ZMQ;
 RUN ./GetToolDAQ.sh --Boost;
 #RUN ./GetToolDAQ.sh --with_root --Root; #comes with WCSim image
-
-# Compile TriggerApp
-ENV TrigGERAppinDOCKer indubitably
-RUN ./GetToolDAQ.sh --Final;
 
 ### Open terminal
 CMD ["/bin/bash"]
