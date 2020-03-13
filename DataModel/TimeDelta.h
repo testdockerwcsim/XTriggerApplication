@@ -76,5 +76,7 @@ bool operator>(const TimeDelta& left_delta, const TimeDelta& right_delta);
 bool operator>=(const TimeDelta& left_delta, const TimeDelta& right_delta);
 bool operator==(const TimeDelta& left_delta, const TimeDelta& right_delta);
 bool operator!=(const TimeDelta& left_delta, const TimeDelta& right_delta);
+TimeDelta& operator+=(TimeDelta& left_delta, const TimeDelta& right_delta);
+TimeDelta& operator-=(TimeDelta& left_delta, const TimeDelta& right_delta);
 
 #endif
