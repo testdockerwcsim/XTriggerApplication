@@ -91,6 +91,10 @@ bool operator!=(const TimeDelta& left_delta, const TimeDelta& right_delta){
   return not (left_delta == right_delta);
 }
 
+std::ostream& operator<<(std::ostream& outs, const TimeDelta& delta){
+  return outs << delta.m_short_time + delta.m_long_time*TimeDelta::s_long_time_unit << " ns";
+}
+
 // Unit constants
 const TimeDelta TimeDelta::ps = TimeDelta(0.001);
 const TimeDelta TimeDelta::ns = TimeDelta(1.0);
