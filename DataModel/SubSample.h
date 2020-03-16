@@ -29,6 +29,9 @@ class SubSample{
   /// Vector of charges for all hits in SubSample. Unit: ?
   std::vector<float> m_charge;
 
+  /// Return the absolute time (timestamp + digit time) of a digit
+  TimeDelta AbsoluteDigitTime(int index) const;
+
   /// Sort all digits in the SubSample by their time
   void SortByTime();
   /// Check whether all hits are in time order

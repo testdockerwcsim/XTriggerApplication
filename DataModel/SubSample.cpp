@@ -114,3 +114,7 @@ std::vector<SubSample> SubSample::Split(TimeDelta target_width, TimeDelta target
 
   return split_samples;
 }
+
+TimeDelta SubSample::AbsoluteDigitTime(int index) const{
+  return m_timestamp + TimeDelta(m_time.at(index));
+}
