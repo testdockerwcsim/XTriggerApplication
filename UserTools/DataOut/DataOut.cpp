@@ -120,7 +120,7 @@ bool DataOut::Execute(){
   for(int i = 0; i < fTriggers->m_N; i++) {
     ss << "INFO: \t[" << fTriggers->m_starttime.at(i)
        << ", " << fTriggers->m_endtime.at(i) << "] "
-       << fTriggers->m_triggertime.at(i) << " ns with type "
+       << fTriggers->m_triggertime.at(i) << " with type "
        << WCSimEnumerations::EnumAsString(fTriggers->m_type.at(i)) << " extra info";
     for(unsigned int ii = 0; ii < fTriggers->m_info.at(i).size(); ii++)
       ss << " " << fTriggers->m_info.at(i).at(ii);
