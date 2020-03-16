@@ -39,26 +39,6 @@ Triggers can be added one at a time, or by copying them all from another `Trigge
 
 Triggers can be sorted into time order using `SortByStartTime()`
 
-#### Important data members
-```
-unsigned int m_N;
-std::vector<TriggerType_t> m_type;
-std::vector<double>        m_starttime;
-std::vector<double>        m_endtime;
-std::vector<double>        m_triggertime;
-std::vector<std::vector<float> > m_info;
-```
-* Note `TriggerType_t` is defined in WCSim in `WCSimEnumerations.hh`
-
-#### Important methods
-
-```
-void AddTrigger(TriggerType_t type, double starttime, double endtime, double triggertime, std::vector<float> info)
-void AddTriggers(TriggerInfo * in)
-void Clear()
-void SortByStartTime()
-```
-
 ### PMTInfo
 
 Stores the PMT ID, and the x, y, z position of each tube
