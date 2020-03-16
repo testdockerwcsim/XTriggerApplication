@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "WCSimEnumerations.hh"
+#include "TimeDelta.h"
 
 class TriggerInfo{
 
@@ -14,6 +15,8 @@ class TriggerInfo{
 
   void AddTrigger(TriggerType_t type, double starttime, double endtime, double triggertime, std::vector<float> info);
 
+  void AddTrigger(TriggerType_t type, TimeDelta starttime, TimeDelta endtime, TimeDelta triggertime, std::vector<float> info);
+
   void AddTriggers(TriggerInfo * in);
 
   void Clear() ;
@@ -22,9 +25,9 @@ class TriggerInfo{
 
   unsigned int m_N;
   std::vector<TriggerType_t> m_type;
-  std::vector<double>        m_starttime;
-  std::vector<double>        m_endtime;
-  std::vector<double>        m_triggertime;
+  std::vector<TimeDelta>     m_starttime;
+  std::vector<TimeDelta>     m_endtime;
+  std::vector<TimeDelta>     m_triggertime;
   std::vector<std::vector<float> > m_info;
 };
 

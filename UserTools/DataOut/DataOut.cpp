@@ -1,4 +1,5 @@
 #include "DataOut.h"
+#include "TimeDelta.h"
 
 DataOut::DataOut():Tool(){}
 
@@ -173,7 +174,7 @@ void DataOut::CreateSubEvents(WCSimRootEvent * WCSimEvent)
       WCSimEvent->AddSubEvent();
     WCSimRootTrigger * trig = WCSimEvent->GetTrigger(i);
     double offset = fTriggerOffset;
-    trig->SetHeader(fEvtNum, 0, fTriggers->m_triggertime.at(i), i+1);
+    trig->SetHeader(fEvtNum, 0, (fTriggers->m_triggertime.at(i) / TimeDelta::ns), i+1);
     trig->SetTriggerInfo(fTriggers->m_type.at(i), fTriggers->m_info.at(i));
     trig->SetMode(0);
   }//i
@@ -224,7 +225,7 @@ void DataOut::RemoveDigits(WCSimRootEvent * WCSimEvent, std::map<int, std::map<i
 	//do it this slightly odd way to mirror what WCSim does
 	double t = time;
 	t += fTriggerOffset
-	  - (float)fTriggers->m_triggertime.at(window);
+	  - (fTriggers->m_triggertime.at(window) / TimeDelta::ns);
 	d->SetT(t);
       }
       if(window > 0 &&
@@ -292,9 +293,10 @@ void DataOut::MoveTracks(WCSimRootEvent * WCSimEvent)
 /////////////////////////////////////////////////////////////////
 int DataOut::TimeInTriggerWindow(double time) {
   for(unsigned int i = 0; i < fTriggers->m_N; i++) {
-    double lo = fTriggers->m_starttime.at(i);
-    double hi = fTriggers->m_endtime.at(i);
-    if(time >= lo && time <= hi)
+    TimeDelta lo = fTriggers->m_starttime.at(i);
+    TimeDelta hi = fTriggers->m_endtime.at(i);
+    TimeDelta delta_time(time);
+    if(delta_time >= lo && delta_time <= hi)
       return i;
   }//it
   return -1;
@@ -310,8 +312,8 @@ unsigned int DataOut::TimeInTriggerWindowNoDelete(double time) {
   // therefore return value is at maximum the number of triggers
   const int N = fTriggers->m_N;
   for(unsigned int i = 0; i < N; i++) {
-    double hi = fTriggers->m_endtime.at(i);
-    if(time <= hi)
+    TimeDelta hi = fTriggers->m_endtime.at(i);
+    if(TimeDelta(time) <= hi)
       return i;
   }//it
   ss << "WARNING DataOut::TimeInTriggerWindowNoDelete() could not find a trigger that track with time " << time << " can live in. Returning maximum trigger number " << N - 1;
