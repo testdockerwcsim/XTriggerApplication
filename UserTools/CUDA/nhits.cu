@@ -129,7 +129,7 @@ int GPU_daq::nhits_initialize(){
 
 }
 
-int GPU_daq::nhits_initialize_ToolDAQ(std::string ParameterFile,std::vector<int> tube_no,std::vector<float> tube_x,std::vector<float> tube_y,std::vector<float> tube_z, int fTriggerSearchWindow, int fTriggerSearchWindowStep, int fTriggerThreshold, int fTriggerSaveWindowPre, int fTriggerSaveWindowPost){
+int GPU_daq::nhits_initialize_ToolDAQ(std::string ParameterFile,int nPMTs, int fTriggerSearchWindow, int fTriggerSearchWindowStep, int fTriggerThreshold, int fTriggerSaveWindowPre, int fTriggerSaveWindowPost){
 
   int argc = 0;
   const char* n_argv[] = {};
@@ -170,31 +170,17 @@ int GPU_daq::nhits_initialize_ToolDAQ(std::string ParameterFile,std::vector<int>
   ////////////////
   // read PMTs  //
   ////////////////
-  // set: n_PMTs, PMT_x, PMT_y, PMT_z
+  // set: n_PMTs
   if( use_timing )
     start_c_clock();
   output_file_base = "all_hits_emerald_threshold_";
   //  if( !read_the_pmts() ) return 0;
   {
     printf(" --- read pmts \n");
-    n_PMTs = tube_no.size();
-    if( n_PMTs != tube_x.size() ||
-	n_PMTs != tube_y.size() ||
-	n_PMTs != tube_z.size() ){
-      printf(" pmt problem: n_PMTs %d xs %d ys %d zs %d \n", n_PMTs, tube_x.size(), tube_y.size(), tube_z.size());
-      return 0;
-    }
+    n_PMTs = nPMTs;
       
     if( !n_PMTs ) return 0;
     printf(" detector contains %d PMTs \n", n_PMTs);
-    PMT_x = (double *)malloc(n_PMTs*sizeof(double));
-    PMT_y = (double *)malloc(n_PMTs*sizeof(double));
-    PMT_z = (double *)malloc(n_PMTs*sizeof(double));
-    for( unsigned int i=0; i<n_PMTs; i++){
-      PMT_x[i] = tube_x[i];
-      PMT_y[i] = tube_y[i];
-      PMT_z[i] = tube_z[i];
-    }
   }
   if( use_timing )
     elapsed_pmts = stop_c_clock();

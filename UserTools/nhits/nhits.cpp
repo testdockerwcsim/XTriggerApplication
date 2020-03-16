@@ -64,18 +64,7 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
 #ifdef GPU
   //  GPU_daq::nhits_initialize();
 
-  std::vector<int> tube_no;
-  std::vector<float> tube_x;
-  std::vector<float> tube_y;
-  std::vector<float> tube_z;
-  for( std::vector<PMTInfo>::const_iterator ip=m_data->IDGeom.begin(); ip!=m_data->IDGeom.end(); ip++){
-    tube_no.push_back(ip->m_tubeno);
-    tube_x.push_back(ip->m_x);
-    tube_y.push_back(ip->m_y);
-    tube_z.push_back(ip->m_z);
-  }
-
-  GPU_daq::nhits_initialize_ToolDAQ(ParameterFile,tube_no,tube_x,tube_y,tube_z,fTriggerSearchWindow, fTriggerSearchWindowStep, fTriggerThreshold, fTriggerSaveWindowPre, fTriggerSaveWindowPost);
+  GPU_daq::nhits_initialize_ToolDAQ(ParameterFile,m_data->IDGeom.size(),fTriggerSearchWindow, fTriggerSearchWindowStep, fTriggerThreshold, fTriggerSaveWindowPre, fTriggerSaveWindowPost);
 #endif
 
 
