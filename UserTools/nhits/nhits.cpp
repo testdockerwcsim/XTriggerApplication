@@ -25,20 +25,26 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
   GPU_daq::nhits_initialize_ToolDAQ(PMTFile,DetectorFile,ParameterFile);
 #endif
 
-  // can acess variables directly like this and would be good if you could impliment in your code
+  double temp_m_trigger_search_window;
+  double temp_m_trigger_save_window_pre;
+  double temp_m_trigger_save_window_post;
 
-  m_variables.Get("trigger_search_window",        m_trigger_search_window);
+  m_variables.Get("trigger_search_window",   temp_m_trigger_search_window);
   m_variables.Get("trigger_threshold",            m_trigger_threshold);
-  m_variables.Get("pretrigger_save_window",       m_trigger_save_window_pre);
-  m_variables.Get("posttrigger_save_window",      m_trigger_save_window_post);
+  m_variables.Get("pretrigger_save_window",  temp_m_trigger_save_window_pre);
+  m_variables.Get("posttrigger_save_window", temp_m_trigger_save_window_post);
   m_variables.Get("trigger_od",                   m_trigger_OD);
+
+  m_trigger_search_window = TimeDelta(temp_m_trigger_search_window);
+  m_trigger_save_window_pre = TimeDelta(temp_m_trigger_save_window_pre);
+  m_trigger_save_window_post = TimeDelta(temp_m_trigger_save_window_post);
 
   bool adjust_for_noise;
   m_variables.Get("trigger_threshold_adjust_for_noise", adjust_for_noise);
   if(adjust_for_noise) {
     int npmts = m_trigger_OD ? m_data->ODNPMTs : m_data->IDNPMTs;
     double dark_rate_kHZ = m_trigger_OD ? m_data->ODPMTDarkRate : m_data->IDPMTDarkRate;
-    double trigger_window_seconds = m_trigger_search_window * 1E-9;
+    double trigger_window_seconds = m_trigger_search_window / TimeDelta::s;
     double dark_rate_Hz = dark_rate_kHZ * 1000;
     double average_occupancy = dark_rate_Hz * trigger_window_seconds * npmts;
 
@@ -104,12 +110,12 @@ void NHits::AlgNDigits(const SubSample * sample)
     // if # of digits in window over threshold, issue trigger
     int n_digits_in_window = current_digit - first_digit_in_window + 1; // +1 because difference is 0 when first digit is the only digit in window
     if( n_digits_in_window > m_trigger_threshold) {
-      TimeDelta::short_time_t triggertime = sample->m_time[current_digit];
+      TimeDelta triggertime = sample->AbsoluteDigitTime(current_digit);
       m_ss << "DEBUG: Found NHits trigger in SubSample at " << triggertime;
       StreamToLog(DEBUG2);
       m_ss << "DEBUG: Advancing search by posttrigger_save_window " << m_trigger_save_window_post;
       StreamToLog(DEBUG2);
-      while(sample->m_time[current_digit] < triggertime + m_trigger_save_window_post){
+      while(sample->AbsoluteDigitTime(current_digit) < triggertime + m_trigger_save_window_post){
         ++current_digit;
       }
       --current_digit; // We want the last digit *within* post-trigger-window
