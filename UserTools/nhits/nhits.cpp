@@ -117,6 +117,10 @@ void NHits::AlgNDigits(const SubSample * sample)
       StreamToLog(DEBUG2);
       while(sample->AbsoluteDigitTime(current_digit) < triggertime + m_trigger_save_window_post){
         ++current_digit;
+        if (current_digit >= ndigits){
+          // Break if we run out of digits
+          break;
+        }
       }
       --current_digit; // We want the last digit *within* post-trigger-window
       int n_digits = current_digit - first_digit_in_window + 1;
