@@ -16,19 +16,59 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
 
 
   
-  std::string PMTFile;
   std::string DetectorFile;
   std::string ParameterFile;
   
 
-  m_variables.Get("PMTFile",PMTFile);
   m_variables.Get("DetectorFile",DetectorFile);
   m_variables.Get("ParameterFile",ParameterFile);
   
+  m_variables.Get("distance_between_vertices",        f_distance_between_vertices);
+  m_variables.Get("wall_like_distance",   f_wall_like_distance);
+  m_variables.Get("water_like_threshold_number_of_pmts",   f_water_like_threshold_number_of_pmts);
+  m_variables.Get("wall_like_threshold_number_of_pmts",   f_wall_like_threshold_number_of_pmts);
+  m_variables.Get("coalesce_time",   f_coalesce_time);
+  m_variables.Get("trigger_gate_up",   f_trigger_gate_up);
+  m_variables.Get("trigger_gate_down",   f_trigger_gate_down);
+  m_variables.Get("output_txt",   f_output_txt);
+  m_variables.Get("correct_mode",   f_correct_mode);
+  m_variables.Get("write_output_mode",   f_write_output_mode);
+  m_variables.Get("trigger_threshold_adjust_for_noise",                   f_trigger_threshold_adjust_for_noise);
+
+  printf(" DetectorFile %s \n ", DetectorFile.c_str());
+  printf(" ParameterFile %s \n ",ParameterFile.c_str() );
+  printf(" f_distance_between_vertices %f \n ", f_distance_between_vertices);
+  printf(" f_wall_like_distance %f \n ", f_wall_like_distance);
+  printf(" f_water_like_threshold_number_of_pmts %f \n ", f_water_like_threshold_number_of_pmts);
+  printf(" f_wall_like_threshold_number_of_pmts %f \n ", f_wall_like_threshold_number_of_pmts);
+  printf(" f_coalesce_time %f \n ", f_coalesce_time);
+  printf(" f_trigger_gate_up %f \n ", f_trigger_gate_up);
+  printf(" f_trigger_gate_down %f \n ", f_trigger_gate_down);
+  printf(" f_output_txt %d \n ", f_output_txt);
+  printf(" f_correct_mode %d \n ", f_correct_mode);
+  printf(" f_write_output_mode %d \n ", f_write_output_mode);
+  printf(" f_trigger_threshold_adjust_for_noise %d \n ", f_trigger_threshold_adjust_for_noise);
+
   //  gpu_daq_initialize(PMTFile,DetectorFile,ParameterFile);
 
 #ifdef GPU
-  GPU_daq::test_vertices_initialize();
+  //  GPU_daq::test_vertices_initialize();
+
+
+  std::vector<int> tube_no;
+  std::vector<float> tube_x;
+  std::vector<float> tube_y;
+  std::vector<float> tube_z;
+  for( std::vector<PMTInfo>::const_iterator ip=m_data->IDGeom.begin(); ip!=m_data->IDGeom.end(); ip++){
+    tube_no.push_back(ip->m_tubeno);
+    tube_x.push_back(ip->m_x);
+    tube_y.push_back(ip->m_y);
+    tube_z.push_back(ip->m_z);
+  }
+
+  
+
+  GPU_daq::test_vertices_initialize_ToolDAQ(DetectorFile, ParameterFile, tube_no, tube_x, tube_y, tube_z);
 #endif
 
   // can acess variables directly like this and would be good if you could impliment in your code

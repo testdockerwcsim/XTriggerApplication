@@ -6,6 +6,7 @@
 namespace GPU_daq {
 
 int test_vertices_initialize();
+int test_vertices_initialize_ToolDAQ(std::string DetectorFile, std::string ParameterFile, std::vector<int> tube_no,std::vector<float> tube_x,std::vector<float> tube_y,std::vector<float> tube_z);
 int test_vertices_execute();
 int test_vertices_finalize();
 int nhits_initialize();

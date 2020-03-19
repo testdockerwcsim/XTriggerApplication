@@ -223,6 +223,234 @@ int GPU_daq::test_vertices_initialize(){
 
 }
 
+int GPU_daq::test_vertices_initialize_ToolDAQ(std::string DetectorFile, std::string ParameterFile, std::vector<int> tube_no,std::vector<float> tube_x,std::vector<float> tube_y,std::vector<float> tube_z){
+
+  int argc = 0;
+  const char* n_argv[] = {};
+  const char **argv = n_argv;
+
+  /////////////////////
+  // initialise card //
+  /////////////////////
+  findCudaDevice(argc, argv);
+
+
+  // initialise CUDA timing
+  use_timing = true;
+  if( use_timing ){
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+  }
+  cudaEventCreate(&total_start);
+  cudaEventCreate(&total_stop);
+  elapsed_parameters = 0; elapsed_pmts = 0; elapsed_detector = 0; elapsed_vertices = 0;
+  elapsed_threads = 0; elapsed_tof = 0; elapsed_directions = 0; elapsed_memory_tofs_dev = 0; elapsed_memory_directions_dev = 0; elapsed_memory_candidates_host = 0; elapsed_tofs_copy_dev = 0; elapsed_directions_copy_dev = 0;
+  elapsed_input = 0; elapsed_memory_dev = 0; elapsed_copy_dev = 0; elapsed_kernel_correct_times_and_get_n_pmts_per_time_bin = 0; 
+  elapsed_threads_candidates = 0; elapsed_candidates_memory_dev = 0; elapsed_candidates_kernel = 0;
+  elapsed_candidates_copy_host = 0; choose_candidates = 0; elapsed_coalesce = 0; elapsed_gates = 0; elapsed_free = 0; elapsed_total = 0;
+  elapsed_tofs_free = 0; elapsed_reset = 0;
+  use_verbose = false;
+
+
+  ////////////////////
+  // inspect device //
+  ////////////////////
+  // set: max_n_threads_per_block, max_n_blocks
+  print_gpu_properties();
+
+
+
+
+  ////////////////
+  // read PMTs  //
+  ////////////////
+  // set: n_PMTs, PMT_x, PMT_y, PMT_z
+  if( use_timing )
+    start_c_clock();
+  event_file_base = "all_hits_";
+  event_file_suffix = ".txt";
+  detector_file = DetectorFile;
+  output_file_base = "all_hits_emerald_threshold_";
+  //  if( !read_the_pmts() ) return 0;
+  {
+    printf(" --- read pmts \n");
+    n_PMTs = tube_no.size();
+    {
+      if( n_PMTs != tube_x.size() ||
+	  n_PMTs != tube_y.size() ||
+	  n_PMTs != tube_z.size() ){
+	printf("pmt problem: n_PMTs %d xs %d ys %d zs %d \n", n_PMTs, tube_x.size(), tube_y.size(), tube_z.size());
+	return 0;
+      }
+    }
+    if( !n_PMTs ) return 0;
+    PMT_x = (double *)malloc(n_PMTs*sizeof(double));
+    PMT_y = (double *)malloc(n_PMTs*sizeof(double));
+    PMT_z = (double *)malloc(n_PMTs*sizeof(double));
+    for( unsigned int i=0; i<n_PMTs; i++){
+      PMT_x[i] = tube_x[i];
+      PMT_y[i] = tube_y[i];
+      PMT_z[i] = tube_z[i];
+    }
+    printf(" detector contains %d PMTs \n", n_PMTs);
+  }
+  if( use_timing )
+    elapsed_pmts = stop_c_clock();
+
+
+  ///////////////////////
+  // define parameters //
+  ///////////////////////
+  if( use_timing )
+    start_c_clock();
+  read_user_parameters();
+  set_output_file();
+  printf(" --- user parameters \n");
+  printf(" dark_rate %f \n", dark_rate);
+  printf(" distance between test vertices = %f cm \n", distance_between_vertices);
+  printf(" wall_like_distance %f \n", wall_like_distance);
+  printf(" water_like_threshold_number_of_pmts = %d \n", water_like_threshold_number_of_pmts);
+  printf(" wall_like_threshold_number_of_pmts %d \n", wall_like_threshold_number_of_pmts);
+  printf(" coalesce_time = %f ns \n", coalesce_time);
+  printf(" trigger_gate_up = %f ns \n", trigger_gate_up);
+  printf(" trigger_gate_down = %f ns \n", trigger_gate_down);
+  printf(" max_n_hits_per_job = %d \n", max_n_hits_per_job);
+  printf(" output_txt %d \n", output_txt);
+  printf(" correct_mode %d \n", correct_mode);
+  printf(" num_blocks_y %d \n", number_of_kernel_blocks_3d.y);
+  printf(" num_threads_per_block_x %d \n", number_of_threads_per_block_3d.x);
+  printf(" num_threads_per_block_y %d \n", number_of_threads_per_block_3d.y);
+  printf(" cylindrical_grid %d \n", cylindrical_grid);
+  printf(" time step size = %d ns \n", time_step_size);
+  printf(" write_output_mode %d \n", write_output_mode);
+  if( correct_mode == 9 ){
+    printf(" n_direction_bins_theta %d, n_direction_bins_phi %d, n_direction_bins %d \n",
+	   n_direction_bins_theta, n_direction_bins_phi, n_direction_bins);
+  }
+  if( use_timing )
+    elapsed_parameters = stop_c_clock();
+
+
+
+
+  /////////////////////
+  // read detector ////
+  /////////////////////
+  // set: detector_height, detector_radius, pmt_radius
+  if( use_timing )
+    start_c_clock();
+  if( !read_the_detector() ) return 0;
+  if( use_timing )
+    elapsed_detector = stop_c_clock();
+
+
+
+
+  ////////////////////////
+  // make test vertices //
+  ////////////////////////
+  // set: n_test_vertices, n_water_like_test_vertices, vertex_x, vertex_y, vertex_z
+  // use: detector_height, detector_radius
+  if( use_timing )
+    start_c_clock();
+  make_test_vertices();
+  if( use_timing )
+    elapsed_vertices = stop_c_clock();
+
+
+
+  //////////////////////////////
+  // table of times_of_flight //
+  //////////////////////////////
+  // set: host_times_of_flight, time_offset
+  // use: n_test_vertices, vertex_x, vertex_y, vertex_z, n_PMTs, PMT_x, PMT_y, PMT_z
+  // malloc: host_times_of_flight
+  if( use_timing )
+    start_c_clock();
+  make_table_of_tofs();
+  if( use_timing )
+    elapsed_tof = stop_c_clock();
+
+  printf("correcting \n");
+
+  if( correct_mode == 9 ){
+    //////////////////////////////
+    // table of directions //
+    //////////////////////////////
+    // set: host_directions_phi, host_directions_cos_theta
+    // use: n_test_vertices, vertex_x, vertex_y, vertex_z, n_PMTs, PMT_x, PMT_y, PMT_z
+    // malloc: host_directions_phi, host_directions_cos_theta
+    if( use_timing )
+      start_c_clock();
+    make_table_of_directions();
+    if( use_timing )
+      elapsed_directions = stop_c_clock();
+  }
+
+
+  ////////////////////////////////////
+  // allocate tofs memory on device //
+  ////////////////////////////////////
+  // use: n_test_vertices, n_PMTs
+  // cudamalloc: device_times_of_flight
+  if( use_timing )
+    start_cuda_clock();
+  allocate_tofs_memory_on_device();
+  if( use_timing )
+    elapsed_memory_tofs_dev = stop_cuda_clock();
+
+
+  if( correct_mode == 9 ){
+    ////////////////////////////////////
+    // allocate direction memory on device //
+    ////////////////////////////////////
+    // use: n_test_vertices, n_PMTs
+    // cudamalloc: device_directions_phi, device_directions_cos_theta
+    if( use_timing )
+      start_cuda_clock();
+    allocate_directions_memory_on_device();
+    if( use_timing )
+      elapsed_memory_directions_dev = stop_cuda_clock();
+  }
+
+
+  ////////////////////////////////
+  // fill tofs memory on device //
+  ////////////////////////////////
+  // use: n_test_vertices, n_water_like_test_vertices, n_PMTs
+  // memcpy: device_times_of_flight, constant_time_step_size, constant_n_test_vertices, constant_n_water_like_test_vertices, constant_n_PMTs
+  // texture: tex_times_of_flight
+  if( use_timing )
+    start_cuda_clock();
+  fill_tofs_memory_on_device();
+  if( use_timing )
+    elapsed_tofs_copy_dev = stop_cuda_clock();
+
+
+  if( correct_mode == 9 ){
+    ////////////////////////////////
+    // fill directions memory on device //
+    ////////////////////////////////
+    // use: n_test_vertices, n_water_like_test_vertices, n_PMTs
+    // memcpy: device_directions_phi, device_directions_cos_theta, constant_time_step_size, constant_n_test_vertices, constant_n_water_like_test_vertices, constant_n_PMTs
+    // texture: tex_directions_phi, tex_directions_cos_theta
+    if( use_timing )
+      start_cuda_clock();
+    fill_directions_memory_on_device();
+    if( use_timing )
+      elapsed_directions_copy_dev = stop_cuda_clock();
+  }
+
+  ///////////////////////
+  // initialize output //
+  ///////////////////////
+  initialize_output();
+
+
+  return 1;
+
+}
+
 int GPU_daq::test_vertices_execute(){
 
   start_total_cuda_clock();
