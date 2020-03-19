@@ -29,12 +29,33 @@ bool PrepareSubSamples::Initialise(std::string configfile, DataModel &data){
   return true;
 }
 
-std::vector<SubSample> PrepareSubSamples::SplitSubSampleVector(std::vector<SubSample> &samples){
-  std::vector<SubSample> new_samples;
+void PrepareSubSamples::SortSubSampleVector(std::vector<SubSample> &samples){
   for (std::vector<SubSample>::iterator it = samples.begin(); it != samples.end(); ++it){
     ss << "DEBUG: Sorting sample";
     StreamToLog(DEBUG2);
     it->SortByTime();
+  }
+}
+
+bool PrepareSubSamples::CheckSubSampleVectorNeedsSplitting(const std::vector<SubSample> &samples){
+  for (std::vector<SubSample>::const_iterator it = samples.begin(); it != samples.end(); ++it){
+    if (CheckSubSampleNeedsSplitting(*it)){
+      return true;
+    }
+  }
+  return false;
+}
+
+bool PrepareSubSamples::CheckSubSampleNeedsSplitting(const SubSample &sample){
+  int N = sample.m_time.size();
+  if (N == 0)
+    return false;
+  return (sample.m_time[N-1] - sample.m_time[0]) > m_sample_width;
+}
+
+std::vector<SubSample> PrepareSubSamples::SplitSubSampleVector(std::vector<SubSample> &samples){
+  std::vector<SubSample> new_samples;
+  for (std::vector<SubSample>::iterator it = samples.begin(); it != samples.end(); ++it){
     ss << "DEBUG: Splitting sample";
     StreamToLog(DEBUG2);
     std::vector<SubSample> temp_samples = it->Split(m_sample_width, m_sample_overlap);
@@ -47,8 +68,7 @@ std::vector<SubSample> PrepareSubSamples::SplitSubSampleVector(std::vector<SubSa
     StreamToLog(DEBUG3);
   }
   return new_samples;
-};
-
+}
 
 bool PrepareSubSamples::Execute(){
 
@@ -58,12 +78,18 @@ bool PrepareSubSamples::Execute(){
   // Split ID samples
   ss << "DEBUG: Preparing " << m_data->IDSamples.size() << " ID samples";
   StreamToLog(DEBUG1);
-  m_data->IDSamples = SplitSubSampleVector(m_data->IDSamples);
+  SortSubSampleVector(m_data->IDSamples);
+  if (CheckSubSampleVectorNeedsSplitting(m_data->IDSamples)){
+    m_data->IDSamples = SplitSubSampleVector(m_data->IDSamples);
+  }
 
   // Split OD samples
   ss << "DEBUG: Preparing " << m_data->ODSamples.size() << " OD samples";
   StreamToLog(DEBUG1);
-  m_data->ODSamples = SplitSubSampleVector(m_data->ODSamples);
+  SortSubSampleVector(m_data->ODSamples);
+  if (CheckSubSampleVectorNeedsSplitting(m_data->ODSamples)){
+    m_data->ODSamples = SplitSubSampleVector(m_data->ODSamples);
+  }
 
   ss << "DEBUG: Exiting PrepareSubSamples::Execute";
   StreamToLog(DEBUG1);
