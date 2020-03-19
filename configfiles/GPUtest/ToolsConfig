@@ -1,10 +1,4 @@
 wcsim1 WCSimReader configfiles/GPUtest/WCSimReaderToolConfig
-#nhits1 nhits configfiles/WCSimReaderTest/nhitsToolConfig
 test_vertices1 test_vertices configfiles/GPUtest/GPUProcessorConfig
-#pass_all1 pass_all configfiles/WCSimReaderTest/pass_allToolConfig
-out1 DataOut configfiles/WCSimReaderTest/DataOutToolConfig
-# WCSim_ASCI_Reader WCSimASCIReader configfiles/GPUtest/WCSimASCIReaderConfig
-# #GPU_Processor GPUProcessor configfiles/GPUtest/GPUProcessorConfig
-# GPU_Processor nhits configfiles/GPUtest/GPUProcessorConfig
-# #GPU_Processor test_vertices configfiles/GPUtest/GPUProcessorConfig
-# Trigger_Output TriggerOutput configfiles/GPUtest/TriggerOutputConfig
+out1 DataOut configfiles/GPUtest/DataOutToolConfig
+

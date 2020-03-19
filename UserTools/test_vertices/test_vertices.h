@@ -30,9 +30,16 @@ class test_vertices: public Tool {
   float f_trigger_gate_down;
   int f_output_txt;
   int f_correct_mode;
-  int f_write_output_mode;
+  int f_n_direction_bins_theta;
+  bool f_cylindrical_grid;
+  float f_costheta_cone_cut;
+  bool f_select_based_on_cone;
   bool  f_trigger_threshold_adjust_for_noise;
-  
+  int f_max_n_hits_per_job;
+  int f_num_blocks_y;
+  int f_num_threads_per_block_y;
+  int f_num_threads_per_block_x;
+  int f_write_output_mode;
 
 
 

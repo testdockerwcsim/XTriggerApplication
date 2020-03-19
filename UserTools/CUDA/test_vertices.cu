@@ -223,7 +223,27 @@ int GPU_daq::test_vertices_initialize(){
 
 }
 
-int GPU_daq::test_vertices_initialize_ToolDAQ(std::string DetectorFile, std::string ParameterFile, std::vector<int> tube_no,std::vector<float> tube_x,std::vector<float> tube_y,std::vector<float> tube_z){
+int GPU_daq::test_vertices_initialize_ToolDAQ(std::string DetectorFile, std::string ParameterFile, std::vector<int> tube_no,std::vector<float> tube_x,std::vector<float> tube_y,std::vector<float> tube_z, float f_dark_rate,
+  float f_distance_between_vertices,
+  float f_wall_like_distance,
+  float f_water_like_threshold_number_of_pmts,
+  float f_wall_like_threshold_number_of_pmts,
+  float f_coalesce_time,
+  float f_trigger_gate_up,
+  float f_trigger_gate_down,
+  int f_output_txt,
+  int f_correct_mode,
+  int f_n_direction_bins_theta,
+  bool f_cylindrical_grid,
+  float f_costheta_cone_cut,
+  bool f_select_based_on_cone,
+  bool  f_trigger_threshold_adjust_for_noise,
+  int f_max_n_hits_per_job,
+  int f_num_blocks_y,
+  int f_num_threads_per_block_y,
+  int f_num_threads_per_block_x,
+  int f_write_output_mode
+){
 
   int argc = 0;
   const char* n_argv[] = {};
@@ -303,8 +323,46 @@ int GPU_daq::test_vertices_initialize_ToolDAQ(std::string DetectorFile, std::str
   ///////////////////////
   if( use_timing )
     start_c_clock();
-  read_user_parameters();
-  set_output_file();
+  //read_user_parameters();
+  {
+    
+    twopi = 2.*acos(-1.);
+    speed_light_water = 29.9792/1.3330; // speed of light in water, cm/ns
+  //double speed_light_water = 22.490023;
+
+    cerenkov_costheta =1./1.3330;
+    cerenkov_angle_water = acos(cerenkov_costheta);
+    costheta_cone_cut = f_costheta_cone_cut;
+    select_based_on_cone = f_select_based_on_cone;
+
+    dark_rate = f_dark_rate; // Hz
+    cylindrical_grid = f_cylindrical_grid;
+    distance_between_vertices = f_distance_between_vertices; // cm
+    wall_like_distance = f_wall_like_distance; // units of distance between vertices
+    time_step_size = (unsigned int)(sqrt(3.)*distance_between_vertices/(4.*speed_light_water)); // ns
+    int extra_threshold = 0;
+    if( f_trigger_threshold_adjust_for_noise ){
+      extra_threshold = (int)(dark_rate*n_PMTs*2.*time_step_size*1.e-9); // to account for dark current occupancy
+    }
+    water_like_threshold_number_of_pmts = f_water_like_threshold_number_of_pmts + extra_threshold;
+    wall_like_threshold_number_of_pmts = f_wall_like_threshold_number_of_pmts + extra_threshold;
+    coalesce_time = f_coalesce_time; // ns
+    trigger_gate_up = f_trigger_gate_up; // ns
+    trigger_gate_down = f_trigger_gate_down; // ns
+    max_n_hits_per_job = f_max_n_hits_per_job;
+    output_txt = f_output_txt;
+    correct_mode = f_correct_mode;
+    write_output_mode = f_write_output_mode;
+    number_of_kernel_blocks_3d.y = f_num_blocks_y;
+    number_of_threads_per_block_3d.y = f_num_threads_per_block_y;
+    number_of_threads_per_block_3d.x = f_num_threads_per_block_x;
+    
+    n_direction_bins_theta = f_n_direction_bins_theta;
+    n_direction_bins_phi = 2*(n_direction_bins_theta - 1);
+    n_direction_bins = n_direction_bins_phi*n_direction_bins_theta - 2*(n_direction_bins_phi - 1);
+    
+  }
+  //  set_output_file();
   printf(" --- user parameters \n");
   printf(" dark_rate %f \n", dark_rate);
   printf(" distance between test vertices = %f cm \n", distance_between_vertices);
@@ -370,8 +428,6 @@ int GPU_daq::test_vertices_initialize_ToolDAQ(std::string DetectorFile, std::str
   make_table_of_tofs();
   if( use_timing )
     elapsed_tof = stop_c_clock();
-
-  printf("correcting \n");
 
   if( correct_mode == 9 ){
     //////////////////////////////
@@ -444,7 +500,7 @@ int GPU_daq::test_vertices_initialize_ToolDAQ(std::string DetectorFile, std::str
   ///////////////////////
   // initialize output //
   ///////////////////////
-  initialize_output();
+  //  initialize_output();
 
 
   return 1;
@@ -470,6 +526,374 @@ int GPU_daq::test_vertices_execute(){
     if( use_timing )
       start_c_clock();
     if( !read_the_input() ){
+      if( use_timing )
+	elapsed_input += stop_c_clock();
+      write_output();
+      n_events ++;
+      continue;
+    }
+    if( use_timing )
+      elapsed_input += stop_c_clock();
+  
+
+
+    ////////////////////////////////////////
+    // allocate candidates memory on host //
+    ////////////////////////////////////////
+    // use: n_time_bins
+    // malloc: host_max_number_of_pmts_in_time_bin, host_vertex_with_max_n_pmts
+    if( use_timing )
+      start_cuda_clock();
+    allocate_candidates_memory_on_host();
+    if( use_timing )
+      elapsed_memory_candidates_host += stop_cuda_clock();
+
+
+    if( correct_mode != 8 && correct_mode != 10 ){
+      ////////////////////////////////////////////////
+      // set number of blocks and threads per block //
+      ////////////////////////////////////////////////
+      // set: number_of_kernel_blocks, number_of_threads_per_block
+      // use: n_test_vertices, n_hits
+      if( use_timing )
+	start_c_clock();
+      if( !setup_threads_for_tof_2d(n_test_vertices, n_hits) ) return 0;
+      if( use_timing )
+	elapsed_threads += stop_c_clock();
+    }
+
+
+    ///////////////////////////////////////
+    // allocate correct memory on device //
+    ///////////////////////////////////////
+    // use: n_test_vertices, n_hits, n_time_bins
+    // cudamalloc: device_ids, device_times, device_n_pmts_per_time_bin
+    if( use_timing )
+      start_cuda_clock();
+    allocate_correct_memory_on_device();
+    if( use_timing )
+      elapsed_memory_dev += stop_cuda_clock();
+
+
+    //////////////////////////////////////
+    // copy input into device variables //
+    //////////////////////////////////////
+    // use: n_hits
+    // memcpy: device_ids, device_times, constant_time_offset
+    // texture: tex_ids, tex_times
+    if( use_timing )
+      start_cuda_clock();
+    fill_correct_memory_on_device();
+    if( use_timing )
+      elapsed_copy_dev += stop_cuda_clock();
+
+
+
+    ////////////////////
+    // execute kernel //
+    ////////////////////
+    if( use_timing )
+      start_cuda_clock();
+    if( correct_mode == 0 ){
+      printf(" --- execute kernel to correct times and get n pmts per time bin \n");
+      kernel_correct_times_and_get_n_pmts_per_time_bin<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_n_pmts_per_time_bin);
+      cudaThreadSynchronize();
+      getLastCudaError("correct_kernel execution failed\n");
+    }else if( correct_mode == 1 ){
+      printf(" --- execute kernel to correct times \n");
+      kernel_correct_times<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_time_bin_of_hit);
+      cudaThreadSynchronize();
+      getLastCudaError("correct_kernel execution failed\n");
+
+      setup_threads_for_histo(n_test_vertices);
+      printf(" --- execute kernel to get n pmts per time bin \n");
+      kernel_histo_one_thread_one_vertex<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_time_bin_of_hit, device_n_pmts_per_time_bin);
+      cudaThreadSynchronize();
+      getLastCudaError("kernel_histo_one_thread_one_vertex execution failed\n");
+    }else if( correct_mode == 2 ){
+      printf(" --- execute kernel to correct times \n");
+      kernel_correct_times<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_time_bin_of_hit);
+      cudaThreadSynchronize();
+      getLastCudaError("correct_kernel execution failed\n");
+
+      checkCudaErrors(cudaMemcpy(host_time_bin_of_hit,
+				 device_time_bin_of_hit,
+				 n_hits*n_test_vertices*sizeof(unsigned int),
+				 cudaMemcpyDeviceToHost));
+
+      for( unsigned int u=0; u<n_hits*n_test_vertices; u++){
+	unsigned int bin = host_time_bin_of_hit[u];
+	if( bin < n_time_bins*n_test_vertices )
+	  host_n_pmts_per_time_bin[ bin ] ++;
+      }
+
+      checkCudaErrors(cudaMemcpy(device_n_pmts_per_time_bin,
+				 host_n_pmts_per_time_bin,
+				 n_time_bins*n_test_vertices*sizeof(unsigned int),
+				 cudaMemcpyHostToDevice));
+      
+
+    }else if( correct_mode == 3 ){
+      printf(" --- execute kernel to correct times \n");
+      kernel_correct_times<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_time_bin_of_hit);
+      cudaThreadSynchronize();
+      getLastCudaError("correct_kernel execution failed\n");
+      
+      setup_threads_for_histo();
+      printf(" --- execute kernel to get n pmts per time bin \n");
+      kernel_histo_stride<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_time_bin_of_hit, device_n_pmts_per_time_bin);
+      cudaThreadSynchronize();
+      getLastCudaError("kernel_histo_one_thread_one_vertex execution failed\n");
+    }else if( correct_mode == 4 ){
+      printf(" --- execute kernel to correct times \n");
+      kernel_correct_times<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_time_bin_of_hit);
+      cudaThreadSynchronize();
+      getLastCudaError("correct_kernel execution failed\n");
+
+      unsigned int njobs = n_time_bins*n_test_vertices/max_n_threads_per_block + 1;
+      printf(" executing %d njobs to get n pmts per time bin \n", njobs); 
+      for( unsigned int iter=0; iter<njobs; iter++){
+
+	setup_threads_for_histo_iterated((bool)(iter + 1 == njobs));
+
+	kernel_histo_iterated<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*n_test_vertices*sizeof(unsigned int) >>>(device_time_bin_of_hit, device_n_pmts_per_time_bin, iter*max_n_threads_per_block);
+	cudaThreadSynchronize();
+	getLastCudaError("kernel_histo execution failed\n");
+      }
+
+    }else if( correct_mode == 5 ){
+      printf(" --- execute kernel to correct times \n");
+      kernel_correct_times<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_time_bin_of_hit);
+      cudaThreadSynchronize();
+      getLastCudaError("correct_kernel execution failed\n");
+
+      if( !setup_threads_for_tof_2d(n_test_vertices, n_time_bins) ) return 0;
+
+      printf(" executing kernel to get n pmts per time bin \n"); 
+
+      kernel_histo_stride_2d<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d >>>(device_time_bin_of_hit, device_n_pmts_per_time_bin);
+      cudaThreadSynchronize();
+      getLastCudaError("kernel_histo execution failed\n");
+
+    }else if( correct_mode == 6 ){
+      printf(" --- execute kernel to correct times \n");
+      kernel_correct_times<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_time_bin_of_hit);
+      cudaThreadSynchronize();
+      getLastCudaError("correct_kernel execution failed\n");
+      
+      setup_threads_for_histo_per(n_test_vertices);
+      printf(" --- execute kernel to get n pmts per time bin \n");
+      kernel_histo_per_vertex<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_time_bin_of_hit, device_n_pmts_per_time_bin);
+      cudaThreadSynchronize();
+      getLastCudaError("kernel_histo_one_thread_one_vertex execution failed\n");
+    }else if( correct_mode == 7 ){
+      printf(" --- execute kernel to correct times \n");
+      kernel_correct_times<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_time_bin_of_hit);
+      cudaThreadSynchronize();
+      getLastCudaError("correct_kernel execution failed\n");
+      
+      setup_threads_for_histo_per(n_test_vertices);
+      printf(" --- execute kernel to get n pmts per time bin \n");
+      kernel_histo_per_vertex_shared<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*sizeof(unsigned int)>>>(device_time_bin_of_hit, device_n_pmts_per_time_bin);
+      cudaThreadSynchronize();
+      getLastCudaError("kernel_histo_one_thread_one_vertex execution failed\n");
+    }else if( correct_mode == 8 ){
+      setup_threads_for_histo_per(n_test_vertices);
+      printf(" --- execute kernel to correct times and get n pmts per time bin \n");
+      kernel_correct_times_and_get_histo_per_vertex_shared<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*sizeof(unsigned int)>>>(device_n_pmts_per_time_bin);
+      cudaThreadSynchronize();
+      getLastCudaError("kernel_correct_times_and_get_histo_per_vertex_shared execution failed\n");
+    }else if( correct_mode == 9 ){
+      printf(" --- execute kernel to correct times and get n pmts per time bin \n");
+      kernel_correct_times_and_get_n_pmts_per_time_bin_and_direction_bin<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_n_pmts_per_time_bin_and_direction_bin, device_directions_for_vertex_and_pmt);
+      cudaThreadSynchronize();
+      getLastCudaError("correct_kernel execution failed\n");
+    }else if( correct_mode == 10 ){
+      setup_threads_for_histo_per(n_test_vertices);
+      printf(" --- execute kernel to correct times and get n pmts per time bin \n");
+      kernel_correct_times_calculate_averages_and_get_histo_per_vertex_shared<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*sizeof(unsigned int)>>>(device_n_pmts_per_time_bin,device_dx_per_time_bin,device_dy_per_time_bin,device_dz_per_time_bin,device_number_of_pmts_in_cone_in_time_bin);
+      cudaThreadSynchronize();
+      getLastCudaError("kernel_correct_times_calculate_averages_and_get_histo_per_vertex_shared execution failed\n");
+
+
+    }
+    if( use_timing )
+      elapsed_kernel_correct_times_and_get_n_pmts_per_time_bin += stop_cuda_clock();
+
+
+
+    //////////////////////////////////
+    // setup threads for candidates //
+    //////////////////////////////////
+    // set: number_of_kernel_blocks, number_of_threads_per_block
+    // use: n_time_bins
+    if( use_timing )
+      start_c_clock();
+    if( !setup_threads_to_find_candidates() ) return 0;
+    if( use_timing )
+      elapsed_threads_candidates += stop_c_clock();
+
+
+
+    //////////////////////////////////////////
+    // allocate candidates memory on device //
+    //////////////////////////////////////////
+    // use: n_time_bins
+    // cudamalloc: device_max_number_of_pmts_in_time_bin, device_vertex_with_max_n_pmts
+    if( use_timing )
+      start_cuda_clock();
+    allocate_candidates_memory_on_device();
+    if( use_timing )
+      elapsed_candidates_memory_dev += stop_cuda_clock();
+
+
+
+    /////////////////////////////////////
+    // find candidates above threshold //
+    /////////////////////////////////////
+    if( use_timing )
+      start_cuda_clock();
+    if( use_verbose )
+      printf(" --- execute candidates kernel \n");
+    if( correct_mode == 9 ){
+      kernel_find_vertex_with_max_npmts_in_timebin_and_directionbin<<<number_of_kernel_blocks,number_of_threads_per_block>>>(device_n_pmts_per_time_bin_and_direction_bin, device_max_number_of_pmts_in_time_bin, device_vertex_with_max_n_pmts);
+    }else if( correct_mode == 10 ){
+      kernel_find_vertex_with_max_npmts_and_center_of_mass_in_timebin<<<number_of_kernel_blocks,number_of_threads_per_block>>>(device_n_pmts_per_time_bin, device_max_number_of_pmts_in_time_bin, device_vertex_with_max_n_pmts,device_number_of_pmts_in_cone_in_time_bin,device_max_number_of_pmts_in_cone_in_time_bin);
+
+    }else{
+      kernel_find_vertex_with_max_npmts_in_timebin<<<number_of_kernel_blocks,number_of_threads_per_block>>>(device_n_pmts_per_time_bin, device_max_number_of_pmts_in_time_bin, device_vertex_with_max_n_pmts);
+    }
+    getLastCudaError("candidates_kernel execution failed\n");
+    if( use_timing )
+      elapsed_candidates_kernel += stop_cuda_clock();
+
+
+
+    /////////////////////////////////////////
+    // copy candidates from device to host //
+    /////////////////////////////////////////
+    // use: n_time_bins
+    // memcpy: host_max_number_of_pmts_in_time_bin, host_vertex_with_max_n_pmts
+    if( use_timing )
+      start_cuda_clock();
+    if( use_verbose )
+      printf(" --- copy candidates from device to host \n");
+    copy_candidates_from_device_to_host();
+    if( use_timing )
+      elapsed_candidates_copy_host += stop_cuda_clock();
+
+
+
+    ///////////////////////////////////////
+    // choose candidates above threshold //
+    ///////////////////////////////////////
+    if( use_timing )
+      start_cuda_clock();
+    if( use_verbose )
+      printf(" --- choose candidates above threshold \n");
+    choose_candidates_above_threshold();
+    if( use_timing )
+      choose_candidates = stop_cuda_clock();
+
+
+
+    ///////////////////////
+    // coalesce triggers //
+    ///////////////////////
+    if( use_timing )
+      start_cuda_clock();
+    coalesce_triggers();
+    if( use_timing )
+      elapsed_coalesce += stop_cuda_clock();
+
+
+
+
+    //////////////////////////////////
+    // separate triggers into gates //
+    //////////////////////////////////
+    if( use_timing )
+      start_cuda_clock();
+    separate_triggers_into_gates();
+    if( use_timing )
+      elapsed_gates += stop_cuda_clock();
+
+
+
+    //////////////////
+    // write output //
+    //////////////////
+    if( use_timing )
+      start_cuda_clock();
+    write_output();
+    if( use_timing )
+      elapsed_write_output += stop_cuda_clock();
+
+    /////////////////////////////
+    // deallocate event memory //
+    /////////////////////////////
+    if( use_timing )
+      start_cuda_clock();
+    if( use_verbose )
+      printf(" --- deallocate memory \n");
+    free_event_memories();
+    if( use_timing )
+      elapsed_free += stop_cuda_clock();
+
+    n_events ++;
+
+  }
+
+  elapsed_total += stop_total_cuda_clock();
+
+
+  printf(" ------ analyzed %d events \n", n_events);
+
+  ///////////////////////
+  // normalize timings //
+  ///////////////////////
+  if( use_timing ){
+    elapsed_input /= n_events;
+    elapsed_memory_candidates_host /= n_events;
+    elapsed_threads /= n_events;
+    elapsed_memory_dev /= n_events;
+    elapsed_copy_dev /= n_events;
+    elapsed_kernel_correct_times_and_get_n_pmts_per_time_bin /= n_events;
+    elapsed_threads_candidates /= n_events;
+    elapsed_candidates_memory_dev /= n_events;
+    elapsed_candidates_kernel /= n_events;
+    elapsed_candidates_copy_host /= n_events;
+    elapsed_coalesce /= n_events;
+    elapsed_gates /= n_events;
+    elapsed_write_output /= n_events;
+    elapsed_free /= n_events;
+  }
+  elapsed_total /= n_events;
+
+  return 1;
+}
+
+int GPU_daq::test_vertices_execute(std::vector<int> PMTid, std::vector<int> time, std::vector<int> * trigger_ns, std::vector<int> * trigger_ts){
+
+  start_total_cuda_clock();
+
+  n_events = 0;
+
+  while( 1 ){
+
+    printf(" ------ analyzing event %d \n", n_events+1);
+
+    ////////////////
+    // read input //
+    ////////////////
+    // set: n_hits, host_ids, host_times, time_offset, n_time_bins
+    // use: time_offset, n_test_vertices
+    // memcpy: constant_n_time_bins, constant_n_hits
+    int earliest_time = 0;
+    if( use_timing )
+      start_c_clock();
+    //    if( !read_the_input() ){
+    if( !read_the_input_ToolDAQ(PMTid, time, &earliest_time) ){
       if( use_timing )
 	elapsed_input += stop_c_clock();
       write_output();

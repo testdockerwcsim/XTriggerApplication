@@ -2054,7 +2054,7 @@ float read_value_from_file(std::string paramname, std::string filename){
 
 void read_user_parameters(){
 
-  std::string parameter_file = "inputfiles/parameters.txt";
+  std::string parameter_file = "parameters.txt";
 
   twopi = 2.*acos(-1.);
   speed_light_water = 29.9792/1.3330; // speed of light in water, cm/ns
