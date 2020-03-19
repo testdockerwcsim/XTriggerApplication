@@ -50,7 +50,7 @@ bool PrepareSubSamples::CheckSubSampleNeedsSplitting(const SubSample &sample){
   int N = sample.m_time.size();
   if (N == 0)
     return false;
-  return (sample.m_time[N-1] - sample.m_time[0]) > m_sample_width;
+  return (TimeDelta(sample.m_time[N-1]) - TimeDelta(sample.m_time[0])) > m_sample_width;
 }
 
 std::vector<SubSample> PrepareSubSamples::SplitSubSampleVector(std::vector<SubSample> &samples){
