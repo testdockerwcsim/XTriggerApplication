@@ -360,6 +360,8 @@ bool WCSimReader::Execute(){
 
 SubSample WCSimReader::GetDigits()
 {
+  // Store times relative to first hit time
+  TimeDelta first_time;
   //loop over the digits
   std::vector<int> PMTid;
   std::vector<float> charge;
@@ -371,7 +373,11 @@ SubSample WCSimReader::GetDigits()
       dynamic_cast<WCSimRootCherenkovDigiHit*>(element);
     //get the digit information
     int ID = digit->GetTubeId();
-    float T = digit->GetT();
+    if (idigi == 0){
+      // Store times relative to the first digit
+      first_time = TimeDelta(digit->GetT());
+    }
+    float T = (TimeDelta(digit->GetT()) - first_time) / TimeDelta::ns;
     float Q = digit->GetQ();
     PMTid.push_back(ID);
     time.push_back(T);
@@ -388,7 +394,14 @@ SubSample WCSimReader::GetDigits()
   ss << "DEBUG: Saved information on " << time.size() << " digits";
   StreamToLog(DEBUG1);
 
-  SubSample sub(PMTid, time, charge);
+  // Set the timestamp of the SubSample to the first digit time (the one every
+  // other time is relative to) plus the trigger time as reported by WCSim.
+  // WCSim stores all digit times relative to the trigger time.
+  //
+  // WCSim also adds a 950 ns offset to the digit times, if it no running in
+  // the NoTrigger mode. But we should not care about that here.
+  TimeDelta timestamp = TimeDelta(fEvt->GetHeader()->GetDate()) + first_time;
+  SubSample sub(PMTid, time, charge, timestamp);
 
   return sub;
 }
