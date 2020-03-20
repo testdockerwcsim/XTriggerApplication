@@ -5,6 +5,10 @@ TimeDelta::TimeDelta(double naive_ns){
   m_long_time = 0;
   m_short_time = naive_ns;
   Normalize();
+  // Avoid loss of precision when possible
+  double difference = naive_ns - (*this / ns);
+  m_short_time += difference;
+  Normalize();
 }
 
 void TimeDelta::Normalize(){
