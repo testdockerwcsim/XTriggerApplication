@@ -1210,6 +1210,7 @@ int GPU_daq::test_vertices_execute(std::vector<int> PMTid, std::vector<int> time
 
     n_events ++;
 
+    break;
   }
 
   elapsed_total += stop_total_cuda_clock();

@@ -11,7 +11,7 @@
  trigger_gate_up 950.0
  trigger_gate_down -400.0
  max_n_hits_per_job 5000
- output_txt 1
+ output_txt 0
  correct_mode 8
  num_blocks_y 1
  num_threads_per_block_y 1024
