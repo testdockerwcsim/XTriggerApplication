@@ -19,13 +19,15 @@
 // 
 
 // __global__ identifier says it's a kernel function
-__global__ void kernel_correct_times_and_get_n_pmts_per_time_bin(unsigned int *ct){
+__global__ void kernel_correct_times_and_get_n_pmts_per_time_bin(histogram_t *ct){
 
   int time_bin = get_time_bin();
 
   if( time_bin < 0 ) return;
 
+#if defined __HISTOGRAM_UINT__
   atomicAdd(&ct[time_bin],1);
+#endif
 
   //  printf( " hit %d (nh %d) id %d t %d; vertex %d (nv %d) tof %f  %d \n", hit_index, constant_n_hits, ids[hit_index], t[hit_index], vertex_index, constant_n_test_vertices, tof, ct[time_index]);
 
@@ -252,7 +254,7 @@ __device__ int get_time_bin(){
 
 
 
-__global__ void kernel_histo_one_thread_one_vertex( unsigned int *ct, unsigned int *histo ){
+__global__ void kernel_histo_one_thread_one_vertex( unsigned int *ct, histogram_t *histo ){
 
   
   // get unique id for each thread in each block
@@ -266,18 +268,23 @@ __global__ void kernel_histo_one_thread_one_vertex( unsigned int *ct, unsigned i
   for( unsigned int ihit=0; ihit<constant_n_hits; ihit++){
     bin = size + ihit;
     if( bin < max)
+#if defined __HISTOGRAM_UINT__
       atomicAdd(&histo[ct[bin]],1);
+#endif
+      ;
   }
   
 }
 
-__global__ void kernel_histo_stride( unsigned int *ct, unsigned int *histo){
+__global__ void kernel_histo_stride( unsigned int *ct, histogram_t *histo){
 
   
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   int stride = blockDim.x * gridDim.x;
   while( i < constant_n_hits*constant_n_test_vertices ){
+#if defined __HISTOGRAM_UINT__
     atomicAdd( &histo[ct[i]], 1);
+#endif
     i += stride;
   }
 
@@ -286,7 +293,7 @@ __global__ void kernel_histo_stride( unsigned int *ct, unsigned int *histo){
 
 
 
-__global__ void kernel_histo_iterated( unsigned int *ct, unsigned int *histo, unsigned int offset ){
+__global__ void kernel_histo_iterated( unsigned int *ct, histogram_t *histo, unsigned int offset ){
 
   
   extern __shared__ unsigned int temp[];
@@ -301,13 +308,15 @@ __global__ void kernel_histo_iterated( unsigned int *ct, unsigned int *histo, un
     i += size;
   }
   __syncthreads();
-  atomicAdd( &(histo[index]), temp[index] );
+#if defined __HISTOGRAM_UINT__
+    atomicAdd( &(histo[index]), temp[index] );
+#endif
 
 
 }
 
 
-__global__ void kernel_histo_stride_2d( unsigned int *ct, unsigned int *histo){
+__global__ void kernel_histo_stride_2d( unsigned int *ct, histogram_t *histo){
 
   // get unique id for each thread in each block
   unsigned int tid_x = threadIdx.x + blockDim.x*blockIdx.x;
@@ -337,7 +346,9 @@ __global__ void kernel_histo_stride_2d( unsigned int *ct, unsigned int *histo){
   unsigned int stride = blockDim.y * gridDim.y*size;
 
   while( tid < max ){
+#if defined __HISTOGRAM_UINT__
     atomicAdd( &histo[ct[tid]], 1);
+#endif
     tid += stride;
   }
 
@@ -345,7 +356,7 @@ __global__ void kernel_histo_stride_2d( unsigned int *ct, unsigned int *histo){
 }
 
 
-__global__ void kernel_histo_per_vertex( unsigned int *ct, unsigned int *histo){
+__global__ void kernel_histo_per_vertex( unsigned int *ct, histogram_t *histo){
 
   // get unique id for each thread in each block
   unsigned int tid_x = threadIdx.x + blockDim.x*blockIdx.x;
@@ -362,14 +373,16 @@ __global__ void kernel_histo_per_vertex( unsigned int *ct, unsigned int *histo){
 
     bin = ct[ihit];
     //histo[bin]++;
+#if defined __HISTOGRAM_UINT__
     atomicAdd( &histo[bin], 1);
+#endif
     ihit += stride;
 
   }
   __syncthreads();
 }
 
-__global__ void kernel_histo_per_vertex_shared( unsigned int *ct, unsigned int *histo){
+__global__ void kernel_histo_per_vertex_shared( unsigned int *ct, histogram_t *histo){
   // get unique id for each thread in each block
   unsigned int tid_x = threadIdx.x + blockDim.x*blockIdx.x;
   unsigned int tid_y = threadIdx.y + blockDim.y*blockIdx.y;
@@ -404,7 +417,9 @@ __global__ void kernel_histo_per_vertex_shared( unsigned int *ct, unsigned int *
 
   local_ihit = threadIdx.y;
   while( local_ihit<constant_n_time_bins ){
+#if defined __HISTOGRAM_UINT__
     atomicAdd( &histo[local_ihit+time_offset], temp[local_ihit]);
+#endif
     local_ihit += stride_block;
   }
 
@@ -512,7 +527,7 @@ __global__ void kernel_correct_times_and_get_histo_per_vertex_shared(histogram_t
 }
 
 
-__global__ void kernel_correct_times_calculate_averages_and_get_histo_per_vertex_shared(unsigned int *ct,float *dx,float *dy,float *dz, unsigned int *ncone){
+__global__ void kernel_correct_times_calculate_averages_and_get_histo_per_vertex_shared(histogram_t *ct,float *dx,float *dy,float *dz, unsigned int *ncone){
 
   //  number_of_kernel_blocks_3d = (n test vertices, 1)
   //  gridDim.x = n test vertices,  gridDim.y = 1
@@ -575,7 +590,12 @@ __global__ void kernel_correct_times_calculate_averages_and_get_histo_per_vertex
   // count hits per time bin
   local_ihit = local_ihit_initial;
   while( local_ihit<constant_n_time_bins ){
-    atomicAdd( &ct[local_ihit+time_offset], temp_ct[local_ihit]);
+    //    atomicAdd( &ct[local_ihit+time_offset], temp_ct[local_ihit]);
+#if defined __HISTOGRAM_UCHAR__
+    ct[local_ihit+time_offset] = min(255, ct[local_ihit+time_offset] + temp_ct[local_ihit]);
+#else
+    ct[local_ihit+time_offset] += temp_ct[local_ihit];
+#endif
     local_ihit += stride_block;
   }
 

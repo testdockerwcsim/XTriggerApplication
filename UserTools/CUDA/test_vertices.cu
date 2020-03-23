@@ -594,7 +594,6 @@ int GPU_daq::test_vertices_execute(){
     ////////////////////
     if( use_timing )
       start_cuda_clock();
-    /*
     if( correct_mode == 0 ){
       printf(" --- execute kernel to correct times and get n pmts per time bin \n");
       kernel_correct_times_and_get_n_pmts_per_time_bin<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_n_pmts_per_time_bin);
@@ -698,14 +697,13 @@ int GPU_daq::test_vertices_execute(){
       kernel_histo_per_vertex_shared<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*sizeof(unsigned int)>>>(device_time_bin_of_hit, device_n_pmts_per_time_bin);
       cudaThreadSynchronize();
       getLastCudaError("kernel_histo_one_thread_one_vertex execution failed\n");
-      }else if( correct_mode == 8 ){*/
-      if( correct_mode == 8 ){
+      }else if( correct_mode == 8 ){
       setup_threads_for_histo_per(n_test_vertices);
       printf(" --- execute kernel to correct times and get n pmts per time bin \n");
       kernel_correct_times_and_get_histo_per_vertex_shared<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*sizeof(unsigned int)>>>(device_n_pmts_per_time_bin);
       cudaThreadSynchronize();
       getLastCudaError("kernel_correct_times_and_get_histo_per_vertex_shared execution failed\n");
-    }/*else if( correct_mode == 9 ){
+    }else if( correct_mode == 9 ){
       printf(" --- execute kernel to correct times and get n pmts per time bin \n");
       kernel_correct_times_and_get_n_pmts_per_time_bin_and_direction_bin<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_n_pmts_per_time_bin_and_direction_bin, device_directions_for_vertex_and_pmt);
       cudaThreadSynchronize();
@@ -718,7 +716,7 @@ int GPU_daq::test_vertices_execute(){
       getLastCudaError("kernel_correct_times_calculate_averages_and_get_histo_per_vertex_shared execution failed\n");
 
 
-      }*/
+      }
     if( use_timing )
       elapsed_kernel_correct_times_and_get_n_pmts_per_time_bin += stop_cuda_clock();
 
@@ -964,7 +962,6 @@ int GPU_daq::test_vertices_execute(std::vector<int> PMTid, std::vector<int> time
     ////////////////////
     if( use_timing )
       start_cuda_clock();
-    /*
     if( correct_mode == 0 ){
       printf(" --- execute kernel to correct times and get n pmts per time bin \n");
       kernel_correct_times_and_get_n_pmts_per_time_bin<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_n_pmts_per_time_bin);
@@ -1068,17 +1065,16 @@ int GPU_daq::test_vertices_execute(std::vector<int> PMTid, std::vector<int> time
       kernel_histo_per_vertex_shared<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*sizeof(unsigned int)>>>(device_time_bin_of_hit, device_n_pmts_per_time_bin);
       cudaThreadSynchronize();
       getLastCudaError("kernel_histo_one_thread_one_vertex execution failed\n");
-      }else if( correct_mode == 8 ){*/
-if( correct_mode == 8 ){
+    }else if( correct_mode == 8 ){
       setup_threads_for_histo_per(n_test_vertices);
       printf(" --- execute kernel to correct times and get n pmts per time bin \n");
       //      kernel_correct_times_and_get_histo_per_vertex_shared<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*sizeof(unsigned int)>>>(device_n_pmts_per_time_bin);
       kernel_correct_times_and_get_histo_per_vertex_shared<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*sizeof(unsigned int)>>>
-				(device_n_pmts_per_time_bin, device_times, device_ids, device_times_of_flight, 
-				   n_test_vertices, n_time_bins, n_hits, n_PMTs, time_offset, time_step_size);
+	(device_n_pmts_per_time_bin, device_times, device_ids, device_times_of_flight, 
+	 n_test_vertices, n_time_bins, n_hits, n_PMTs, time_offset, time_step_size);
       cudaThreadSynchronize();
       getLastCudaError("kernel_correct_times_and_get_histo_per_vertex_shared execution failed\n");
-    }/*else if( correct_mode == 9 ){
+    }else if( correct_mode == 9 ){
       printf(" --- execute kernel to correct times and get n pmts per time bin \n");
       kernel_correct_times_and_get_n_pmts_per_time_bin_and_direction_bin<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_n_pmts_per_time_bin_and_direction_bin, device_directions_for_vertex_and_pmt);
       cudaThreadSynchronize();
@@ -1091,7 +1087,7 @@ if( correct_mode == 8 ){
       getLastCudaError("kernel_correct_times_calculate_averages_and_get_histo_per_vertex_shared execution failed\n");
 
 
-      }*/
+      }
     if( use_timing )
       elapsed_kernel_correct_times_and_get_n_pmts_per_time_bin += stop_cuda_clock();
 
