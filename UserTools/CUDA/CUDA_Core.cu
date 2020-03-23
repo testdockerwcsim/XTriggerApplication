@@ -411,7 +411,7 @@ __global__ void kernel_histo_per_vertex_shared( unsigned int *ct, unsigned int *
 
 }
 
-__global__ void kernel_correct_times_and_get_histo_per_vertex_shared(unsigned int *ct){
+__global__ void kernel_correct_times_and_get_histo_per_vertex_shared(histogram_t *ct){
 
   unsigned int vertex_index = blockIdx.x;
   if( vertex_index >= constant_n_test_vertices ) return;
@@ -445,7 +445,12 @@ __global__ void kernel_correct_times_and_get_histo_per_vertex_shared(unsigned in
 
   local_ihit = local_ihit_initial;
   while( local_ihit<constant_n_time_bins ){
-    atomicAdd( &ct[local_ihit+time_offset], temp[local_ihit]);
+    //    atomicAdd( &ct[local_ihit+time_offset], temp[local_ihit]);
+#if defined __HISTOGRAM_UCHAR__
+    ct[local_ihit+time_offset] = min(255, ct[local_ihit+time_offset] + temp[local_ihit]);
+#else
+    ct[local_ihit+time_offset] += temp[local_ihit];
+#endif
     local_ihit += stride_block;
   }
 
