@@ -32,6 +32,9 @@ __global__ void kernel_histo_stride_2d( unsigned int *ct, unsigned int *histo);
 __global__ void kernel_histo_per_vertex( unsigned int *ct, unsigned int *histo);
 __global__ void kernel_histo_per_vertex_shared( unsigned int *ct, unsigned int *histo);
 __global__ void kernel_correct_times_and_get_histo_per_vertex_shared(unsigned int *ct);
+__global__ void kernel_correct_times_and_get_histo_per_vertex_shared(histogram_t *ct, unsigned int* times, unsigned int* ids, unsigned short* times_of_flight,
+				 unsigned int const_n_test_vertices, unsigned int const_n_time_bins, unsigned int const_n_hits,
+     				 unsigned int const_n_PMTs, offset_t const_time_offset, unsigned int const_time_step_size);
 __global__ void kernel_correct_times_calculate_averages_and_get_histo_per_vertex_shared(unsigned int *ct,float *dx,float *dy,float *dz, unsigned int *ncone);
 __global__ void kernel_nhits(unsigned int *ct, unsigned int start_time, unsigned int nhits_window);
 

@@ -433,7 +433,16 @@ __global__ void kernel_correct_times_and_get_histo_per_vertex_shared(histogram_t
 
   __syncthreads();
 
+  // unsigned int vertex_block = const_n_time_bins*vertex_index;
+  // unsigned int vertex_block2 = const_n_PMTs*vertex_index;
+  // unsigned int v1, v2, v4;
+  // float v3;
   while( hit_index<constant_n_hits){
+    // v1 = __ldg(times + hit_index);
+    // v2 = *(ids + hit_index) + vertex_block2 - 1;
+    // v3 = __ldg(times_of_flight + v2);
+    // v4 = (v1 - v3 + const_time_offset)/const_time_step_size;
+    // bin = (v4+vertex_block);
     bin = get_time_bin_for_vertex_and_hit(vertex_index, hit_index);
     atomicAdd(&temp[bin - time_offset],1);
     hit_index += stride;
@@ -454,6 +463,52 @@ __global__ void kernel_correct_times_and_get_histo_per_vertex_shared(histogram_t
   }
 
 
+}
+
+
+__global__ void kernel_correct_times_and_get_histo_per_vertex_shared(histogram_t *ct, unsigned int* times, unsigned int* ids, unsigned short* times_of_flight,
+     unsigned int const_n_test_vertices, unsigned int const_n_time_bins, unsigned int const_n_hits, 
+     unsigned int const_n_PMTs, offset_t const_time_offset, unsigned int const_time_step_size)
+{
+
+  unsigned int vertex_index = blockIdx.x;
+  if( vertex_index >= const_n_test_vertices ) return;
+  unsigned int local_ihit_initial = threadIdx.x + threadIdx.y*blockDim.x;
+  unsigned int local_ihit = local_ihit_initial;
+  unsigned int stride_block = blockDim.x*blockDim.y;
+  unsigned int stride = stride_block*gridDim.y;
+  unsigned int hit_index = threadIdx.x + threadIdx.y*blockDim.x + stride_block*blockIdx.y;
+  unsigned int bin;
+  unsigned int time_offset = vertex_index*const_n_time_bins;
+  extern __shared__ unsigned int temp[];
+  while( local_ihit<const_n_time_bins ){
+    temp[local_ihit] = 0;
+    local_ihit += stride_block;
+  }
+  __syncthreads();
+  unsigned int vertex_block = const_n_time_bins*vertex_index;
+  unsigned int vertex_block2 = const_n_PMTs*vertex_index;
+  unsigned int v1, v2, v4;
+  float v3;
+  while( hit_index<const_n_hits){
+    v1 = __ldg(times + hit_index);
+    v2 = *(ids + hit_index) + vertex_block2 - 1;
+    v3 = __ldg(times_of_flight + v2);
+    v4 = (v1 - v3 + const_time_offset)/const_time_step_size;
+    bin = (v4+vertex_block);
+    atomicAdd(&temp[bin - time_offset],1);
+    hit_index += stride;
+  }
+  __syncthreads();
+  local_ihit = local_ihit_initial;
+  while( local_ihit<const_n_time_bins ){
+#if defined __HISTOGRAM_UCHAR__
+    ct[local_ihit+time_offset] = min(255, ct[local_ihit+time_offset] + temp[local_ihit]);
+#else
+    ct[local_ihit+time_offset] += temp[local_ihit];
+#endif
+    local_ihit += stride_block;
+  }
 }
 
 
