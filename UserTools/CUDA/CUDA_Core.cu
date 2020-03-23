@@ -434,7 +434,6 @@ __global__ void kernel_correct_times_and_get_histo_per_vertex_shared(histogram_t
   __syncthreads();
 
   while( hit_index<constant_n_hits){
-
     bin = get_time_bin_for_vertex_and_hit(vertex_index, hit_index);
     atomicAdd(&temp[bin - time_offset],1);
     hit_index += stride;
