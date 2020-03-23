@@ -1131,13 +1131,12 @@ if( correct_mode == 8 ){
       start_cuda_clock();
     if( use_verbose )
       printf(" --- execute candidates kernel \n");
-    /*
     if( correct_mode == 9 ){
       kernel_find_vertex_with_max_npmts_in_timebin_and_directionbin<<<number_of_kernel_blocks,number_of_threads_per_block>>>(device_n_pmts_per_time_bin_and_direction_bin, device_max_number_of_pmts_in_time_bin, device_vertex_with_max_n_pmts);
     }else if( correct_mode == 10 ){
       kernel_find_vertex_with_max_npmts_and_center_of_mass_in_timebin<<<number_of_kernel_blocks,number_of_threads_per_block>>>(device_n_pmts_per_time_bin, device_max_number_of_pmts_in_time_bin, device_vertex_with_max_n_pmts,device_number_of_pmts_in_cone_in_time_bin,device_max_number_of_pmts_in_cone_in_time_bin);
 
-      }else*/{
+      }else{
       kernel_find_vertex_with_max_npmts_in_timebin<<<number_of_kernel_blocks,number_of_threads_per_block>>>(device_n_pmts_per_time_bin, device_max_number_of_pmts_in_time_bin, device_vertex_with_max_n_pmts);
     }
     getLastCudaError("candidates_kernel execution failed\n");

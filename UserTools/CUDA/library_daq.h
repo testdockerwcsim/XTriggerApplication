@@ -179,8 +179,8 @@ int n_events;
 
 
 __global__ void kernel_find_vertex_with_max_npmts_in_timebin(histogram_t * np, histogram_t * mnp, unsigned int * vmnp);
-__global__ void kernel_find_vertex_with_max_npmts_and_center_of_mass_in_timebin(unsigned int * np, unsigned int * mnp, unsigned int * vmnp, unsigned int *nc, unsigned int *mnc);
-__global__ void kernel_find_vertex_with_max_npmts_in_timebin_and_directionbin(unsigned int * np, unsigned int * mnp, unsigned int * vmnp);
+__global__ void kernel_find_vertex_with_max_npmts_and_center_of_mass_in_timebin(histogram_t * np, histogram_t * mnp, unsigned int * vmnp, unsigned int *nc, unsigned int *mnc);
+__global__ void kernel_find_vertex_with_max_npmts_in_timebin_and_directionbin(unsigned int * np, histogram_t * mnp, unsigned int * vmnp);
 
 unsigned int read_number_of_input_hits();
 bool read_input();
@@ -1637,7 +1637,7 @@ __global__ void kernel_find_vertex_with_max_npmts_in_timebin(histogram_t * np, h
 
 }
 
-__global__ void kernel_find_vertex_with_max_npmts_and_center_of_mass_in_timebin(unsigned int * np, unsigned int * mnp, unsigned int * vmnp, unsigned int *nc, unsigned int *mnc){
+__global__ void kernel_find_vertex_with_max_npmts_and_center_of_mass_in_timebin(histogram_t * np, histogram_t * mnp, unsigned int * vmnp, unsigned int *nc, unsigned int *mnc){
 
 
   // get unique id for each thread in each block == time bin
@@ -1686,7 +1686,7 @@ __global__ void kernel_find_vertex_with_max_npmts_and_center_of_mass_in_timebin(
 
 }
 
-__global__ void kernel_find_vertex_with_max_npmts_in_timebin_and_directionbin(unsigned int * np, unsigned int * mnp, unsigned int * vmnp){
+__global__ void kernel_find_vertex_with_max_npmts_in_timebin_and_directionbin(unsigned int * np, histogram_t * mnp, unsigned int * vmnp){
 
 
   // get unique id for each thread in each block == time bin
