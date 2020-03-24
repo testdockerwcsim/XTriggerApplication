@@ -1,1 +1,1 @@
-6017.84  3713.47 25.4 
+/opt/ppd/t2k/users/federico_nova/HyperK/HyperK_g410/WCSim-Tom-trigger/WCSim/sample-root-scripts/fedescripts/txts/detector.txt

@@ -287,7 +287,10 @@ bool read_input(){
   }
 
   if( min < 0 ){
-    time_offset -= min;
+    for(int i=0; i<n_hits; i++){
+      host_times[i] -= min;
+      max -= min;
+    }
   }
 
 
@@ -823,7 +826,10 @@ bool read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<int> times, int
       if( time < min ) min = time;
     }
     if( min < 0 ){
-      time_offset -= min;
+      for(int i=0; i<PMTids.size(); i++){
+	host_times[i] -= min;
+	max -= min;
+      }
     }
     the_max_time = max;
     *earliest_time = min - min % time_step_size;
