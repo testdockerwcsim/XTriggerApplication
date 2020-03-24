@@ -1,1 +1,1 @@
-/opt/ppd/t2k/users/federico_nova/HyperK/HyperK_g410/WCSim-Tom-trigger/WCSim/sample-root-scripts/fedescripts/txts_electron/detector.txt
+/opt/ppd/t2k/users/federico_nova/HyperK/HyperK_g410/WCSim-Tom-trigger/WCSim/sample-root-scripts/fedescripts/txts/detector.txt
