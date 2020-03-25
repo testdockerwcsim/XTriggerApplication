@@ -119,8 +119,9 @@ bool BONSAI::Execute(){
     }
     for(int i = 0; i < 2; i++)
       dout_cone[i] = out_direction[i+3];
-    
-    m_data->RecoInfo.AddRecon(kReconBONSAI, itrigger, m_in_nhits, out_vertex[3], &(dout_vertex[0]), out_maxlike[2], out_maxlike[1],
+
+    TimeDelta vertex_time = out_vertex[3] * TimeDelta::ns;
+    m_data->RecoInfo.AddRecon(kReconBONSAI, itrigger, m_in_nhits, vertex_time, &(dout_vertex[0]), out_maxlike[2], out_maxlike[1],
 			      &(dout_direction[0]), &(dout_cone[0]), out_direction[5]);
 
   }//itrigger
