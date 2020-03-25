@@ -6,7 +6,7 @@
 namespace GPU_daq {
 
 int test_vertices_initialize();
- int test_vertices_initialize_ToolDAQ(std::string DetectorFile, std::string ParameterFile, std::vector<int> tube_no,std::vector<float> tube_x,std::vector<float> tube_y,std::vector<float> tube_z, float f_dark_rate,
+ int test_vertices_initialize_ToolDAQ(double detector_length, double detector_radius, double pmt_radius, std::string ParameterFile, std::vector<int> tube_no,std::vector<float> tube_x,std::vector<float> tube_y,std::vector<float> tube_z, float f_dark_rate,
   float distance_between_vertices,
   float wall_like_distance,
   float water_like_threshold_number_of_pmts,

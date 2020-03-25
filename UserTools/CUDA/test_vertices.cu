@@ -223,7 +223,7 @@ int GPU_daq::test_vertices_initialize(){
 
 }
 
-int GPU_daq::test_vertices_initialize_ToolDAQ(std::string DetectorFile, std::string ParameterFile, std::vector<int> tube_no,std::vector<float> tube_x,std::vector<float> tube_y,std::vector<float> tube_z, float f_dark_rate,
+int GPU_daq::test_vertices_initialize_ToolDAQ(double f_detector_length, double f_detector_radius, double f_pmt_radius, std::string ParameterFile, std::vector<int> tube_no,std::vector<float> tube_x,std::vector<float> tube_y,std::vector<float> tube_z, float f_dark_rate,
   float f_distance_between_vertices,
   float f_wall_like_distance,
   float f_water_like_threshold_number_of_pmts,
@@ -289,7 +289,7 @@ int GPU_daq::test_vertices_initialize_ToolDAQ(std::string DetectorFile, std::str
     start_c_clock();
   event_file_base = "all_hits_";
   event_file_suffix = ".txt";
-  detector_file = DetectorFile;
+  //  detector_file = DetectorFile;
   output_file_base = "all_hits_emerald_threshold_";
   //  if( !read_the_pmts() ) return 0;
   {
@@ -397,7 +397,11 @@ int GPU_daq::test_vertices_initialize_ToolDAQ(std::string DetectorFile, std::str
   // set: detector_height, detector_radius, pmt_radius
   if( use_timing )
     start_c_clock();
-  if( !read_the_detector() ) return 0;
+  //  if( !read_the_detector() ) return 0;
+  detector_height = f_detector_length;
+  detector_radius = f_detector_radius;
+  printf(" detector height %f cm, radius %f cm \n", detector_height, detector_radius);
+  //  pmt_radius = f_pmt_radius;
   if( use_timing )
     elapsed_detector = stop_c_clock();
 

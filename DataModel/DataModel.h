@@ -62,6 +62,9 @@ class DataModel {
   double ODPMTDarkRate;
   int IDNPMTs;
   int ODNPMTs;
+  double detector_length;
+  double detector_radius;
+  double pmt_radius;
   
   TChain * WCSimGeomTree;
   TChain * WCSimOptionsTree;
