@@ -650,6 +650,8 @@ void make_test_vertices(){
 
   }
 
+  printf(" made %d test vertices \n", n_test_vertices);
+
   return;
 
 }

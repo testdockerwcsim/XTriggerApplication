@@ -106,6 +106,9 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
   //store the relevant options
   m_data->IsMC = true;
   //geometry
+  m_data->detector_length = fWCGeo->GetWCCylLength();
+  m_data->detector_radius = fWCGeo->GetWCCylRadius();
+  m_data->pmt_radius = fWCGeo->GetWCPMTRadius();
   m_data->IDPMTDarkRate = fWCOpt->GetPMTDarkRate("tank");
   m_data->IDNPMTs = fWCGeo->GetWCNumPMT();
   if(m_data->HasOD) {

@@ -85,7 +85,7 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
 
   
 
-  GPU_daq::test_vertices_initialize_ToolDAQ(DetectorFile, ParameterFile, tube_no, tube_x, tube_y, tube_z, m_data->IDPMTDarkRate*1000,
+  GPU_daq::test_vertices_initialize_ToolDAQ(m_data->detector_length, m_data->detector_radius, m_data->pmt_radius, ParameterFile, tube_no, tube_x, tube_y, tube_z, m_data->IDPMTDarkRate*1000,
  f_distance_between_vertices,
  f_wall_like_distance,
  f_water_like_threshold_number_of_pmts,
