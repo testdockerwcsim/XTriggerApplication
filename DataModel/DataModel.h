@@ -57,9 +57,6 @@ class DataModel {
   ReconInfo RecoInfo;
   std::map<std::string, ReconInfo*> RecoInfoMap;
 
-  /// Holds named stopwatches
-  std::map<std::string, Stopwatch>  StopwatchMap;
-
   bool triggeroutput;
 
   double IDPMTDarkRate;
