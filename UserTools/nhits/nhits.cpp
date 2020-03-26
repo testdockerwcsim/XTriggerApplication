@@ -77,9 +77,6 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
     m_stopwatch->Stop();
     ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
     StreamToLog(INFO);
-    m_stopwatch->Reset();
-    ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
-    StreamToLog(INFO);
   }
 
   return true;
