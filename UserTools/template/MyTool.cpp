@@ -13,7 +13,28 @@ bool MyTool::Initialise(std::string configfile, DataModel &data){
 
   Log("INFO: MyTool::Initialise() starting", INFO, m_verbose);
 
+  //Setup and start the stopwatch
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new Stopwatch() : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch)
+    m_stopwatch->Start();
+
   m_data= &data;
+
+
+  /// YOUR CODE HERE
+
+
+  if(m_stopwatch) {
+    m_stopwatch->Stop();
+    ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
+    StreamToLog(INFO);
+  }
 
   Log("INFO: MyTool::Initialise() complete", INFO, m_verbose);
 
@@ -22,9 +43,15 @@ bool MyTool::Initialise(std::string configfile, DataModel &data){
 
 
 bool MyTool::Execute(){
-
   Log("INFO: MyTool::Execute() starting", INFO, m_verbose);
 
+  if(m_stopwatch)
+    m_stopwatch->Start();
+
+  //// YOUR CODE HERE
+
+  if(m_stopwatch)
+    m_stopwatch->Start();
 
   Log("INFO: MyTool::Execute() complete", INFO, m_verbose);
 
@@ -36,6 +63,21 @@ bool MyTool::Finalise(){
 
   Log("INFO: MyTool::Finalise() starting", INFO, m_verbose);
 
+  if(m_stopwatch) {
+    ss << "INFO: nhits::Execute() run stats" << m_stopwatch->Result(m_stopwatch_file);
+    StreamToLog(INFO);
+    m_stopwatch->Reset();
+    m_stopwatch->Start();
+  }
+
+  //// YOUR CODE HERE
+
+  if(m_stopwatch) {
+    m_stopwatch->Stop();
+    ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
+    StreamToLog(INFO);
+    m_stopwatch->Reset();
+  }
 
   Log("INFO: MyTool::Finalise() complete", INFO, m_verbose);
 
