@@ -7,16 +7,13 @@ nhits::nhits():Tool(){}
 
 bool nhits::Initialise(std::string configfile, DataModel &data){
 
-
-
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
 
   verbose = 0;
   m_variables.Get("verbose", verbose);
 
-  m_data= &data;
-
+  //Setup and start the stopwatch
   bool use_stopwatch = false;
   m_variables.Get("use_stopwatch", use_stopwatch);
   m_stopwatch = use_stopwatch ? new Stopwatch() : 0;
@@ -26,6 +23,8 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
 
   if(m_stopwatch)
     m_stopwatch->Start();
+
+  m_data= &data;
 
   m_data->triggeroutput=false;
   
