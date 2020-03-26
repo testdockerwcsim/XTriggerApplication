@@ -345,9 +345,39 @@ bool WCSimReader::Execute(){
 
   //store digit info in the transient data model
   //ID
-  m_wcsim_trigger = m_wcsim_event_ID->GetTrigger(0);
-  SubSample subid = GetDigits();
-  m_data->IDSamples.push_back(subid);
+  if(m_wcsim_event_ID->GetNumberOfEvents() == 1 && m_wcsim_event_ID->GetTrigger(0)->GetTriggerType() == kTriggerNoTrig) {
+    //a trigger hasn't been run, so we just add all digits to a single SubSample
+    m_wcsim_trigger = m_wcsim_event_ID->GetTrigger(0);
+    SubSample subid = GetDigits();
+    m_data->IDSamples.push_back(subid);
+  }
+  else {
+    //a trigger has been run, so we need to get all digits from all WCSim event triggers, and fill in the relevant TriggerInfo
+    SubSample subid_all;
+    for(int itrigger = 0; itrigger < m_wcsim_event_ID->GetNumberOfEvents(); itrigger++) {
+      m_wcsim_trigger = m_wcsim_event_ID->GetTrigger(itrigger);
+      SubSample subid_this = GetDigits();
+      double trigger_time = m_wcsim_trigger->GetHeader()->GetDate();
+      //this is a hack to get something close to the readout window size:
+      // take the first/last hit times
+      double first = +9E300;
+      double last  = -9E300;
+      for(size_t ihit = 0; ihit < subid_this.m_time.size(); ihit++) {
+	double time = subid_this.m_time[ihit];
+	if(time < first)
+	  first = time;
+	if(time > last)
+	  last  = time;
+      }//ihit
+      m_data->IDTriggers.AddTrigger(m_wcsim_trigger->GetTriggerType(),
+				    first,
+				    last,
+				    trigger_time,
+				    m_wcsim_trigger->GetTriggerInfo());
+      subid_all.Append(subid_this);
+    }//itrigger
+    m_data->IDSamples.push_back(subid_all);
+  }//
   //OD
   if(m_wcsim_event_OD) {
     m_wcsim_trigger = m_wcsim_event_OD->GetTrigger(0);
