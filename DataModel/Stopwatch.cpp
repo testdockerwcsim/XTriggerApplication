@@ -60,10 +60,11 @@ std::string Stopwatch::Result(std::string output_file)
       hreal.Fill(m_results[i].real_time);
     }//i
     TCanvas c;
+    hcpu.GetYaxis()->SetRangeUser(0, 1.05 * std::max(hcpu.GetMaximum(), hreal.GetMaximum()));
     hcpu.Draw();
     hreal.SetLineColor(kRed);
     hreal.Draw("SAME");
-    TLegend leg(0.8, 0.8, 1, 1);
+    TLegend leg(0.8, 0.9, 1, 1);
     leg.AddEntry(&hcpu,   "CPU time", "L");
     leg.AddEntry(&hreal, "Real time", "L");
     leg.Draw();
