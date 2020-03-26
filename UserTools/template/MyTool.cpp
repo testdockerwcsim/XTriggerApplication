@@ -76,7 +76,7 @@ bool MyTool::Finalise(){
     m_stopwatch->Stop();
     ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
     StreamToLog(INFO);
-    m_stopwatch->Reset();
+    delete m_stopwatch;
   }
 
   Log("INFO: MyTool::Finalise() complete", INFO, m_verbose);
