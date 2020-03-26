@@ -17,10 +17,17 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data;
 
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new Stopwatch() : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch)
+    m_stopwatch->Start();
+
   m_data->triggeroutput=false;
-
-
-
   
   std::string PMTFile;
   std::string DetectorFile;
@@ -67,11 +74,23 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
     fTriggerThreshold += round(average_occupancy);    
   }
 
+  if(m_stopwatch) {
+    m_stopwatch->Stop();
+    ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
+    StreamToLog(INFO);
+    m_stopwatch->Reset();
+    ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
+    StreamToLog(INFO);
+  }
+
   return true;
 }
 
 
 bool nhits::Execute(){
+  if(m_stopwatch)
+    m_stopwatch->Start();
+
   int the_output;
 
   //do stuff with m_data->Samples
@@ -92,6 +111,9 @@ bool nhits::Execute(){
 
   //  the_output = CUDAFunction(samples.at(0).m_PMTid, samples.at(0).m_time);
   m_data->triggeroutput=(bool)the_output;
+
+  if(m_stopwatch)
+    m_stopwatch->Stop();
 
   return true;
 }
@@ -187,11 +209,23 @@ void nhits::AlgNDigits(const SubSample * sample)
 
 bool nhits::Finalise(){
 
+  if(m_stopwatch) {
+    ss << "INFO: nhits::Execute() run stats" << m_stopwatch->Result(m_stopwatch_file);
+    StreamToLog(INFO);
+    m_stopwatch->Reset();
+    m_stopwatch->Start();
+  }
 
 #ifdef GPU
   GPU_daq::nhits_finalize();
 #endif
 
+  if(m_stopwatch) {
+    m_stopwatch->Stop();
+    ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
+    StreamToLog(INFO);
+    m_stopwatch->Reset();
+  }
 
   return true;
 }

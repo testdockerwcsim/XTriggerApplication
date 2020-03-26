@@ -31,6 +31,11 @@ class nhits: public Tool {
  
   static const int kALongTime;      ///< An arbitrary long time to use in loops (ns)
 
+  /// The stopwatch, if we're using one
+  Stopwatch * m_stopwatch;
+  /// Image filename to save the histogram to, if required
+  std::string m_stopwatch_file;
+
   int verbose;
 
   std::stringstream ss;
