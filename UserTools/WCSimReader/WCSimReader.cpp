@@ -414,7 +414,7 @@ SubSample WCSimReader::GetDigits()
       // Store times relative to the first digit
       first_time = TimeDelta(digit->GetT());
     }
-    float T = (TimeDelta(digit->GetT()) - first_time) / TimeDelta::ns;
+    TimeDelta::short_time_t T = (TimeDelta(digit->GetT()) - first_time) / TimeDelta::ns;
     float Q = digit->GetQ();
     PMTid.push_back(ID);
     time.push_back(T);
