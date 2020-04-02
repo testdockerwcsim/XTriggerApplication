@@ -4,7 +4,11 @@
 
 ToolDAQapp=`pwd`
 
-source /root/HyperK/root/bin/thisroot.sh
+if [ $TrigGERAppinDOCKer = "indubitably" ]; then
+    echo "You're running in docker. Setting up ROOT/WCSim/Geant4"
+    echo "(If you're not, why have you set \$TrigGERAppinDOCKer to \"indubitably\"?!)"
+    source /root/HyperK/env-WCSim.sh
+fi
 
 echo "" > Build.h
 
@@ -22,6 +26,14 @@ if [ -z "$BONSAIDIR" ]; then
 else
     echo "#define BONSAIEXISTS" >> Build.h
     export LD_LIBRARY_PATH=$BONSAIDIR:$LD_LIBRARY_PATH
+
+    #energetic BONSAI requires BONSAI, therefore only set it up if we've got both
+    if [ -z "$EBONSAIDIR" ]; then
+	echo "Running without energetic BONSAI";
+    else
+	echo "#define EBONSAIEXISTS" >> Build.h
+	export LD_LIBRARY_PATH=$EBONSAIDIR:$LD_LIBRARY_PATH
+    fi
 fi
 
 
