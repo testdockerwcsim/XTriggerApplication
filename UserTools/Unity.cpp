@@ -18,3 +18,6 @@
 #include "ReconFilter/ReconFilter.cpp"
 #include "ReconReset/ReconReset.cpp"
 #include "PrepareSubSamples/PrepareSubSamples.cpp"
+#ifdef EBONSAIEXISTS
+#include "EnergeticBONSAI/EnergeticBONSAI.cpp"
+#endif //EBONSAIEXISTS

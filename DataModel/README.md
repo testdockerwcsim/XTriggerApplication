@@ -107,6 +107,9 @@ void Reset()
 #### Related things
 
 * `enum Reconstructer_t` - an enumeration of reconstruction tools. E.g. `kReconBONSAI`
+* `enum NClustersWarning_t` - an enumeration of the nclusters warning thresholds used in the supernova trigger
+* `enum SNWarning_t` - an enumeration of supernova warning levels that are assigned based on the values of nclusters and dimensionality
+* `struct SNWarningParams` holds nclusters, dim and highest nclusters threshold passed
 * `struct Pos3D` holds x, y, z positions
 * `struct DirectionEuler` holds theta, phi, alpha directions
 * `struct CherenkovCone` holds cos_angle, ellipticity of the Chrenkov cone

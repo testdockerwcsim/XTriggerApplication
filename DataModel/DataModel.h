@@ -97,6 +97,9 @@ class DataModel {
   /// The triggered `WCSimRootEvent` for the OD (digits are sorted into trigger windows)
   WCSimRootEvent * ODWCSimEvent_Triggered;
 
+  /// Store the dimensionality, number of reconstructed vertices and the highest nclusters warning threshold passed
+  std::vector<SNWarningParams> SupernovaWarningParameters;
+
   /// Does the geometry include the outer detector?
   bool HasOD;
   /// Is this simulated data?

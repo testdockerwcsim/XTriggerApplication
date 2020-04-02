@@ -118,3 +118,16 @@ std::vector<SubSample> SubSample::Split(TimeDelta target_width, TimeDelta target
 TimeDelta SubSample::AbsoluteDigitTime(int index) const{
   return m_timestamp + TimeDelta(m_time.at(index));
 }
+
+void SubSample::Append(SubSample & sub)
+{
+  Append(sub.m_PMTid, sub.m_time, sub.m_charge);
+}
+
+void SubSample::Append(std::vector<int> PMTid, std::vector<float> time, std::vector<float> charge)
+{
+  assert(PMTid.size() == time.size() && PMTid.size() == charge.size());
+  m_PMTid.insert (m_PMTid.end(),  PMTid.begin(),  PMTid.end());
+  m_time.insert  (m_time.end(),   time.begin(),   time.end());
+  m_charge.insert(m_charge.end(), charge.begin(), charge.end());
+}
