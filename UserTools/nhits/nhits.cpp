@@ -215,7 +215,7 @@ bool nhits::Finalise(){
 
   if(m_stopwatch) {
     m_stopwatch->Stop();
-    ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
+    ss << "INFO: nhits::Finalise() run stats" << m_stopwatch->Result();
     StreamToLog(INFO);
     delete m_stopwatch;
   }

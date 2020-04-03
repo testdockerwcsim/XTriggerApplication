@@ -71,7 +71,7 @@ bool MyTool::Finalise(){
 
   if(m_stopwatch) {
     m_stopwatch->Stop();
-    ss << "INFO: MyTool::Initialise() run stats" << m_stopwatch->Result();
+    ss << "INFO: MyTool::Finalise() run stats" << m_stopwatch->Result();
     StreamToLog(INFO);
     delete m_stopwatch;
   }
