@@ -6,8 +6,6 @@
 
 #include "Tool.h"
 
-#include "Stopwatch.h"
-
 class MyTool: public Tool {
 
 

@@ -22,6 +22,7 @@
 #include <PMTInfo.h>
 #include <TriggerInfo.h>
 #include <ReconInfo.h>
+#include <Stopwatch.h>
 
 class DataModel {
 
