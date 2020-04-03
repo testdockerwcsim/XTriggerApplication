@@ -59,7 +59,7 @@ class TimeDelta{
   static const TimeDelta us;
   /// TimeDelta of 1 ms
   static const TimeDelta ms;
-  /// TimeDelta of 1 us
+  /// TimeDelta of 1 s
   static const TimeDelta s;
 
 };
