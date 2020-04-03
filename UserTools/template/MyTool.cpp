@@ -32,7 +32,7 @@ bool MyTool::Initialise(std::string configfile, DataModel &data){
 
   if(m_stopwatch) {
     m_stopwatch->Stop();
-    ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
+    ss << "INFO: MyTool::Initialise() run stats" << m_stopwatch->Result();
     StreamToLog(INFO);
   }
 
@@ -64,7 +64,7 @@ bool MyTool::Finalise(){
   Log("INFO: MyTool::Finalise() starting", INFO, m_verbose);
 
   if(m_stopwatch) {
-    ss << "INFO: nhits::Execute() run stats" << m_stopwatch->Result(m_stopwatch_file);
+    ss << "INFO: MyTool::Execute() run stats" << m_stopwatch->Result(m_stopwatch_file);
     StreamToLog(INFO);
     m_stopwatch->Reset();
     m_stopwatch->Start();
@@ -74,7 +74,7 @@ bool MyTool::Finalise(){
 
   if(m_stopwatch) {
     m_stopwatch->Stop();
-    ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
+    ss << "INFO: MyTool::Initialise() run stats" << m_stopwatch->Result();
     StreamToLog(INFO);
     delete m_stopwatch;
   }
