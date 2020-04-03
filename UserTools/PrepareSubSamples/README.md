@@ -16,7 +16,6 @@ if necessary.
 
 ## Configuration
 
-Describe any configuration variables for PrepareSubSamples.
 
 ```
 sample_width WIDTH
