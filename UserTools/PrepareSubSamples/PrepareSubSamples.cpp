@@ -13,9 +13,6 @@ bool PrepareSubSamples::Initialise(std::string configfile, DataModel &data){
   verbose = 0;
   m_variables.Get("verbose", verbose);
 
-  ss << "DEBUG: In PrepareSubSamples::Initialise";
-  StreamToLog(DEBUG1);
-
   double temp_width, temp_overlap;
   m_variables.Get("sample_width", temp_width);
   m_variables.Get("sample_overlap", temp_overlap);
@@ -24,8 +21,6 @@ bool PrepareSubSamples::Initialise(std::string configfile, DataModel &data){
   m_sample_width = temp_width * TimeDelta::ns;
   m_sample_overlap = temp_overlap * TimeDelta::ns;
 
-  ss << "DEBUG: Leaving PrepareSubSamples::Initialise";
-  StreamToLog(DEBUG1);
   return true;
 }
 
@@ -72,8 +67,6 @@ std::vector<SubSample> PrepareSubSamples::SplitSubSampleVector(std::vector<SubSa
 
 bool PrepareSubSamples::Execute(){
 
-  ss << "DEBUG: Entering PrepareSubSamples::Execute";
-  StreamToLog(DEBUG1);
 
   // Split ID samples
   ss << "DEBUG: Preparing " << m_data->IDSamples.size() << " ID samples";
@@ -91,8 +84,6 @@ bool PrepareSubSamples::Execute(){
     m_data->ODSamples = SplitSubSampleVector(m_data->ODSamples);
   }
 
-  ss << "DEBUG: Exiting PrepareSubSamples::Execute";
-  StreamToLog(DEBUG1);
 
   return true;
 }
