@@ -19,7 +19,7 @@ class TriggerInfo{
   /// Add a trigger
   void AddTrigger(TriggerType_t type, TimeDelta starttime, TimeDelta endtime, TimeDelta triggertime, std::vector<float> info);
 
-  /// Add all triggers from aother TriggerInfo object
+  /// Add all triggers from another TriggerInfo object
   void AddTriggers(TriggerInfo * in);
 
   /// Clear all triggers
