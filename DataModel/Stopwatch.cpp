@@ -9,13 +9,21 @@
 #include "TCanvas.h"
 
 ///////////////////////////////////////////////////
+util::Stopwatch::Stopwatch(const char * tool_name)
+  : m_tool_name(tool_name)
+{
+}
+
+///////////////////////////////////////////////////
 void util::Stopwatch::Start() {
+  m_running = true;
   m_sw.Start();
 }
 
 ///////////////////////////////////////////////////
 util::StopwatchTimes util::Stopwatch::Stop() {
   m_sw.Stop();
+  m_running = false;
   StopwatchTimes times;
   times.cpu_time  = m_sw.CpuTime();
   times.real_time = m_sw.RealTime();
@@ -27,7 +35,11 @@ util::StopwatchTimes util::Stopwatch::Stop() {
 }
 
 ///////////////////////////////////////////////////
-std::string util::Stopwatch::Result(std::string output_file) {
+std::string util::Stopwatch::Result(std::string method_name, std::string output_file) {
+  //If it's running, stop it
+  if(m_running)
+    this->Stop();
+
   //get the stats
   double min_cpu  = 9999, max_cpu  = -9999, tot_cpu  = 0;
   double min_real = 9999, max_real = -9999, tot_real = 0;
@@ -68,23 +80,28 @@ std::string util::Stopwatch::Result(std::string output_file) {
     c.SaveAs(output_file.c_str());
   }
 
-
   //format the output
   std::stringstream ss;
-  ss << "CPU Time (s): Total = " << tot_cpu << std::endl
-     << "              Average = " << tot_cpu / (double)n
+  ss << m_tool_name << "::" << method_name << "() run timing stats:" << std::endl
+     << " CPU Time (s): Total = " << tot_cpu << std::endl
+     << "             Average = " << tot_cpu / (double)n
      << " over " << n << " runs" << std::endl
-     << "Range of " << min_cpu << " to " << max_cpu << std::endl;
-  ss << "Real Time (s): Total = " << tot_real << std::endl
+     << "  Range of " << min_cpu << " to " << max_cpu << std::endl
+     << " Real Time (s): Total = " << tot_real << std::endl
      << "              Average = " << tot_real / (double)n
      << " over " << n << " runs" << std::endl
-     << "Range of " << min_real << " to " << max_real << std::endl;
+     << "  Range of " << min_real << " to " << max_real << std::endl;
+
+  //reset
+  this->Reset();
+
   return ss.str();
 }
 
 ///////////////////////////////////////////////////
 void util::Stopwatch::Reset() {
-  m_sw.Stop();
+  if(m_running)
+    m_sw.Stop();
   m_results.clear();
 }
 

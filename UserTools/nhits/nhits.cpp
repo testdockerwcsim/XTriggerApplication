@@ -16,7 +16,7 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
   //Setup and start the stopwatch
   bool use_stopwatch = false;
   m_variables.Get("use_stopwatch", use_stopwatch);
-  m_stopwatch = use_stopwatch ? new util::Stopwatch() : 0;
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("nhits") : 0;
 
   m_stopwatch_file = "";
   m_variables.Get("stopwatch_file", m_stopwatch_file);
@@ -72,11 +72,7 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
     fTriggerThreshold += round(average_occupancy);    
   }
 
-  if(m_stopwatch) {
-    m_stopwatch->Stop();
-    ss << "INFO: nhits::Initialise() run stats" << m_stopwatch->Result();
-    StreamToLog(INFO);
-  }
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, verbose);
 
   return true;
 }
@@ -203,9 +199,7 @@ void nhits::AlgNDigits(const SubSample * sample)
 bool nhits::Finalise(){
 
   if(m_stopwatch) {
-    ss << "INFO: nhits::Execute() run stats" << m_stopwatch->Result(m_stopwatch_file);
-    StreamToLog(INFO);
-    m_stopwatch->Reset();
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, verbose);
     m_stopwatch->Start();
   }
 
@@ -214,9 +208,7 @@ bool nhits::Finalise(){
 #endif
 
   if(m_stopwatch) {
-    m_stopwatch->Stop();
-    ss << "INFO: nhits::Finalise() run stats" << m_stopwatch->Result();
-    StreamToLog(INFO);
+    Log(m_stopwatch->Result("Finalise"), INFO, verbose);
     delete m_stopwatch;
   }
 

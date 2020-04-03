@@ -14,7 +14,7 @@ bool MyTool::Initialise(std::string configfile, DataModel &data){
   //Setup and start the stopwatch
   bool use_stopwatch = false;
   m_variables.Get("use_stopwatch", use_stopwatch);
-  m_stopwatch = use_stopwatch ? new util::Stopwatch() : 0;
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("MyTool") : 0;
 
   m_stopwatch_file = "";
   m_variables.Get("stopwatch_file", m_stopwatch_file);
@@ -27,11 +27,7 @@ bool MyTool::Initialise(std::string configfile, DataModel &data){
   /// YOUR CODE HERE
 
 
-  if(m_stopwatch) {
-    m_stopwatch->Stop();
-    ss << "INFO: MyTool::Initialise() run stats" << m_stopwatch->Result();
-    StreamToLog(INFO);
-  }
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, verbose);
 
   return true;
 }
@@ -43,7 +39,7 @@ bool MyTool::Execute(){
 
   //// YOUR CODE HERE
 
-  if(m_stopwatch) m_stopwatch->Start();
+  if(m_stopwatch) m_stopwatch->Stop();
 
   return true;
 }
@@ -52,18 +48,14 @@ bool MyTool::Execute(){
 bool MyTool::Finalise(){
 
   if(m_stopwatch) {
-    ss << "INFO: MyTool::Execute() run stats" << m_stopwatch->Result(m_stopwatch_file);
-    StreamToLog(INFO);
-    m_stopwatch->Reset();
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, verbose);
     m_stopwatch->Start();
   }
 
   //// YOUR CODE HERE
 
   if(m_stopwatch) {
-    m_stopwatch->Stop();
-    ss << "INFO: MyTool::Finalise() run stats" << m_stopwatch->Result();
-    StreamToLog(INFO);
+    Log(m_stopwatch->Result("Finalise"), INFO, verbose);
     delete m_stopwatch;
   }
 
