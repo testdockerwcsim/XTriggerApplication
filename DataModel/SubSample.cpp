@@ -124,7 +124,7 @@ void SubSample::Append(SubSample & sub)
   Append(sub.m_PMTid, sub.m_time, sub.m_charge);
 }
 
-void SubSample::Append(std::vector<int> PMTid, std::vector<float> time, std::vector<float> charge)
+void SubSample::Append(std::vector<int> PMTid, std::vector<TimeDelta::short_time_t> time, std::vector<float> charge)
 {
   assert(PMTid.size() == time.size() && PMTid.size() == charge.size());
   m_PMTid.insert (m_PMTid.end(),  PMTid.begin(),  PMTid.end());

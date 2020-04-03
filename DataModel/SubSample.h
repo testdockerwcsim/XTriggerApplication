@@ -24,7 +24,7 @@ class SubSample{
 
   void Append(SubSample & sub);
 
-  void Append(std::vector<int> PMTid, std::vector<float> time, std::vector<float> charge);
+  void Append(std::vector<int> PMTid, std::vector<TimeDelta::short_time_t> time, std::vector<float> charge);
 
   /// Vector of PMT IDs for all hits in SubSample
   std::vector<int> m_PMTid;
