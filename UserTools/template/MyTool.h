@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "Tool.h"
-#include "UtilStopwatch.h"
+#include "Stopwatch.h"
 
 class MyTool: public Tool {
 

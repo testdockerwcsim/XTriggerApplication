@@ -7,7 +7,7 @@
 #include "Tool.h"
 
 #include "GPUFunctions.h"
-#include "UtilStopwatch.h"
+#include "Stopwatch.h"
 
 class nhits: public Tool {
 
