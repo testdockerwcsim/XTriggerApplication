@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "Tool.h"
+#include "UtilStopwatch.h"
 
 class MyTool: public Tool {
 
@@ -21,7 +22,7 @@ class MyTool: public Tool {
 
 
   /// The stopwatch, if we're using one
-  Stopwatch * m_stopwatch;
+  util::Stopwatch * m_stopwatch;
   /// Image filename to save the histogram to, if required
   std::string m_stopwatch_file;
 
