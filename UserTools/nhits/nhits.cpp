@@ -21,8 +21,7 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
   m_stopwatch_file = "";
   m_variables.Get("stopwatch_file", m_stopwatch_file);
 
-  if(m_stopwatch)
-    m_stopwatch->Start();
+  if(m_stopwatch) m_stopwatch->Start();
 
   m_data= &data;
 
@@ -84,8 +83,7 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
 
 
 bool nhits::Execute(){
-  if(m_stopwatch)
-    m_stopwatch->Start();
+  if(m_stopwatch) m_stopwatch->Start();
 
   int the_output;
 
@@ -108,8 +106,7 @@ bool nhits::Execute(){
   //  the_output = CUDAFunction(samples.at(0).m_PMTid, samples.at(0).m_time);
   m_data->triggeroutput=(bool)the_output;
 
-  if(m_stopwatch)
-    m_stopwatch->Stop();
+  if(m_stopwatch) m_stopwatch->Stop();
 
   return true;
 }

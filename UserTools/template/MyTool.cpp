@@ -21,8 +21,7 @@ bool MyTool::Initialise(std::string configfile, DataModel &data){
   m_stopwatch_file = "";
   m_variables.Get("stopwatch_file", m_stopwatch_file);
 
-  if(m_stopwatch)
-    m_stopwatch->Start();
+  if(m_stopwatch) m_stopwatch->Start();
 
   m_data= &data;
 
@@ -45,13 +44,11 @@ bool MyTool::Initialise(std::string configfile, DataModel &data){
 bool MyTool::Execute(){
   Log("INFO: MyTool::Execute() starting", INFO, m_verbose);
 
-  if(m_stopwatch)
-    m_stopwatch->Start();
+  if(m_stopwatch) m_stopwatch->Start();
 
   //// YOUR CODE HERE
 
-  if(m_stopwatch)
-    m_stopwatch->Start();
+  if(m_stopwatch) m_stopwatch->Start();
 
   Log("INFO: MyTool::Execute() complete", INFO, m_verbose);
 

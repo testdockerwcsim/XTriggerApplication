@@ -9,14 +9,12 @@
 #include "TCanvas.h"
 
 ///////////////////////////////////////////////////
-void Stopwatch::Start()
-{
+void Stopwatch::Start() {
   m_sw.Start();
 }
 
 ///////////////////////////////////////////////////
-StopwatchTimes Stopwatch::Stop()
-{
+StopwatchTimes Stopwatch::Stop() {
   m_sw.Stop();
   StopwatchTimes times;
   times.cpu_time  = m_sw.CpuTime();
@@ -29,8 +27,7 @@ StopwatchTimes Stopwatch::Stop()
 }
 
 ///////////////////////////////////////////////////
-std::string Stopwatch::Result(std::string output_file)
-{
+std::string Stopwatch::Result(std::string output_file) {
   //get the stats
   double min_cpu  = 9999, max_cpu  = -9999, tot_cpu  = 0;
   double min_real = 9999, max_real = -9999, tot_real = 0;
@@ -86,8 +83,7 @@ std::string Stopwatch::Result(std::string output_file)
 }
 
 ///////////////////////////////////////////////////
-void Stopwatch::Reset()
-{
+void Stopwatch::Reset() {
   m_sw.Stop();
   m_results.clear();
 }
