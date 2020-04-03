@@ -8,6 +8,8 @@
 
 #include "GPUFunctions.h"
 
+#include "Stopwatch.h"
+
 class nhits: public Tool {
 
 
