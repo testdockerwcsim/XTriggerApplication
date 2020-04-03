@@ -23,6 +23,7 @@ bool MyTool::Initialise(std::string configfile, DataModel &data){
 
   if(m_stopwatch) m_stopwatch->Start();
 
+
   m_data= &data;
 
 

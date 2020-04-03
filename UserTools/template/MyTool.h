@@ -25,10 +25,14 @@ class MyTool: public Tool {
   /// Image filename to save the histogram to, if required
   std::string m_stopwatch_file;
 
+
   /// Verbosity level, as defined in tool parameter file
   int m_verbose;
 
   /// For easy formatting of Log messages
+
+  int m_verbose;
+
   std::stringstream m_ss;
 
   /// Print the current value of the streamer at the set log level,

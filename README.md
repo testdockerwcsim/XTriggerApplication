@@ -76,9 +76,7 @@ Docker is a platform independent container system which eases the headache of lo
 3) Run an instance of the container which will have the trigger application and all dependencies installed `docker run --name=TriggerApplication -it hkdaq/triggerapplication:latest` Note: only run once or you will make multiple contianers
 
 Once the container has started to run the software
-1) `cd TriggerApplication`
-2) `source Setup.sh`
-3) `./main`
+1) `./main`
   * This runs an example toolchain with two versions of the `dummy` tool. It's essentially a Hello World tool
 
 You're then free to install any applications in your container you wish for development
@@ -99,6 +97,9 @@ Notes:
     * Versions of WCSim older than v1.8.0 will almost certainly not work. (`kTriggerNoTrig` added in v1.8.0; `WCSimRootOptions` added in v1.7.0)
   * Note that you also need ROOT setup (a WCSim prerequisite)
 * (Optional) If you want to run the BONSAI tool, make sure you have sourced hk-BONSAI i.e. that you have `$BONSAIDIR` set
+* (Optional) If you want to run the EnergeticBONSAI tool, make sure you have sourced energetic-bonsai i.e. that you have `$EBONSAIDIR` set
+  * Note: you need to use the library branch at https://github.com/tdealtry/energetic-bonsai/tree/library (PR pending)
+  * Note that this also requires BONSAI to be setup
 * Run `./GetToolDAQ.sh`
   * This gets and compiles the prerequisites: ToolDAQ, boost, and zmq
   * You can optionally install Root
@@ -114,7 +115,7 @@ To check it has built successfully:
 Some triggers have been developed to be run on CUDA-compatible GPUs.
 If you want to use these (and you have a compatible system)
 * `source Setup.sh`
-* `makeGPU`
+* `make GPU`
 * `./mainGPU`
 
 ## Running

@@ -74,6 +74,7 @@ class DataModel {
   WCSimRootEvent * IDWCSimEvent_Triggered;
   WCSimRootEvent * ODWCSimEvent_Triggered;
 
+  std::vector<SNWarningParams> SupernovaWarningParameters;
 
   bool HasOD;
   bool IsMC;
