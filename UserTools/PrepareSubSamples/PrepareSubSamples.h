@@ -25,13 +25,13 @@ class PrepareSubSamples: public Tool {
   /// The desired SubSample overlap time
   TimeDelta m_sample_overlap;
 
-  int verbose;
+  int m_verbose;
 
-  std::stringstream ss;
+  std::stringstream m_ss;
 
   void StreamToLog(int level) {
-    Log(ss.str(), level, verbose);
-    ss.str("");
+    Log(m_ss.str(), level, m_verbose);
+    m_ss.str("");
   }
 
   enum LogLevel {FATAL=-1, ERROR=0, WARN=1, INFO=2, DEBUG1=3, DEBUG2=4, DEBUG3=5};
