@@ -7,6 +7,7 @@
 #include "Tool.h"
 
 #include "GPUFunctions.h"
+#include "Stopwatch.h"
 
 class NHits: public Tool {
 
@@ -31,6 +32,11 @@ class NHits: public Tool {
 
   /// CPU version of the NDigits algorithm
   void AlgNDigits(const SubSample * samples);
+
+  /// The stopwatch, if we're using one
+  util::Stopwatch * m_stopwatch;
+  /// Image filename to save the histogram to, if required
+  std::string m_stopwatch_file;
 
   int m_verbose;
 

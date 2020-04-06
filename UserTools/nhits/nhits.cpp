@@ -10,6 +10,16 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
   m_verbose = 0;
   m_variables.Get("verbose", m_verbose);
 
+  //Setup and start the stopwatch
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("nhits") : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch) m_stopwatch->Start();
+
   m_data= &data;
 
 #ifdef GPU
@@ -59,10 +69,14 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
     m_trigger_threshold += round(average_occupancy);
   }
 
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
+
   return true;
 }
 
 bool NHits::Execute(){
+  if(m_stopwatch) m_stopwatch->Start();
+
   //do stuff with m_data->Samples
 
   std::vector<SubSample> & samples = m_trigger_OD ? (m_data->ODSamples) : (m_data->IDSamples);
@@ -81,6 +95,8 @@ bool NHits::Execute(){
   AlgNDigits(&(*is));
 #endif
   }
+
+  if(m_stopwatch) m_stopwatch->Stop();
 
   return true;
 }
@@ -141,9 +157,19 @@ void NHits::AlgNDigits(const SubSample * sample)
 
 bool NHits::Finalise(){
 
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    m_stopwatch->Start();
+  }
+
 #ifdef GPU
   GPU_daq::nhits_finalize();
 #endif
+
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    delete m_stopwatch;
+  }
 
   return true;
 }

@@ -12,3 +12,19 @@ readable code throughout the project:
 *   Add a `s_` prefix to static member (i.e. class-) variables
 *   `ALL-CAPS` enums, implementation constants, and the like, e.g. `s_LONG_TIME`.
 *   Explain your code with helpful (!) comments, ideally using Doxygen syntax
+*   Classes, functions, methods, and if statements should place the opening brace at the end of the line, rather than on a new line
+    * e.g. `if(1) {`
+    * not
+```
+if
+{
+```
+*   Short if statements should be put on one line
+    * e.g. `if(1) return true;`
+    * not
+```
+if(1)
+return true
+```
+*   Functions that are usable by multiple tools, but don't live in the DataModel itself should go in `DataModel/Utilities.{cpp,h}` and live inside the `util` namespace
+    * Classes should also go into that folder and namespace, but should have their own file with a Util prefix e.g. `UtilStopwatch`
