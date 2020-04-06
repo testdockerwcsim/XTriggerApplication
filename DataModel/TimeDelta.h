@@ -35,7 +35,7 @@ class TimeDelta{
 
   /// Type for relative hit times within a SubSample. Unit = ns
   typedef float short_time_t;
-  /// Type for absolute timestamps of a SubSample. Unit = us
+  /// Type for absolute timestamps of a SubSample. Unit = ns
   typedef int64_t long_time_t;
 
   /// Member for short time deltas
