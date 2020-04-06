@@ -119,15 +119,20 @@ TimeDelta SubSample::AbsoluteDigitTime(int index) const{
   return m_timestamp + TimeDelta(m_time.at(index));
 }
 
-void SubSample::Append(SubSample & sub)
+void SubSample::Append(const SubSample& sub)
 {
-  Append(sub.m_PMTid, sub.m_time, sub.m_charge);
+  Append(sub.m_PMTid, sub.m_time, sub.m_charge, sub.m_timestamp);
 }
 
-void SubSample::Append(std::vector<int> PMTid, std::vector<TimeDelta::short_time_t> time, std::vector<float> charge)
+void SubSample::Append(const std::vector<int> PMTid, const std::vector<TimeDelta::short_time_t> time, const std::vector<float> charge, const TimeDelta timestamp)
 {
   assert(PMTid.size() == time.size() && PMTid.size() == charge.size());
   m_PMTid.insert (m_PMTid.end(),  PMTid.begin(),  PMTid.end());
-  m_time.insert  (m_time.end(),   time.begin(),   time.end());
   m_charge.insert(m_charge.end(), charge.begin(), charge.end());
+
+  // Need to shift the hit times by the difference of timestamp offsets
+  TimeDelta::short_time_t time_shift = (timestamp - m_timestamp) / TimeDelta::ns;
+  for (int i=0; i<time.size(); ++i){
+      m_time.push_back(time[i] + time_shift);
+  }
 }

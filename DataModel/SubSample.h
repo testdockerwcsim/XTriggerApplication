@@ -22,9 +22,11 @@ class SubSample{
   /// Timestamp of the whole SubSample
   TimeDelta m_timestamp;
 
-  void Append(SubSample & sub);
+  /// Append the hits in a different SubSample to this one
+  void Append(const SubSample& sub);
 
-  void Append(std::vector<int> PMTid, std::vector<TimeDelta::short_time_t> time, std::vector<float> charge);
+  /// Append the hits in a different SubSample to this one
+  void Append(const std::vector<int> PMTid, const std::vector<TimeDelta::short_time_t> time, const std::vector<float> charge, const TimeDelta timestamp);
 
   /// Vector of PMT IDs for all hits in SubSample
   std::vector<int> m_PMTid;
