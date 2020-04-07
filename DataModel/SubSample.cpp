@@ -1,14 +1,10 @@
 #include "SubSample.h"
-#include <cassert>
 
-SubSample::SubSample(std::vector<int> PMTid, std::vector<TimeDelta::short_time_t> time, std::vector<float> charge, TimeDelta timestamp)
-{
+SubSample::SubSample(std::vector<int> PMTid, std::vector<TimeDelta::short_time_t> time, std::vector<float> charge, TimeDelta timestamp){
   // If charge vector is empty, fill with 0s
   if (charge.size() == 0){
     charge =  std::vector<float>(PMTid.size(), 0.);
   }
-  // Check that all vectors are same size
-  assert(PMTid.size() == time.size() && PMTid.size() == charge.size());
   // Assign values
   m_PMTid  = PMTid;
   m_time   = time;
@@ -94,7 +90,9 @@ std::vector<SubSample> SubSample::Split(TimeDelta target_width, TimeDelta target
     } else {
       // Digit outside target window
       // Save current SubSample and rewind to prepare a new one at the overlap position
-      split_samples.push_back(SubSample(temp_PMTid, temp_time, temp_charge, temp_timestamp));
+      SubSample new_sample;
+      new_sample.Append(temp_PMTid, temp_time, temp_charge, temp_timestamp);
+      split_samples.push_back(new_sample);
       // Reset temporary vectors
       temp_PMTid.clear();
       temp_time.clear();
@@ -112,7 +110,9 @@ std::vector<SubSample> SubSample::Split(TimeDelta target_width, TimeDelta target
     }
   }
   // Add final SubSample
-  split_samples.push_back(SubSample(temp_PMTid, temp_time, temp_charge, temp_timestamp));
+  SubSample new_sample;
+  new_sample.Append(temp_PMTid, temp_time, temp_charge, temp_timestamp);
+  split_samples.push_back(new_sample);
 
   return split_samples;
 }
@@ -121,20 +121,28 @@ TimeDelta SubSample::AbsoluteDigitTime(int index) const{
   return m_timestamp + TimeDelta(m_time.at(index));
 }
 
-void SubSample::Append(const SubSample& sub)
+bool SubSample::Append(const SubSample& sub)
 {
-  Append(sub.m_PMTid, sub.m_time, sub.m_charge, sub.m_timestamp);
+  return Append(sub.m_PMTid, sub.m_time, sub.m_charge, sub.m_timestamp);
 }
 
-void SubSample::Append(const std::vector<int> PMTid, const std::vector<TimeDelta::short_time_t> time, const std::vector<float> charge, const TimeDelta timestamp)
-{
-  assert(PMTid.size() == time.size() && PMTid.size() == charge.size());
+bool SubSample::Append(const std::vector<int> PMTid, const std::vector<TimeDelta::short_time_t> time, const std::vector<float> charge, const TimeDelta timestamp){
+  if (not (PMTid.size() == time.size() && PMTid.size() == charge.size())){
+    return false;
+  }
   m_PMTid.insert (m_PMTid.end(),  PMTid.begin(),  PMTid.end());
   m_charge.insert(m_charge.end(), charge.begin(), charge.end());
 
-  // Need to shift the hit times by the difference of timestamp offsets
-  TimeDelta::short_time_t time_shift = (timestamp - m_timestamp) / TimeDelta::ns;
-  for (int i=0; i<time.size(); ++i){
-      m_time.push_back(time[i] + time_shift);
+  // If these are the first hits to be added, just use their timestamp
+  if (m_time.size() == 0){
+    m_timestamp = timestamp;
+    m_time.insert(m_time.end(), time.begin(), time.end());
+  } else {
+    // Need to shift the hit times by the difference of timestamp offsets
+    TimeDelta::short_time_t time_shift = (timestamp - m_timestamp) / TimeDelta::ns;
+    for (int i=0; i<time.size(); ++i){
+        m_time.push_back(time[i] + time_shift);
+    }
   }
+  return true;
 }

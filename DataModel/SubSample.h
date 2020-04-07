@@ -12,6 +12,9 @@ class SubSample{
  public:
 
   SubSample() {};
+
+  /// Deprecated constructor, use empty constructor and Append instead.
+  __attribute__((deprecated))
   SubSample(
     std::vector<int> PMTid,
     std::vector<TimeDelta::short_time_t> time,
@@ -23,10 +26,14 @@ class SubSample{
   TimeDelta m_timestamp;
 
   /// Append the hits in a different SubSample to this one
-  void Append(const SubSample& sub);
+  ///
+  /// Returns `true` if successful.
+  bool Append(const SubSample& sub);
 
   /// Append the hits in a different SubSample to this one
-  void Append(const std::vector<int> PMTid, const std::vector<TimeDelta::short_time_t> time, const std::vector<float> charge, const TimeDelta timestamp);
+  ///
+  /// Returns `true` if successful.
+  bool Append(const std::vector<int> PMTid, const std::vector<TimeDelta::short_time_t> time, const std::vector<float> charge, const TimeDelta timestamp);
 
   /// Vector of PMT IDs for all hits in SubSample
   std::vector<int> m_PMTid;

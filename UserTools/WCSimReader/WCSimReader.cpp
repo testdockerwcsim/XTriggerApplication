@@ -438,7 +438,10 @@ SubSample WCSimReader::GetDigits()
   // WCSim also adds a 950 ns offset to the digit times, if it no running in
   // the NoTrigger mode. But we should not care about that here.
   TimeDelta timestamp = TimeDelta(m_wcsim_trigger->GetHeader()->GetDate()) + first_time;
-  SubSample sub(PMTid, time, charge, timestamp);
+  SubSample sub;
+  if (not sub.Append(PMTid, time, charge, timestamp)){
+    Log("ERROR: Appending hits failed!", ERROR, m_verbose);
+  }
 
   return sub;
 }
