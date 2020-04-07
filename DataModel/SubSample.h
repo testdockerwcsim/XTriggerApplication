@@ -44,6 +44,9 @@ class SubSample{
   bool IsSortedByTime() const;
 
   /// Split SubSample into multiple overlapping ones
+  ///
+  /// The SubSample needs to be sorted by time for this to work!
+  /// Otherwise it will return an empty vector.
   std::vector<SubSample> Split(TimeDelta target_width, TimeDelta target_overlap) const;
 };
 

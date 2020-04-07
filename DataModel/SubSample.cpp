@@ -55,12 +55,14 @@ std::vector<SubSample> SubSample::Split(TimeDelta target_width, TimeDelta target
     return std::vector<SubSample>(1, *this);
   }
 
+  // Ensure everything is sorted
+  if (not IsSortedByTime()){
+    // Otherwise return empty vector
+    return std::vector<SubSample>();
+  }
 
   // Distance between SubSamples
   TimeDelta target_stride = target_width - target_overlap;
-
-  // Ensure everything is sorted
-  assert(IsSortedByTime());
 
   // The vector of samples to be returned
   std::vector<SubSample> split_samples;
