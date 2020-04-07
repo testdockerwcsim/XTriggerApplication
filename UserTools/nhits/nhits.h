@@ -26,6 +26,10 @@ class nhits: public Tool {
   float fTriggerThreshold;
   float fTriggerSaveWindowPre;
   float fTriggerSaveWindowPost;
+  /// Pre-trigger time for masking digits from future tools
+  float m_trigger_mask_window_pre;
+  /// Post-trigger time for masking digits from future tools
+  float m_trigger_mask_window_post;
   bool  fTriggerOD;
 
   void AlgNDigits(const SubSample * samples); ///< Modified from WCSim v1.7.0

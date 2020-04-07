@@ -43,14 +43,41 @@ bool nhits::Initialise(std::string configfile, DataModel &data){
   GPU_daq::nhits_initialize_ToolDAQ(PMTFile,DetectorFile,ParameterFile);
 #endif
 
-  // can acess variables directly like this and would be good if you could impliment in your code
+  m_trigger_mask_window_pre  = -99;
+  m_trigger_mask_window_post = -99;
 
   m_variables.Get("trigger_search_window",        fTriggerSearchWindow);
   m_variables.Get("trigger_search_window_step",   fTriggerSearchWindowStep);
   m_variables.Get("trigger_threshold",            fTriggerThreshold);
   m_variables.Get("pretrigger_save_window",       fTriggerSaveWindowPre);
   m_variables.Get("posttrigger_save_window",      fTriggerSaveWindowPost);
+  m_variables.Get("pretrigger_mask_window",       m_trigger_mask_window_pre);
+  m_variables.Get("posttrigger_mask_window",      m_trigger_mask_window_post);
   m_variables.Get("trigger_od",                   fTriggerOD);
+
+  //Set the masks to sensible values
+  //pretrigger
+  if(abs(m_trigger_mask_window_pre + 99) < 0) {
+    ss << "WARN: pretrigger_mask_window parameter not given. Setting it to pretrigger_save_window value: " << fTriggerSaveWindowPre;
+    StreamToLog(WARN);
+  }
+  else if(m_trigger_mask_window_pre > fTriggerSaveWindowPre) {
+    ss << "WARN: pretrigger_mask_window parameter value: " << m_trigger_mask_window_pre 
+       << " larger than pretrigger_save_window value: " << fTriggerSaveWindowPre
+       << " Setting it to pretrigger_save_window value";
+    StreamToLog(WARN);
+  }
+  //posttrigger
+  if(abs(m_trigger_mask_window_post + 99) < 0) {
+    ss << "WARN: posttrigger_mask_window parameter not given. Setting it to posttrigger_save_window value: " << fTriggerSaveWindowPost;
+    StreamToLog(WARN);
+  }
+  else if(m_trigger_mask_window_post > fTriggerSaveWindowPost) {
+    ss << "WARN: posttrigger_mask_window parameter value: " << m_trigger_mask_window_post 
+       << " larger than posttrigger_save_window value: " << fTriggerSaveWindowPost
+       << " Setting it to posttrigger_save_window value";
+    StreamToLog(WARN);
+  }
 
   bool adjust_for_noise;
   m_variables.Get("trigger_threshold_adjust_for_noise", adjust_for_noise);
@@ -169,6 +196,8 @@ void nhits::AlgNDigits(const SubSample * sample)
       Triggers->AddTrigger(kTriggerNDigits,
 			   triggertime - fTriggerSaveWindowPre, 
 			   triggertime + fTriggerSaveWindowPost,
+			   triggertime - m_trigger_mask_window_pre,
+			   triggertime + m_trigger_mask_window_post,
 			   triggertime,
 			   std::vector<float>(1, n_digits));
     }
@@ -192,7 +221,7 @@ void nhits::AlgNDigits(const SubSample * sample)
 
   }//sliding trigger window while loop
   
-  ss << "INFO: Found " << Triggers->m_N << " NDigit trigger(s) from " << (fTriggerOD ? "OD" : "ID");
+  ss << "INFO: Found " << Triggers->m_num_triggers << " NDigit trigger(s) from " << (fTriggerOD ? "OD" : "ID");
   StreamToLog(INFO);
 }
 
