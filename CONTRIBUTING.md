@@ -27,4 +27,4 @@ if(1)
 return true
 ```
 *   Functions that are usable by multiple tools, but don't live in the DataModel itself should go in `DataModel/Utilities.{cpp,h}` and live inside the `util` namespace
-    * Classes should also go into that folder and namespace, but should have their own file with a Util prefix e.g. `UtilStopwatch`
+    * Classes should also go into that folder and namespace, but should have their own files e.g. `Stopwatch.h` & `Stopwatch.cpp`
