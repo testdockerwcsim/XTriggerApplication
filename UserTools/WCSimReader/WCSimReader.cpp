@@ -369,10 +369,10 @@ bool WCSimReader::Execute(){
 	  last  = time;
       }//ihit
       m_data->IDTriggers.AddTrigger(m_wcsim_trigger->GetTriggerType(),
-				    first, //readout
-				    last,
-				    first, //mask
-				    last,
+				    trigger_time - first, //readout
+				    last - trigger_time,
+				    trigger_time - first, //mask
+				    last - trigger_time,
 				    trigger_time,
 				    m_wcsim_trigger->GetTriggerInfo());
       subid_all.Append(subid_this);
