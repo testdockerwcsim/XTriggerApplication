@@ -109,13 +109,12 @@ bool DataOut::Execute(){
   fTriggers->AddTriggers(&(m_data->IDTriggers));
   if(m_data->HasOD)
     fTriggers->AddTriggers(&(m_data->ODTriggers));
-  fTriggers->SortByStartTime();
-  ss << "INFO: Have " << fTriggers->m_N << " triggers to save times:";
+  ss << "INFO: Have " << fTriggers->m_num_triggers << " triggers to save times:";
   StreamToLog(INFO);
-  for(int i = 0; i < fTriggers->m_N; i++) {
-    ss << "INFO: \t[" << fTriggers->m_starttime.at(i)
-       << ", " << fTriggers->m_endtime.at(i) << "] "
-       << fTriggers->m_triggertime.at(i) << " ns with type "
+  for(int i = 0; i < fTriggers->m_num_triggers; i++) {
+    ss << "INFO: \t[" << fTriggers->m_readout_start_time.at(i)
+       << ", " << fTriggers->m_readout_end_time.at(i) << "] "
+       << fTriggers->m_trigger_time.at(i) << " ns with type "
        << WCSimEnumerations::EnumAsString(fTriggers->m_type.at(i)) << " extra info";
     for(unsigned int ii = 0; ii < fTriggers->m_info.at(i).size(); ii++)
       ss << " " << fTriggers->m_info.at(i).at(ii);
@@ -162,13 +161,13 @@ bool DataOut::Execute(){
 /////////////////////////////////////////////////////////////////
 void DataOut::CreateSubEvents(WCSimRootEvent * WCSimEvent)
 {
-  const int n = fTriggers->m_N;
+  const int n = fTriggers->m_num_triggers;
   for(int i = 0; i < n; i++) {
     if(i)
       WCSimEvent->AddSubEvent();
     WCSimRootTrigger * trig = WCSimEvent->GetTrigger(i);
     double offset = fTriggerOffset;
-    trig->SetHeader(fEvtNum, 0, fTriggers->m_triggertime.at(i), i+1);
+    trig->SetHeader(fEvtNum, 0, fTriggers->m_trigger_time.at(i), i+1);
     trig->SetTriggerInfo(fTriggers->m_type.at(i), fTriggers->m_info.at(i));
     trig->SetMode(0);
   }//i
@@ -176,7 +175,7 @@ void DataOut::CreateSubEvents(WCSimRootEvent * WCSimEvent)
 /////////////////////////////////////////////////////////////////
 void DataOut::FinaliseSubEvents(WCSimRootEvent * WCSimEvent)
 {
-  const int n = fTriggers->m_N;
+  const int n = fTriggers->m_num_triggers;
   for(int i = 0; i < n; i++) {
     WCSimRootTrigger * trig = WCSimEvent->GetTrigger(i);
     TClonesArray * digits = trig->GetCherenkovDigiHits();
@@ -197,7 +196,7 @@ void DataOut::FinaliseSubEvents(WCSimRootEvent * WCSimEvent)
 /////////////////////////////////////////////////////////////////
 void DataOut::RemoveDigits(WCSimRootEvent * WCSimEvent, std::map<int, std::map<int, bool> > & NDigitPerPMTPerTriggerMap)
 {
-  if(!fTriggers->m_N) {
+  if(!fTriggers->m_num_triggers) {
     ss << "DEBUG: No trigger intervals to save";
     StreamToLog(DEBUG1);
   }
@@ -219,7 +218,7 @@ void DataOut::RemoveDigits(WCSimRootEvent * WCSimEvent, std::map<int, std::map<i
 	//do it this slightly odd way to mirror what WCSim does
 	double t = time;
 	t += fTriggerOffset
-	  - (float)fTriggers->m_triggertime.at(window);
+	  - (float)fTriggers->m_trigger_time.at(window);
 	d->SetT(t);
       }
       if(window > 0 &&
@@ -259,7 +258,7 @@ void DataOut::RemoveDigits(WCSimRootEvent * WCSimEvent, std::map<int, std::map<i
 /////////////////////////////////////////////////////////////////
 void DataOut::MoveTracks(WCSimRootEvent * WCSimEvent)
 {
-  if(fTriggers->m_N < 2)
+  if(fTriggers->m_num_triggers < 2)
     return;
   WCSimRootTrigger * trig0 = WCSimEvent->GetTrigger(0);
   TClonesArray * tracks = trig0->GetTracks();
@@ -286,9 +285,9 @@ void DataOut::MoveTracks(WCSimRootEvent * WCSimEvent)
 }
 /////////////////////////////////////////////////////////////////
 int DataOut::TimeInTriggerWindow(double time) {
-  for(unsigned int i = 0; i < fTriggers->m_N; i++) {
-    double lo = fTriggers->m_starttime.at(i);
-    double hi = fTriggers->m_endtime.at(i);
+  for(unsigned int i = 0; i < fTriggers->m_num_triggers; i++) {
+    double lo = fTriggers->m_readout_start_time.at(i);
+    double hi = fTriggers->m_readout_end_time.at(i);
     if(time >= lo && time <= hi)
       return i;
   }//it
@@ -303,15 +302,15 @@ unsigned int DataOut::TimeInTriggerWindowNoDelete(double time) {
   // etc
   //with the caveat that we don't create a WCSimRootTrigger just to store some tracks
   // therefore return value is at maximum the number of triggers
-  const int N = fTriggers->m_N;
-  for(unsigned int i = 0; i < N; i++) {
-    double hi = fTriggers->m_endtime.at(i);
+  const int num_triggers = fTriggers->m_num_triggers;
+  for(unsigned int i = 0; i < num_triggers; i++) {
+    double hi = fTriggers->m_readout_end_time.at(i);
     if(time <= hi)
       return i;
   }//it
-  ss << "WARNING DataOut::TimeInTriggerWindowNoDelete() could not find a trigger that track with time " << time << " can live in. Returning maximum trigger number " << N - 1;
+  ss << "WARNING DataOut::TimeInTriggerWindowNoDelete() could not find a trigger that track with time " << time << " can live in. Returning maximum trigger number " << num_triggers - 1;
   StreamToLog(WARN);
-  return N - 1;
+  return num_triggers - 1;
 }
 
 /////////////////////////////////////////////////////////////////
