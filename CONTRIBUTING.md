@@ -10,7 +10,7 @@ readable code throughout the project:
 *   Use `snake_case` for variables
 *   Add a `m_` prefix to member variables
 *   Please handle your errors. Do not use `assert`
-    * A common way of handling errors is for a tools' `Initialise()`, `Execute()`, and `Finalise()` methods to return `false`. This will inform the framework of the failure allowing it to decide on the action to take. It can stop immediately, try to recover, or close the program graciously, running finalise on each tool rather than a hard stop. This lets you disconnect hardware connections etc.
+    * A common way of handling errors is for a tools' `Initialise()`, `Execute()`, and `Finalise()` methods to return `false`. This will inform the framework of the failure allowing it to decide on the action to take. It can stop immediately, try to recover, or close the program graciously, running finalise on each tool rather than a hard stop. This lets you disconnect hardware connections etc. When returning false, send a log message with verbosity level 0, to ensure that it is always logged.
 *   Explain your code with helpful (!) comments, ideally using Doxygen syntax
 *   Classes, functions, methods, and if statements should place the opening brace at the end of the line, rather than on a new line
     * e.g. `if(1) {`
