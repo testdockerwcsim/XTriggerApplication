@@ -27,6 +27,10 @@ SubSample::SubSample(std::vector<int> PMTid, std::vector<float> time, std::vecto
     m_time_int[i] = m_time[i];
     m_charge_int[i] = m_charge[i];
   }
+  //set the trigger info
+  const std::vector<int> empty;
+  m_trigger_readout_windows.assign(m_time.size(), empty);
+  m_masked.assign(m_time.size(), false);
 }
 
 void SubSample::Append(SubSample & sub)

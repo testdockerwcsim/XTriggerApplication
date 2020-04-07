@@ -24,6 +24,10 @@ class SubSample{
   std::vector<int> m_time_int;
   std::vector<int> m_charge_int;
 
+  /// Stores the trigger readout windows each hit is associated with
+  std::vector<std::vector<int> > m_trigger_readout_windows;
+  /// Is each hit masked?
+  std::vector<bool> m_masked;
 };
 
 
