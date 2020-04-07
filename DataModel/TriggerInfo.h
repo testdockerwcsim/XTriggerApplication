@@ -14,6 +14,7 @@ class TriggerInfo{
   TriggerInfo();
 
   /// Add a trigger, all times in ns
+  __attribute__((deprecated))
   void AddTrigger(TriggerType_t type, double starttime, double endtime, double triggertime, std::vector<float> info);
 
   /// Add a trigger
