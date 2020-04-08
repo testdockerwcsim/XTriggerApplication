@@ -168,7 +168,6 @@ void DataOut::CreateSubEvents(WCSimRootEvent * WCSimEvent)
       WCSimEvent->AddSubEvent();
     WCSimRootTrigger * trig = WCSimEvent->GetTrigger(i);
     double offset = fTriggerOffset;
-    trig->SetHeader(fEvtNum, 0, fTriggers->m_trigger_time.at(i), i+1);
     trig->SetHeader(fEvtNum, 0, (fTriggers->m_trigger_time.at(i) / TimeDelta::ns), i+1);
     trig->SetTriggerInfo(fTriggers->m_type.at(i), fTriggers->m_info.at(i));
     trig->SetMode(0);

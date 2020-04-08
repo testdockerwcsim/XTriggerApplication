@@ -56,26 +56,26 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
   //Set the masks to sensible values
   //pretrigger
   if(abs(temp_m_trigger_mask_window_pre + 99) < 0) {
-    ss << "WARN: pretrigger_mask_window parameter not given. Setting it to pretrigger_save_window value: " << temp_m_trigger_save_window_pre;
+    m_ss << "WARN: pretrigger_mask_window parameter not given. Setting it to pretrigger_save_window value: " << temp_m_trigger_save_window_pre;
     StreamToLog(WARN);
     m_trigger_mask_window_pre = TimeDelta(temp_m_trigger_save_window_pre);
   } else if(temp_m_trigger_mask_window_pre > temp_m_trigger_save_window_pre) {
-    ss << "WARN: pretrigger_mask_window parameter value: " << temp_m_trigger_mask_window_pre 
-       << " larger than pretrigger_save_window value: " << temp_m_trigger_save_window_pre
-       << " Setting it to pretrigger_save_window value";
+    m_ss << "WARN: pretrigger_mask_window parameter value: " << temp_m_trigger_mask_window_pre 
+	 << " larger than pretrigger_save_window value: " << temp_m_trigger_save_window_pre
+	 << " Setting it to pretrigger_save_window value";
     StreamToLog(WARN);
     m_trigger_mask_window_pre = TimeDelta(temp_m_trigger_save_window_pre);
   } else
     m_trigger_mask_window_pre  = TimeDelta(temp_m_trigger_mask_window_pre);
   //posttrigger
   if(abs(temp_m_trigger_mask_window_post + 99) < 0) {
-    ss << "WARN: posttrigger_mask_window parameter not given. Setting it to posttrigger_save_window value: " << temp_m_trigger_save_window_post;
+    m_ss << "WARN: posttrigger_mask_window parameter not given. Setting it to posttrigger_save_window value: " << temp_m_trigger_save_window_post;
     StreamToLog(WARN);
     m_trigger_mask_window_post = TimeDelta(temp_m_trigger_save_window_post);
   } else if(temp_m_trigger_mask_window_post > temp_m_trigger_save_window_post) {
-    ss << "WARN: posttrigger_mask_window parameter value: " << temp_m_trigger_mask_window_post 
-       << " larger than posttrigger_save_window value: " << temp_m_trigger_save_window_post
-       << " Setting it to posttrigger_save_window value";
+    m_ss << "WARN: posttrigger_mask_window parameter value: " << temp_m_trigger_mask_window_post 
+	 << " larger than posttrigger_save_window value: " << temp_m_trigger_save_window_post
+	 << " Setting it to posttrigger_save_window value";
     StreamToLog(WARN);
     m_trigger_mask_window_post = TimeDelta(temp_m_trigger_save_window_post);
   } else
@@ -185,7 +185,7 @@ void NHits::AlgNDigits(const SubSample * sample)
     }
   }//loop over Digits
   
-  m_ss << "INFO: Found " << triggers->m_num_triggers << " NDigit trigger(s) from " << (fTriggerOD ? "OD" : "ID");
+  m_ss << "INFO: Found " << triggers->m_num_triggers << " NDigit trigger(s) from " << (m_trigger_OD ? "OD" : "ID");
   StreamToLog(INFO);
 }
 
