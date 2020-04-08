@@ -1,4 +1,7 @@
 #include "SubSample.h"
+#include "Utilities.h"
+
+#include <algorithm>
 
 SubSample::SubSample(std::vector<int> PMTid, std::vector<TimeDelta::short_time_t> time, std::vector<float> charge, TimeDelta timestamp){
   // If charge vector is empty, fill with 0s
@@ -22,19 +25,27 @@ void SubSample::SortByTime(){
   TimeDelta::short_time_t save_time;
   int save_PMTid;
   double save_charge;
+  std::vector<int> save_triggers;
+  bool save_masked;
 
   for (i = 1; i < m_PMTid.size(); ++i) {
     save_time       = m_time[i];
     save_PMTid      = m_PMTid[i];
     save_charge     = m_charge[i];
+    save_triggers   = m_trigger_readout_windows[i];
+    save_masked     = m_masked[i];
     for (j = i; j > 0 && m_time[j-1] > save_time; j--) {
       m_time[j]     = m_time[j-1];
       m_PMTid[j]    = m_PMTid[j-1];
       m_charge[j]   = m_charge[j-1];
+      m_trigger_readout_windows[j] = m_trigger_readout_windows[j-1];
+      m_masked[j]   = m_masked[j-1];
     }//j
     m_time[j]     = save_time;
     m_PMTid[j]    = save_PMTid;
     m_charge[j]   = save_charge;
+    m_trigger_readout_windows[j] = save_triggers;
+    m_masked[j]   = save_masked;
   }//i
 }
 
@@ -149,4 +160,56 @@ bool SubSample::Append(const std::vector<int> PMTid, const std::vector<TimeDelta
     }
   }
   return true;
+}
+
+void SubSample::TellMeAboutTheTriggers(TriggerInfo & triggers) {
+  //loop over triggers to get the start/end of the readout & mask windows
+  unsigned int num_triggers = triggers.m_num_triggers;
+  std::vector<util::Window> readout_windows(num_triggers);
+  std::vector<util::Window> mask_windows(num_triggers);
+  for(unsigned int itrigger = 0; itrigger <= num_triggers; itrigger++) {
+    util::Window readout(itrigger,
+				triggers.m_readout_start_time[itrigger],
+				triggers.m_readout_end_time[itrigger]);
+    readout_windows.push_back(readout);
+    util::Window mask(itrigger,
+				triggers.m_mask_start_time[itrigger],
+				triggers.m_mask_end_time[itrigger]);
+    mask_windows.push_back(mask);
+  }//itrigger
+
+  //sort the readout windows. Then we can drop them in the loop over hits when they've gone out of range
+  std::sort(readout_windows.begin(), readout_windows.end(), util::WindowSorter);
+  std::sort(mask_windows.begin(), mask_windows.end(), util::WindowSorter);
+
+  //ensure the hits are sorted in time
+  if (not IsSortedByTime())
+    SortByTime();
+
+  //loop over hits
+  size_t n_hits = m_time.size();
+  TimeDelta hit_time;
+  for(size_t ihit = 0; ihit < n_hits; ihit++) {
+    hit_time = m_time[ihit];
+    //Is the hit in this readout window?
+    for(std::vector<util::Window>::iterator it = readout_windows.end();
+	it != readout_windows.begin(); --it) {
+      //the trigger time is later than this hit
+      if(hit_time < (*it).m_start) break;
+      //the trigger time is earlier than this hit
+      else if (hit_time > (*it).m_end) readout_windows.pop_back();
+      //the hit is in this trigger
+      else m_trigger_readout_windows[ihit].push_back((*it).m_trigger_num);
+    }//readout_windows
+    //Is the hit in this mask window?
+    for(std::vector<util::Window>::iterator it = mask_windows.end();
+	it != mask_windows.begin(); --it) {
+      //the trigger time is later than this hit
+      if(hit_time < (*it).m_start) break;
+      //the trigger time is earlier than this hit
+      else if (hit_time > (*it).m_end) mask_windows.pop_back();
+      //the hit is in this trigger
+      else m_masked[ihit] = true;
+    }//mask_windows
+  }//ihit
 }

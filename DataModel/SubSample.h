@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "TimeDelta.h"
+#include "TriggerInfo.h"
 
 class SubSample{
 
@@ -45,7 +46,7 @@ class SubSample{
 
   /// Stores the trigger readout windows each hit is associated with
   std::vector<std::vector<int> > m_trigger_readout_windows;
-  /// Is each hit masked?
+  /// Is each hit masked from future trigger decisions?
   std::vector<bool> m_masked;
 
   /// Return the absolute time (timestamp + digit time) of a digit
@@ -61,6 +62,8 @@ class SubSample{
   /// The SubSample needs to be sorted by time for this to work!
   /// Otherwise it will return an empty vector.
   std::vector<SubSample> Split(TimeDelta target_width, TimeDelta target_overlap) const;
+
+  void TellMeAboutTheTriggers(TriggerInfo & triggers);
 };
 
 #endif
