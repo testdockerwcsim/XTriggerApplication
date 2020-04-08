@@ -5,9 +5,9 @@ TriggerInfo::TriggerInfo(){
 }
 
 void TriggerInfo::AddTrigger(TriggerType_t type,
-			     double readout_start_time, double readout_end_time,
-			     double mask_start_time, double mask_end_time,
-			     double trigger_time, std::vector<float> info){
+			     TimeDelta readout_start_time, TimeDelta readout_end_time,
+			     TimeDelta mask_start_time, TimeDelta mask_end_time,
+			     TimeDelta trigger_time, std::vector<float> info) {
   m_type              .push_back(type);
   m_readout_start_time.push_back(readout_start_time);
   m_readout_end_time  .push_back(readout_end_time);
@@ -18,7 +18,11 @@ void TriggerInfo::AddTrigger(TriggerType_t type,
   m_num_triggers++;
 }
 
-void TriggerInfo::AddTriggers(TriggerInfo * in){
+void TriggerInfo::AddTrigger(TriggerType_t type, double starttime, double endtime, double triggertime, std::vector<float> info) {
+  AddTrigger(type, TimeDelta(starttime), TimeDelta(endtime), TimeDelta(starttime), TimeDelta(endtime), TimeDelta(triggertime),  info);
+}
+
+void TriggerInfo::AddTriggers(TriggerInfo * in) {
   for(int i = 0; i < in->m_num_triggers; i++) {
     AddTrigger(in->m_type.at(i),
 	       in->m_readout_start_time.at(i), in->m_readout_end_time.at(i),
@@ -27,7 +31,7 @@ void TriggerInfo::AddTriggers(TriggerInfo * in){
   }
 }
 
-void TriggerInfo::Clear(){
+void TriggerInfo::Clear() {
   m_num_triggers = 0;
   m_type.clear();
   m_readout_start_time.clear();

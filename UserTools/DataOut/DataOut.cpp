@@ -1,4 +1,5 @@
 #include "DataOut.h"
+#include "TimeDelta.h"
 
 DataOut::DataOut():Tool(){}
 
@@ -168,6 +169,7 @@ void DataOut::CreateSubEvents(WCSimRootEvent * WCSimEvent)
     WCSimRootTrigger * trig = WCSimEvent->GetTrigger(i);
     double offset = fTriggerOffset;
     trig->SetHeader(fEvtNum, 0, fTriggers->m_trigger_time.at(i), i+1);
+    trig->SetHeader(fEvtNum, 0, (fTriggers->m_trigger_time.at(i) / TimeDelta::ns), i+1);
     trig->SetTriggerInfo(fTriggers->m_type.at(i), fTriggers->m_info.at(i));
     trig->SetMode(0);
   }//i
@@ -218,7 +220,7 @@ void DataOut::RemoveDigits(WCSimRootEvent * WCSimEvent, std::map<int, std::map<i
 	//do it this slightly odd way to mirror what WCSim does
 	double t = time;
 	t += fTriggerOffset
-	  - (float)fTriggers->m_trigger_time.at(window);
+	  - (fTriggers->m_trigger_time.at(window) / TimeDelta::ns);
 	d->SetT(t);
       }
       if(window > 0 &&
@@ -286,9 +288,10 @@ void DataOut::MoveTracks(WCSimRootEvent * WCSimEvent)
 /////////////////////////////////////////////////////////////////
 int DataOut::TimeInTriggerWindow(double time) {
   for(unsigned int i = 0; i < fTriggers->m_num_triggers; i++) {
-    double lo = fTriggers->m_readout_start_time.at(i);
-    double hi = fTriggers->m_readout_end_time.at(i);
-    if(time >= lo && time <= hi)
+    TimeDelta lo = fTriggers->m_readout_start_time.at(i);
+    TimeDelta hi = fTriggers->m_readout_end_time.at(i);
+    TimeDelta delta_time(time);
+    if(delta_time >= lo && delta_time <= hi)
       return i;
   }//it
   return -1;
@@ -304,8 +307,8 @@ unsigned int DataOut::TimeInTriggerWindowNoDelete(double time) {
   // therefore return value is at maximum the number of triggers
   const int num_triggers = fTriggers->m_num_triggers;
   for(unsigned int i = 0; i < num_triggers; i++) {
-    double hi = fTriggers->m_readout_end_time.at(i);
-    if(time <= hi)
+    TimeDelta hi = fTriggers->m_readout_end_time.at(i);
+    if(TimeDelta(time) <= hi)
       return i;
   }//it
   ss << "WARNING DataOut::TimeInTriggerWindowNoDelete() could not find a trigger that track with time " << time << " can live in. Returning maximum trigger number " << num_triggers - 1;
