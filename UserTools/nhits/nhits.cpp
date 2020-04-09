@@ -124,12 +124,14 @@ bool NHits::Execute(){
     is->SortByTime();
     AlgNDigits(&(*is));
 #endif
-  }
+  }//loop over SubSamples
 
-  //Get the SubSample to determine
+  //Now we have all the triggers, get the SubSample to determine
   // - which trigger readout windows each hit is associated with
   // - which hits should be masked from future triggers
-  m_data->IDSamples[0].TellMeAboutTheTriggers(m_data->IDTriggers);
+  for( std::vector<SubSample>::iterator is=samples.begin(); is!=samples.end(); ++is) {
+    (*is).TellMeAboutTheTriggers(m_data->IDTriggers);
+  }//loop over SubSamples
 
   if(m_stopwatch) m_stopwatch->Stop();
 
