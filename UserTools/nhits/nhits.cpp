@@ -172,7 +172,7 @@ void NHits::AlgNDigits(const SubSample * sample)
 	m_ss << "DEBUG: Removing hit with time " << *it
 	     << " from times deque. Search window starts at "
 	     << hit_time - m_trigger_search_window;
-	  StreamToLog(DEBUG3);
+	StreamToLog(DEBUG3);
       }
       break;
     }
