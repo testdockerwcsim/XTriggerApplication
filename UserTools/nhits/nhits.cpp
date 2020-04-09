@@ -1,5 +1,7 @@
 #include "nhits.h"
 
+#include <deque>
+
 NHits::NHits():Tool(){}
 
 bool NHits::Initialise(std::string configfile, DataModel &data){
@@ -143,41 +145,56 @@ void NHits::AlgNDigits(const SubSample * sample)
   //we will try to find triggers
   //loop over PMTs, and Digits in each PMT.  If ndigits > Threshhold in a time window, then we have a trigger
 
-  const unsigned int ndigits = sample->m_time.size();
-  m_ss << "DEBUG: NHits::AlgNDigits(). Number of entries in input digit collection: " << ndigits;
+  const unsigned int n_hits = sample->m_time.size();
+  m_ss << "DEBUG: NHits::AlgNDigits(). Number of entries in input digit collection: " << n_hits;
   StreamToLog(DEBUG1);
 
   // Where to store the triggers we find
   TriggerInfo * triggers = m_trigger_OD ? &(m_data->ODTriggers) : &(m_data->IDTriggers);
 
   // Loop over all digits
-  // But we can start with an offset of at least the threhshold to save some time
-  int current_digit = std::min(m_trigger_threshold, ndigits);
-  int first_digit_in_window = 0;
-  for(;current_digit < ndigits; ++current_digit) {
-    // Update first digit in trigger window
-    while(sample->m_time[first_digit_in_window] < sample->m_time[current_digit] - m_trigger_search_window){
-      ++first_digit_in_window;
+  std::deque<TimeDelta> times;
+  TimeDelta hit_time;
+  for(int idigit = 0; idigit < n_hits; idigit++) {
+    // Skip if the current digit should be ignored
+    if(!sample->m_masked[idigit]) continue;
+
+    // Add the current digit to the back of the queue
+    hit_time = sample->m_time[idigit];
+    times.push_back(hit_time);
+
+    // Remove any digits that are at the start of the queue,
+    //  and no longer in the trigger search window
+    for(std::deque<TimeDelta>::iterator it = times.begin();
+	  it != times.end(); ++it) {
+      if(*it < hit_time - m_trigger_search_window) {
+	times.pop_front();
+	m_ss << "DEBUG: Removing hit with time " << *it
+	     << " from times deque. Search window starts at "
+	     << hit_time - m_trigger_search_window;
+	  StreamToLog(DEBUG3);
+      }
+      break;
     }
 
     // if # of digits in window over threshold, issue trigger
-    int n_digits_in_window = current_digit - first_digit_in_window + 1; // +1 because difference is 0 when first digit is the only digit in window
-    if( n_digits_in_window > m_trigger_threshold) {
-      TimeDelta triggertime = sample->AbsoluteDigitTime(current_digit);
+    const int n_digits_in_search_window = times.size();
+    if(n_digits_in_search_window > m_trigger_threshold) {
+      const TimeDelta triggertime = sample->AbsoluteDigitTime(idigit);
       m_ss << "DEBUG: Found NHits trigger in SubSample at " << triggertime;
       StreamToLog(DEBUG2);
       m_ss << "DEBUG: Advancing search by posttrigger_save_window " << m_trigger_save_window_post;
       StreamToLog(DEBUG2);
-      while(sample->AbsoluteDigitTime(current_digit) < triggertime + m_trigger_save_window_post){
-        ++current_digit;
-        if (current_digit >= ndigits){
+      while(sample->AbsoluteDigitTime(idigit) <
+	    triggertime + m_trigger_save_window_post){
+        ++idigit;
+        if (idigit >= n_hits){
           // Break if we run out of digits
           break;
         }
-      }
-      --current_digit; // We want the last digit *within* post-trigger-window
-      int n_digits = current_digit - first_digit_in_window + 1;
-      m_ss << "DEBUG: Number of digits between (trigger_time - trigger_search_window) and (trigger_time + posttrigger_save_window):" << n_digits;
+      }//advance to end of post trigger window
+      idigit -= 2; // We want the last digit *within* post-trigger-window
+      m_ss << "DEBUG: Number of digits in trigger search window: " << n_digits_in_search_window;
       StreamToLog(DEBUG2);
 
       triggers->AddTrigger(kTriggerNDigits,
@@ -186,8 +203,8 @@ void NHits::AlgNDigits(const SubSample * sample)
 			   triggertime - m_trigger_mask_window_pre,
 			   triggertime + m_trigger_mask_window_post,
                            triggertime,
-                           std::vector<float>(1, n_digits));
-    }
+                           std::vector<float>(1, n_digits_in_search_window));
+    }//trigger found
   }//loop over Digits
   
   m_ss << "INFO: Found " << triggers->m_num_triggers << " NDigit trigger(s) from " << (m_trigger_OD ? "OD" : "ID");
