@@ -157,7 +157,7 @@ void NHits::AlgNDigits(const SubSample * sample)
   TimeDelta hit_time;
   for(int idigit = 0; idigit < n_hits; idigit++) {
     // Skip if the current digit should be ignored
-    if(!sample->m_masked[idigit]) continue;
+    if(sample->m_masked[idigit]) continue;
 
     // Add the current digit to the back of the queue
     hit_time = sample->m_time[idigit];
