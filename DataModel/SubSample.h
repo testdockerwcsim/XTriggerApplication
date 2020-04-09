@@ -12,7 +12,7 @@ class SubSample{
 
  public:
 
-  SubSample() {};
+  SubSample() : m_start_trigger(0) {};
 
   /// Deprecated constructor, use empty constructor and Append instead.
   __attribute__((deprecated))
@@ -40,7 +40,7 @@ class SubSample{
   std::vector<int> m_PMTid;
   /// Vector of hit times relative to timestamp for all hits in SubSample. Unit: ns
   std::vector<TimeDelta::short_time_t> m_time;
-  /// Vector of charges for all hits in SubSample. Unit: ?
+  /// Vector of charges for all hits in SubSample. Unit: photoelectrons (MC), calibrated photoelectrons (data)
   std::vector<float> m_charge;
 
 
@@ -63,7 +63,14 @@ class SubSample{
   /// Otherwise it will return an empty vector.
   std::vector<SubSample> Split(TimeDelta target_width, TimeDelta target_overlap) const;
 
+  /// Picks up the trigger readout and mask windows from the input, and sets
+  ///  digit m_trigger_readout_windows and m_masked appropriately
   void TellMeAboutTheTriggers(const TriggerInfo & triggers);
+
+ private:
+
+  /// Which trigger are we starting from in TellMeAboutTheTriggers()?
+  int m_start_trigger;
 };
 
 #endif
