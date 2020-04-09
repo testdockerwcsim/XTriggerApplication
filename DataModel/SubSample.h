@@ -63,7 +63,7 @@ class SubSample{
   /// Otherwise it will return an empty vector.
   std::vector<SubSample> Split(TimeDelta target_width, TimeDelta target_overlap) const;
 
-  void TellMeAboutTheTriggers(TriggerInfo & triggers);
+  void TellMeAboutTheTriggers(const TriggerInfo & triggers);
 };
 
 #endif
