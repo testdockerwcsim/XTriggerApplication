@@ -41,3 +41,16 @@ void TriggerInfo::Clear() {
   m_trigger_time.clear();
   m_info.clear();
 }
+
+std::ostream& operator<<(std::ostream& outs, const TriggerInfo& trig){
+  outs << trig.m_num_triggers << " triggers stored:" << std::endl;
+  for(unsigned int itrig = 0; itrig < trig.m_num_triggers; itrig++) {
+    std::cout << "\t" << itrig << "\t"
+	      << WCSimEnumerations::EnumAsString(trig.m_type[itrig])
+	      << "\tReadout: " << trig.m_readout_start_time[itrig]
+	      << "\t to " << trig.m_readout_end_time[itrig]
+	      << std::endl;
+  }//itrig
+  return outs;
+}
+

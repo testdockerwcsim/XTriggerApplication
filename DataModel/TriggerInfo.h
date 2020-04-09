@@ -44,4 +44,6 @@ class TriggerInfo{
   std::vector<std::vector<float> > m_info;
 };
 
+std::ostream& operator<<(std::ostream& outs, const TriggerInfo& trig);
+
 #endif
