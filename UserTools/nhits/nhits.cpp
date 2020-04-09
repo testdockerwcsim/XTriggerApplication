@@ -193,7 +193,7 @@ void NHits::AlgNDigits(const SubSample * sample)
           break;
         }
       }//advance to end of post trigger window
-      idigit -= 2; // We want the last digit *within* post-trigger-window
+      idigit--; // We want the last digit *within* post-trigger-window (because we're looping over this in the for loop, so the first digit into the deque will be the first *after* post-trigger-window)
       m_ss << "DEBUG: Number of digits in trigger search window: " << n_digits_in_search_window;
       StreamToLog(DEBUG2);
 
@@ -204,6 +204,9 @@ void NHits::AlgNDigits(const SubSample * sample)
 			   triggertime + m_trigger_mask_window_post,
                            triggertime,
                            std::vector<float>(1, n_digits_in_search_window));
+
+      //clear the deque
+      times.clear();
     }//trigger found
   }//loop over Digits
   
