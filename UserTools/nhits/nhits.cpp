@@ -38,15 +38,13 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
   double temp_m_trigger_search_window;
   double temp_m_trigger_save_window_pre;
   double temp_m_trigger_save_window_post;
-  double temp_m_trigger_mask_window_pre  = -99;
-  double temp_m_trigger_mask_window_post = -99;
+  double temp_m_trigger_mask_window_pre;
+  double temp_m_trigger_mask_window_post;
 
   m_variables.Get("trigger_search_window",   temp_m_trigger_search_window);
   m_variables.Get("trigger_threshold",            m_trigger_threshold);
   m_variables.Get("pretrigger_save_window",  temp_m_trigger_save_window_pre);
   m_variables.Get("posttrigger_save_window", temp_m_trigger_save_window_post);
-  m_variables.Get("pretrigger_mask_window",  temp_m_trigger_mask_window_pre);
-  m_variables.Get("posttrigger_mask_window", temp_m_trigger_mask_window_post);
   m_variables.Get("trigger_od",                   m_trigger_OD);
 
   m_trigger_search_window    = TimeDelta(temp_m_trigger_search_window);
@@ -55,7 +53,7 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
 
   //Set the masks to sensible values
   //pretrigger
-  if(abs(temp_m_trigger_mask_window_pre + 99) < 0) {
+  if(!m_variables.Get("pretrigger_mask_window",  temp_m_trigger_mask_window_pre)) {
     m_ss << "WARN: pretrigger_mask_window parameter not given. Setting it to pretrigger_save_window value: " << temp_m_trigger_save_window_pre;
     StreamToLog(WARN);
     m_trigger_mask_window_pre = TimeDelta(temp_m_trigger_save_window_pre);
@@ -68,7 +66,7 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
   } else
     m_trigger_mask_window_pre  = TimeDelta(temp_m_trigger_mask_window_pre);
   //posttrigger
-  if(abs(temp_m_trigger_mask_window_post + 99) < 0) {
+  if(!m_variables.Get("posttrigger_mask_window", temp_m_trigger_mask_window_post)) {
     m_ss << "WARN: posttrigger_mask_window parameter not given. Setting it to posttrigger_save_window value: " << temp_m_trigger_save_window_post;
     StreamToLog(WARN);
     m_trigger_mask_window_post = TimeDelta(temp_m_trigger_save_window_post);
