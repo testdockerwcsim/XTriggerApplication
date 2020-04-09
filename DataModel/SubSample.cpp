@@ -159,6 +159,16 @@ bool SubSample::Append(const std::vector<int> PMTid, const std::vector<TimeDelta
         m_time.push_back(time[i] + time_shift);
     }
   }
+
+  //set the trigger info
+  const std::vector<int> empty;
+  m_trigger_readout_windows.insert(m_trigger_readout_windows.end(),
+				   m_time.size() - m_trigger_readout_windows.size()
+				   , empty);
+  m_masked.insert(m_masked.end(),
+		  m_time.size() - m_masked.size(),
+		  false);
+
   return true;
 }
 
