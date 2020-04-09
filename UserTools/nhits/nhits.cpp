@@ -118,15 +118,20 @@ bool NHits::Execute(){
 
   for( std::vector<SubSample>::iterator is=samples.begin(); is!=samples.end(); ++is){
 #ifdef GPU
-  GPU_daq::nhits_execute(is->m_PMTid, is->m_time);
-  m_ss << " qqq qqq Look at " << is - samples.begin();
-  StreamToLog(DEBUG1);
+    GPU_daq::nhits_execute(is->m_PMTid, is->m_time);
+    m_ss << " qqq qqq Look at " << is - samples.begin();
+    StreamToLog(DEBUG1);
 #else
-  // Make sure digit times are ordered in time
-  is->SortByTime();
-  AlgNDigits(&(*is));
+    // Make sure digit times are ordered in time
+    is->SortByTime();
+    AlgNDigits(&(*is));
 #endif
   }
+
+  //Get the SubSample to determine
+  // - which trigger readout windows each hit is associated with
+  // - which hits should be masked from future triggers
+  m_data->IDSamples[0].TellMeAboutTheTriggers(m_data->IDTriggers);
 
   if(m_stopwatch) m_stopwatch->Stop();
 
