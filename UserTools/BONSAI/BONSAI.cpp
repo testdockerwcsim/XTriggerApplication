@@ -50,7 +50,7 @@ bool BONSAI::Initialise(std::string configfile, DataModel &data){
 
 bool BONSAI::Execute(){
 
-  float out_vertex[4], out_direction[6], out_maxlike[500];
+  float out_vertex[4], out_direction[6], out_maxlike[3];
   int   out_nsel[2];
   double dout_vertex[3], dout_direction[3], dout_cone[2];
   
