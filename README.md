@@ -80,6 +80,7 @@ Once the container has started to run the software
   * This runs an example toolchain with two versions of the `dummy` tool. It's essentially a Hello World tool
 
 You're then free to install any applications in your container you wish for development
+* If you are using optional packages (e.g. hk-BONSAI or energetic-bonsai) install them in `$HYPERKDIR` and they will automatically be found whenever you start your container (and `Build.h` will be set appropriately)
 
 Notes: 
 * To exit a container use `exit` 
