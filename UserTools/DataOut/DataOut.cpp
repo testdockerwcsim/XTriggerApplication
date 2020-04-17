@@ -21,7 +21,7 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
     Log("ERROR: outfilename configuration not found. Cancelling initialisation", ERROR, verbose);
     return false;
   }
-  fOutFile.Open(fOutFilename.c_str(), "RECREATE");
+  fOutFile = new TFile(fOutFilename.c_str(), "RECREATE");
 
   //other options
   fSaveMultiDigiPerTrigger = true;
@@ -322,9 +322,8 @@ unsigned int DataOut::TimeInTriggerWindowNoDelete(double time) {
 
 bool DataOut::Finalise(){
   //multiple TFiles may be open. Ensure we save to the correct one
-  fOutFile.cd(TString::Format("%s:/", fOutFilename.c_str()));
+  fOutFile->cd(TString::Format("%s:/", fOutFilename.c_str()));
   fTreeEvent->Write();
-  fOutFile.Close();
 
   delete fTreeEvent;
   delete m_data->IDWCSimEvent_Triggered;
@@ -332,6 +331,10 @@ bool DataOut::Finalise(){
     delete m_data->ODWCSimEvent_Triggered;
 
   delete fTriggers;
+
+  //close the output file at the end, else segfault happens
+  fOutFile->Close();
+  delete fOutFile;
 
   return true;
 }

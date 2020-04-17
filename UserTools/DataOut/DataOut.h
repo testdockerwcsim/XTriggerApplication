@@ -35,7 +35,7 @@ class DataOut: public Tool {
   unsigned int TimeInTriggerWindowNoDelete(double time);
 
   std::string fOutFilename;
-  TFile fOutFile;
+  TFile * fOutFile;
   TTree * fTreeEvent;
   TTree * fTreeGeom;
   TTree * fTreeOptions;
