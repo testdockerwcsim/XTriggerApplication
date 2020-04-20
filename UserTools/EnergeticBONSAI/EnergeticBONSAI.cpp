@@ -124,6 +124,8 @@ bool EnergeticBONSAI::Execute(){
     m_ss << "INFO: Energetic BONSAI reconstructed energy " << energy;
     StreamToLog(INFO);
 
+    m_input_filter->SetEnergy(ireco, energy);
+
   }//ireco
 
   return true;
