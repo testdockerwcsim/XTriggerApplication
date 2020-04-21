@@ -1,4 +1,5 @@
 #include "DataOut.h"
+#include "TimeDelta.h"
 
 DataOut::DataOut():Tool(){}
 
@@ -15,6 +16,7 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   m_data= &data;
 
   //open the output file
+  Log("DEBUG: DataOut::Initialise opening output file...", DEBUG2, verbose);
   if(! m_variables.Get("outfilename", fOutFilename)) {
     Log("ERROR: outfilename configuration not found. Cancelling initialisation", ERROR, verbose);
     return false;
@@ -30,6 +32,7 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("save_only_failed_digits", fSaveOnlyFailedDigits);
 
   //setup the out event tree
+  Log("DEBUG: DataOut::Initialise setting up output event tree...", DEBUG2, verbose);
   // Nevents unique event objects
   Int_t bufsize = 64000;
   fTreeEvent = new TTree("wcsimT","WCSim Tree");
@@ -47,13 +50,18 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
 
   //fill the output event-independent trees
   //There are 1 unique geom objects, so this is a simple clone of 1 entry
+  Log("DEBUG: DataOut::Initialise filling event-independent trees...", DEBUG2, verbose);
+  Log("DEBUG:   Geometry...", DEBUG2, verbose);
   fTreeGeom = m_data->WCSimGeomTree->CloneTree(1);
   fTreeGeom->Write();
   delete fTreeGeom;
 
   //There are Nfiles unique options objects, so this is a clone of all entries
   // plus a new branch with the wcsim filename 
+  Log("DEBUG:   Options & file names...", DEBUG2, verbose);
   fTreeOptions = m_data->WCSimOptionsTree->CloneTree();
+  ss << "DEBUG:     entries: " << fTreeOptions->GetEntries();
+  StreamToLog(DEBUG2);
   TObjString * wcsimfilename = new TObjString();
   TBranch * branch = fTreeOptions->Branch("wcsimfilename", &wcsimfilename);
   for(int i = 0; i < fTreeOptions->GetEntries(); i++) {
@@ -66,11 +74,18 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   delete wcsimfilename;
   delete fTreeOptions;
 
+  Log("DEBUG: DataOut::Initialise creating trigger info...", DEBUG2, verbose);
   fTriggers = new TriggerInfo();
   fEvtNum = 0;
 
+  Log("DEBUG: DataOut::Initialise creating ID trigger maps...", DEBUG2, verbose);
+  ss << "DEBUG:   entries: " << m_data->IDNPMTs;
+  StreamToLog(DEBUG2);
   for(int i = 0; i <= m_data->IDNPMTs; i++)
     fIDNDigitPerPMTPerTriggerMap[i] = std::map<int, bool>();
+  Log("DEBUG: DataOut::Initialise creating OD trigger maps...", DEBUG2, verbose);
+  ss << "DEBUG:   entries: " << m_data->ODNPMTs;
+  StreamToLog(DEBUG2);
   for(int i = 0; i <= m_data->ODNPMTs; i++)
     fODNDigitPerPMTPerTriggerMap[i] = std::map<int, bool>();
 
@@ -101,7 +116,7 @@ bool DataOut::Execute(){
   for(int i = 0; i < fTriggers->m_N; i++) {
     ss << "INFO: \t[" << fTriggers->m_starttime.at(i)
        << ", " << fTriggers->m_endtime.at(i) << "] "
-       << fTriggers->m_triggertime.at(i) << " ns with type "
+       << fTriggers->m_triggertime.at(i) << " with type "
        << WCSimEnumerations::EnumAsString(fTriggers->m_type.at(i)) << " extra info";
     for(unsigned int ii = 0; ii < fTriggers->m_info.at(i).size(); ii++)
       ss << " " << fTriggers->m_info.at(i).at(ii);
@@ -143,7 +158,6 @@ bool DataOut::Execute(){
   //increment event number
   fEvtNum++;
 
-  Log("DEBUG: DataOut::Execute() Done", DEBUG1, verbose);
   return true;
 }
 /////////////////////////////////////////////////////////////////
@@ -155,7 +169,7 @@ void DataOut::CreateSubEvents(WCSimRootEvent * WCSimEvent)
       WCSimEvent->AddSubEvent();
     WCSimRootTrigger * trig = WCSimEvent->GetTrigger(i);
     double offset = fTriggerOffset;
-    trig->SetHeader(fEvtNum, 0, fTriggers->m_triggertime.at(i), i+1);
+    trig->SetHeader(fEvtNum, 0, (fTriggers->m_triggertime.at(i) / TimeDelta::ns), i+1);
     trig->SetTriggerInfo(fTriggers->m_type.at(i), fTriggers->m_info.at(i));
     trig->SetMode(0);
   }//i
@@ -206,7 +220,7 @@ void DataOut::RemoveDigits(WCSimRootEvent * WCSimEvent, std::map<int, std::map<i
 	//do it this slightly odd way to mirror what WCSim does
 	double t = time;
 	t += fTriggerOffset
-	  - (float)fTriggers->m_triggertime.at(window);
+	  - (fTriggers->m_triggertime.at(window) / TimeDelta::ns);
 	d->SetT(t);
       }
       if(window > 0 &&
@@ -274,9 +288,10 @@ void DataOut::MoveTracks(WCSimRootEvent * WCSimEvent)
 /////////////////////////////////////////////////////////////////
 int DataOut::TimeInTriggerWindow(double time) {
   for(unsigned int i = 0; i < fTriggers->m_N; i++) {
-    double lo = fTriggers->m_starttime.at(i);
-    double hi = fTriggers->m_endtime.at(i);
-    if(time >= lo && time <= hi)
+    TimeDelta lo = fTriggers->m_starttime.at(i);
+    TimeDelta hi = fTriggers->m_endtime.at(i);
+    TimeDelta delta_time(time);
+    if(delta_time >= lo && delta_time <= hi)
       return i;
   }//it
   return -1;
@@ -292,8 +307,8 @@ unsigned int DataOut::TimeInTriggerWindowNoDelete(double time) {
   // therefore return value is at maximum the number of triggers
   const int N = fTriggers->m_N;
   for(unsigned int i = 0; i < N; i++) {
-    double hi = fTriggers->m_endtime.at(i);
-    if(time <= hi)
+    TimeDelta hi = fTriggers->m_endtime.at(i);
+    if(TimeDelta(time) <= hi)
       return i;
   }//it
   ss << "WARNING DataOut::TimeInTriggerWindowNoDelete() could not find a trigger that track with time " << time << " can live in. Returning maximum trigger number " << N - 1;
