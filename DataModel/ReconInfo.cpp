@@ -1,11 +1,11 @@
 #include "ReconInfo.h"
 
-ReconInfo::ReconInfo()
- : fNRecons(0),
-   fFirstTime(+9E18),
-   fLastTime(-9E18)
-{
+#include <limits>
+#include <cstdint>
 
+ReconInfo::ReconInfo()
+{
+  Reset();
 }
 
 void ReconInfo::AddRecon(Reconstructer_t reconstructer, int trigger_num,
@@ -189,8 +189,8 @@ bool ReconInfo::ShouldProvideDirection(Reconstructer_t r)
 void ReconInfo::Reset()
 {
   fNRecons = 0;
-  fFirstTime = +9E18;
-  fLastTime = -9E18;
+  fFirstTime = std::numeric_limits<TimeDelta::long_time_t>::max() * TimeDelta::s_long_time_unit;
+  fLastTime = std::numeric_limits<TimeDelta::long_time_t>::min() * TimeDelta::s_long_time_unit;
   //event
   fReconstructer.clear();
   fTriggerNum.clear();
