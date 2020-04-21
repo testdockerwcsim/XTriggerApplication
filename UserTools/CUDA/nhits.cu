@@ -555,7 +555,7 @@ int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time, std::v
     unsigned int start_time = earliest_time;
     unsigned int min_time = 0;
 
-    printf(" --- execute kernel nhits starting from time %d \n", start_time);
+    printf(" --- execute kernel nhits starting from time %d max %d \n", start_time, the_max_time);
     while(start_time <= the_max_time) {
       memset(triggerfound, false, nthresholds*sizeof(bool));
       checkCudaErrors(cudaMemset(device_n_pmts_nhits, 0, 1*sizeof(unsigned int)));

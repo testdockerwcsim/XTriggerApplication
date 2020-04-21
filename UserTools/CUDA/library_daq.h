@@ -832,6 +832,7 @@ bool read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<int> times, int
 	host_times[i] -= min;
       }
       max -= min;
+      min -= min;
     }
     the_max_time = max;
     *earliest_time = min - min % time_step_size;
