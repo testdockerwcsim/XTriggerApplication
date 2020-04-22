@@ -10,8 +10,8 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
 
-  verbose = 0;
-  m_variables.Get("verbose", verbose);
+  m_verbose = 0;
+  m_variables.Get("verbose", m_verbose);
 
   //Setup and start the stopwatch
   bool use_stopwatch = false;
@@ -26,9 +26,9 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   m_data= &data;
 
   //open the output file
-  Log("DEBUG: DataOut::Initialise opening output file...", DEBUG2, verbose);
+  Log("DEBUG: DataOut::Initialise opening output file...", DEBUG2, m_verbose);
   if(! m_variables.Get("outfilename", fOutFilename)) {
-    Log("ERROR: outfilename configuration not found. Cancelling initialisation", ERROR, verbose);
+    Log("ERROR: outfilename configuration not found. Cancelling initialisation", ERROR, m_verbose);
     return false;
   }
   fOutFile.Open(fOutFilename.c_str(), "RECREATE");
@@ -42,7 +42,7 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("save_only_failed_digits", fSaveOnlyFailedDigits);
 
   //setup the out event tree
-  Log("DEBUG: DataOut::Initialise setting up output event tree...", DEBUG2, verbose);
+  Log("DEBUG: DataOut::Initialise setting up output event tree...", DEBUG2, m_verbose);
   // Nevents unique event objects
   Int_t bufsize = 64000;
   fTreeEvent = new TTree("wcsimT","WCSim Tree");
@@ -60,15 +60,15 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
 
   //fill the output event-independent trees
   //There are 1 unique geom objects, so this is a simple clone of 1 entry
-  Log("DEBUG: DataOut::Initialise filling event-independent trees...", DEBUG2, verbose);
-  Log("DEBUG:   Geometry...", DEBUG2, verbose);
+  Log("DEBUG: DataOut::Initialise filling event-independent trees...", DEBUG2, m_verbose);
+  Log("DEBUG:   Geometry...", DEBUG2, m_verbose);
   fTreeGeom = m_data->WCSimGeomTree->CloneTree(1);
   fTreeGeom->Write();
   delete fTreeGeom;
 
   //There are Nfiles unique options objects, so this is a clone of all entries
   // plus a new branch with the wcsim filename 
-  Log("DEBUG:   Options & file names...", DEBUG2, verbose);
+  Log("DEBUG:   Options & file names...", DEBUG2, m_verbose);
   fTreeOptions = m_data->WCSimOptionsTree->CloneTree();
   ss << "DEBUG:     entries: " << fTreeOptions->GetEntries();
   StreamToLog(DEBUG2);
@@ -84,16 +84,16 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   delete wcsimfilename;
   delete fTreeOptions;
 
-  Log("DEBUG: DataOut::Initialise creating trigger info...", DEBUG2, verbose);
+  Log("DEBUG: DataOut::Initialise creating trigger info...", DEBUG2, m_verbose);
   fTriggers = new TriggerInfo();
   fEvtNum = 0;
 
-  Log("DEBUG: DataOut::Initialise creating ID trigger maps...", DEBUG2, verbose);
+  Log("DEBUG: DataOut::Initialise creating ID trigger maps...", DEBUG2, m_verbose);
   ss << "DEBUG:   entries: " << m_data->IDNPMTs;
   StreamToLog(DEBUG2);
   for(int i = 0; i <= m_data->IDNPMTs; i++)
     fIDNDigitPerPMTPerTriggerMap[i] = std::map<int, bool>();
-  Log("DEBUG: DataOut::Initialise creating OD trigger maps...", DEBUG2, verbose);
+  Log("DEBUG: DataOut::Initialise creating OD trigger maps...", DEBUG2, m_verbose);
   ss << "DEBUG:   entries: " << m_data->ODNPMTs;
   StreamToLog(DEBUG2);
   for(int i = 0; i <= m_data->ODNPMTs; i++)
@@ -111,7 +111,7 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
 bool DataOut::Execute(){
   if(m_stopwatch) m_stopwatch->Start();
 
-  Log("DEBUG: DataOut::Execute Starting", DEBUG1, verbose);
+  Log("DEBUG: DataOut::Execute Starting", DEBUG1, m_verbose);
 
   for(int i = 0; i <= m_data->IDNPMTs; i++)
     fIDNDigitPerPMTPerTriggerMap[i].clear();

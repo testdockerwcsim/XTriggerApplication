@@ -8,8 +8,8 @@ bool ReconFilter::Initialise(std::string configfile, DataModel &data){
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
 
-  verbose = 0;
-  m_variables.Get("verbose", verbose);
+  m_verbose = 0;
+  m_variables.Get("verbose", m_verbose);
 
   //Setup and start the stopwatch
   bool use_stopwatch = false;
@@ -25,11 +25,11 @@ bool ReconFilter::Initialise(std::string configfile, DataModel &data){
 
   //parameters determining what to name the (pre)filtered RecoInfo objects
   if(!m_variables.Get("input_filter_name", fInputFilterName)) {
-    Log("INFO: input_filter_name not given. Using ALL", WARN, verbose);
+    Log("INFO: input_filter_name not given. Using ALL", WARN, m_verbose);
     fInputFilterName = "ALL";
   }
   if(!m_variables.Get("output_filter_name", fOutputFilterName)) {
-    Log("WARN: output_filter_name not given. Using TEMP", WARN, verbose);
+    Log("WARN: output_filter_name not given. Using TEMP", WARN, m_verbose);
     fOutputFilterName = "TEMP";
   }
   fInFilter  = m_data->GetFilter(fInputFilterName, false);
@@ -41,15 +41,15 @@ bool ReconFilter::Initialise(std::string configfile, DataModel &data){
   fOutFilter = m_data->GetFilter(fOutputFilterName, true);
 
   if(fOutFilter == &(m_data->RecoInfo)) {
-    Log("ERROR: Cannot use the full RecoInfo object to store filtered events", ERROR, verbose);
+    Log("ERROR: Cannot use the full RecoInfo object to store filtered events", ERROR, m_verbose);
     return false;
   }
   if(fInFilter == fOutFilter) {
-    Log("ERROR: Can't use the same filter for input and output. TODO add ReconInfo::RemoveRecon() methods and change logic here in ReconFilter to deal with it", ERROR, verbose);
+    Log("ERROR: Can't use the same filter for input and output. TODO add ReconInfo::RemoveRecon() methods and change logic here in ReconFilter to deal with it", ERROR, m_verbose);
     return false;
   }
   if(fOutFilter->GetNRecons()) {
-    Log("ERROR: output_filter_name must be unique (needs to be a blank canvas). TODO  add ReconInfo::RemoveRecon() methods and change logic here in ReconFilter to deal with it", ERROR, verbose);
+    Log("ERROR: output_filter_name must be unique (needs to be a blank canvas). TODO  add ReconInfo::RemoveRecon() methods and change logic here in ReconFilter to deal with it", ERROR, m_verbose);
     return false;
   }
     
@@ -59,24 +59,24 @@ bool ReconFilter::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("reconstruction_algorithm", reconstruction_algorithm_str);
   fReconstructionAlgorithm = ReconInfo::ReconstructerFromString(reconstruction_algorithm_str);
   if(fReconstructionAlgorithm == kReconUndefined) {
-    Log("ERROR: The reconstruction_algorithm parameter you have chosen is not defined. Please choose a valid option", ERROR, verbose);
+    Log("ERROR: The reconstruction_algorithm parameter you have chosen is not defined. Please choose a valid option", ERROR, m_verbose);
     return false;
   }
   if(!m_variables.Get("fMinReconLikelihood", fMinReconLikelihood)) {
     fMinReconLikelihood = 0;
-    Log("WARN: No fMinReconLikelihood parameter found. Using a value of 0", WARN, verbose);
+    Log("WARN: No fMinReconLikelihood parameter found. Using a value of 0", WARN, m_verbose);
   }
   if(!m_variables.Get("fMinReconTimeLikelihood", fMinReconTimeLikelihood)) {
     fMinReconTimeLikelihood = 0;
-    Log("WARN: No fMinReconTimeLikelihood parameter found. Using a value of 0", WARN, verbose);
+    Log("WARN: No fMinReconTimeLikelihood parameter found. Using a value of 0", WARN, m_verbose);
   }
   if(!m_variables.Get("max_r_pos", fMaxRPos_cm)) {
     fMaxRPos_cm = 3500;
-    Log("WARN: No max_r_pos parameter found. Using a value of 3500 (cm)", WARN, verbose);
+    Log("WARN: No max_r_pos parameter found. Using a value of 3500 (cm)", WARN, m_verbose);
   }
   if(!m_variables.Get("max_z_pos", fMaxZPos_cm)) {
     fMaxZPos_cm = 2700;
-    Log("WARN: No max_z_pos parameter found. Using a value of 2700 (cm)", WARN, verbose);
+    Log("WARN: No max_z_pos parameter found. Using a value of 2700 (cm)", WARN, m_verbose);
   }
 
   if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);

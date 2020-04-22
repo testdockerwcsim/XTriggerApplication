@@ -38,12 +38,12 @@ class ReconDataIn: public Tool {
   /// Image filename to save the histogram to, if required
   std::string m_stopwatch_file;
 
-  int verbose;
+  int m_verbose;
 
   std::stringstream ss;
 
   void StreamToLog(int level) {
-    Log(ss.str(), level, verbose);
+    Log(ss.str(), level, m_verbose);
     ss.str("");
   }
 

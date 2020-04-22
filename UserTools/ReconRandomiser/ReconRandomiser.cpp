@@ -10,8 +10,8 @@ bool ReconRandomiser::Initialise(std::string configfile, DataModel &data){
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
 
-  verbose = 0;
-  m_variables.Get("verbose", verbose);
+  m_verbose = 0;
+  m_variables.Get("verbose", m_verbose);
 
   //Setup and start the stopwatch
   bool use_stopwatch = false;
@@ -27,57 +27,57 @@ bool ReconRandomiser::Initialise(std::string configfile, DataModel &data){
 
    //set number of events
   if(! m_variables.Get("nevents",  fNEvents) ) {
-    Log("WARN: nevents configuration not found. Producing 1 event", WARN, verbose);
+    Log("WARN: nevents configuration not found. Producing 1 event", WARN, m_verbose);
     fNEvents = 1;
   }
   else if(fNEvents <= 0) {
-    Log("WARN: Given negative or 0 nevents. Producing 1 event", WARN, verbose);
+    Log("WARN: Given negative or 0 nevents. Producing 1 event", WARN, m_verbose);
     fNEvents = 1;
   }
   fCurrEvent = 0;
 
   //Random distribution variables
   if(!m_variables.Get("n_vertices_mean", fNVerticesMean)) {
-    Log("FATAL: Must specify n_vertices_mean", FATAL, verbose);
+    Log("FATAL: Must specify n_vertices_mean", FATAL, m_verbose);
     return false;
   }
 
   if(!m_variables.Get("x_mean_pos", fXMean)) {
-    Log("FATAL: Must specify x_mean_pos", FATAL, verbose);
+    Log("FATAL: Must specify x_mean_pos", FATAL, m_verbose);
     return false;
   }
   if(!m_variables.Get("x_width", fXWidth)) {
-    Log("FATAL: Must specify x_width", FATAL, verbose);
+    Log("FATAL: Must specify x_width", FATAL, m_verbose);
     return false;
   }
   if(!m_variables.Get("y_mean_pos", fYMean)) {
-    Log("FATAL: Must specify y_mean_pos", FATAL, verbose);
+    Log("FATAL: Must specify y_mean_pos", FATAL, m_verbose);
     return false;
   }
   if(!m_variables.Get("y_width", fYWidth)) {
-    Log("FATAL: Must specify y_width", FATAL, verbose);
+    Log("FATAL: Must specify y_width", FATAL, m_verbose);
     return false;
   }
   if(!m_variables.Get("z_mean_pos", fZMean)) {
-    Log("FATAL: Must specify z_mean_pos", FATAL, verbose);
+    Log("FATAL: Must specify z_mean_pos", FATAL, m_verbose);
     return false;
   }
   if(!m_variables.Get("z_width", fZWidth)) {
-    Log("FATAL: Must specify z_width", FATAL, verbose);
+    Log("FATAL: Must specify z_width", FATAL, m_verbose);
     return false;
   }
 
   if(!m_variables.Get("max_z_pos", fMaxZPos)) {
-    Log("FATAL: Must specify max_z_pos", FATAL, verbose);
+    Log("FATAL: Must specify max_z_pos", FATAL, m_verbose);
     return false;
   }
   if(!m_variables.Get("max_r_pos", fMaxRPos)) {
-    Log("FATAL: Must specify max_r_pos", FATAL, verbose);
+    Log("FATAL: Must specify max_r_pos", FATAL, m_verbose);
     return false;
   }
 
   if(!m_variables.Get("flat_r", fFlatR)) {
-    Log("FATAL: Must specify flat_r", FATAL, verbose);
+    Log("FATAL: Must specify flat_r", FATAL, m_verbose);
     return false;
   }
 
@@ -87,17 +87,17 @@ bool ReconRandomiser::Initialise(std::string configfile, DataModel &data){
   fZDistribution = GetDistributionType(fZWidth, "Z");
 
   if(!m_variables.Get("t_min", fTMin)) {
-    Log("FATAL: Must specify t_min", FATAL, verbose);
+    Log("FATAL: Must specify t_min", FATAL, m_verbose);
     return false;
   }
   if(!m_variables.Get("t_max", fTMax)) {
-    Log("FATAL: Must specify t_max", FATAL, verbose);
+    Log("FATAL: Must specify t_max", FATAL, m_verbose);
     return false;
   }
 
   int seed = 0;
   if(!m_variables.Get("seed", seed)) {
-    Log("WARN: No seed specified. Using default 0. Your results are not reproducable!", WARN, verbose);
+    Log("WARN: No seed specified. Using default 0. Your results are not reproducable!", WARN, m_verbose);
   }
   fRand = new TRandom3(seed);
 

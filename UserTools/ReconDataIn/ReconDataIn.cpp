@@ -8,8 +8,8 @@ bool ReconDataIn::Initialise(std::string configfile, DataModel &data){
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
 
-  verbose = 0;
-  m_variables.Get("verbose", verbose);
+  m_verbose = 0;
+  m_variables.Get("verbose", m_verbose);
 
   //Setup and start the stopwatch
   bool use_stopwatch = false;
@@ -26,7 +26,7 @@ bool ReconDataIn::Initialise(std::string configfile, DataModel &data){
   //get the filename(s)
   std::string infilestr;
   if(! m_variables.Get("infilenames", infilestr)) {
-    Log("ERROR: infilenames configuration not found. Cancelling initialisation", ERROR, verbose);
+    Log("ERROR: infilenames configuration not found. Cancelling initialisation", ERROR, m_verbose);
     return false;
   }
   //TODO add ability to get filelist, like WCSimReader() - need to take functions out of there & put into a general utilties file? Library? namespace?`
