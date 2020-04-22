@@ -49,14 +49,14 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
     return false;
 
   //set branch addresses
-  m_wcsim_opt = new WCSimRootOptions();
+  m_wcsim_opt = 0;
   m_chain_opt  ->SetBranchAddress("wcsimrootoptions", &m_wcsim_opt);
   m_chain_opt->GetEntry(0);
-  m_wcsim_event_ID = new WCSimRootEvent();
+  m_wcsim_event_ID = 0;
   m_chain_event->SetBranchAddress("wcsimrootevent",   &m_wcsim_event_ID);
   if(m_wcsim_opt->GetGeomHasOD()) {
     Log("INFO: The geometry has an OD. Will add OD digits to m_data", INFO, m_verbose);
-    m_wcsim_event_OD = new WCSimRootEvent();
+    m_wcsim_event_OD = 0;
     m_chain_event->SetBranchAddress("wcsimrootevent_OD",   &m_wcsim_event_OD);
     m_data->HasOD = true;
   }
@@ -64,7 +64,7 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
     m_wcsim_event_OD = 0;
     m_data->HasOD = false;
   }
-  m_wcsim_geom = new WCSimRootGeom();
+  m_wcsim_geom = 0;
   m_chain_geom ->SetBranchAddress("wcsimrootgeom",    &m_wcsim_geom);
 
   //set number of events
@@ -88,8 +88,8 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
   std::cerr << "OD PMTs are not currently stored in WCSimRootGeom. When they are TODO fill IDGeom & ODGeom depending on where the PMT is" << std::endl;
   m_chain_geom->GetEntry(0);
   for(int ipmt = 0; ipmt < m_wcsim_geom->GetWCNumPMT(); ipmt++) {
-    WCSimRootPMT pmt = m_wcsim_geom->GetPMT(ipmt);
-    PMTInfo pmt_light(pmt.GetTubeNo(), pmt.GetPosition(0), pmt.GetPosition(1), pmt.GetPosition(2));
+    const WCSimRootPMT * pmt = m_wcsim_geom->GetPMTPtr(ipmt);
+    PMTInfo pmt_light(pmt->GetTubeNo(), pmt->GetPosition(0), pmt->GetPosition(1), pmt->GetPosition(2));
     m_data->IDGeom.push_back(pmt_light);
   }//ipmt
 
@@ -97,13 +97,6 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
   m_data->WCSimGeomTree = m_chain_geom;
   m_data->WCSimOptionsTree = m_chain_opt;
   m_data->WCSimEventTree = m_chain_event;
-  m_data->IDWCSimEvent_Raw = m_wcsim_event_ID;
-  m_data->ODWCSimEvent_Raw = m_wcsim_event_OD;
-
-  //setup the TObjArray to store the filenames
-  //int nfiles = m_chain_event->GetListOfFiles()->GetEntries();
-  m_data->CurrentWCSimFiles = new TObjArray();
-  m_data->CurrentWCSimFiles->SetOwner(true);
 
   //store the relevant options
   m_data->IsMC = true;
@@ -309,6 +302,7 @@ template <typename T> bool WCSimReader::CompareVariable(T v1, T v2, const char *
 }
 
 bool WCSimReader::Execute(){
+
   m_data->IDSamples.clear();
   m_data->ODSamples.clear();
 
@@ -333,15 +327,18 @@ bool WCSimReader::Execute(){
     return false;
   }
 
+  //make sure the event is pointed to in the data model
+  m_data->IDWCSimEvent_Raw = m_wcsim_event_ID;
+  m_data->ODWCSimEvent_Raw = m_wcsim_event_OD;
+
   //store the WCSim filename(s) and event number(s) for the current event(s)
-  m_data->CurrentWCSimFiles->Clear();
-  m_data->CurrentWCSimEventNums.clear();
-  TObjString * fname = new TObjString(m_chain_event->GetFile()->GetName());
-  int event_in_wcsim_file = m_current_event_num - m_chain_event->GetTreeOffset()[m_chain_event->GetTreeNumber()];
-  m_ss << "DEBUG: Current event is event " << event_in_wcsim_file << " from WCSim file " << fname->String() << " " << m_chain_event->GetTreeOffset()[m_chain_event->GetTreeNumber()];
+  m_data->CurrentWCSimFile.String() = m_chain_event->GetFile()->GetName();
+  m_data->CurrentWCSimEventNum      = m_current_event_num 
+    - m_chain_event->GetTreeOffset()[m_chain_event->GetTreeNumber()];
+  m_ss << "DEBUG: Current event is event " << m_data->CurrentWCSimEventNum
+       << " from WCSim file " << m_data->CurrentWCSimFile.String()
+       << " Tree offset is " << m_chain_event->GetTreeOffset()[m_chain_event->GetTreeNumber()];
   StreamToLog(DEBUG1);
-  m_data->CurrentWCSimFiles->Add(fname);
-  m_data->CurrentWCSimEventNums.push_back(event_in_wcsim_file);
 
   //store digit info in the transient data model
   //ID
@@ -450,17 +447,9 @@ bool WCSimReader::Finalise(){
   m_ss << "INFO: Read " << m_current_event_num << " WCSim events";
   StreamToLog(INFO);
 
-  delete m_data->CurrentWCSimFiles;
-
   delete m_chain_opt;
   delete m_chain_event;
   delete m_chain_geom;
-
-  delete m_wcsim_opt;
-  delete m_wcsim_event_ID;
-  if(m_wcsim_event_OD)
-    delete m_wcsim_event_OD;
-  delete m_wcsim_geom;
 
   return true;
 }

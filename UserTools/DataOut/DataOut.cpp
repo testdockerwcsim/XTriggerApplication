@@ -45,8 +45,8 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   else {
     m_data->ODWCSimEvent_Triggered = 0;
   }
-  fTreeEvent->Branch("wcsimfilename", &(m_data->CurrentWCSimFiles), bufsize, 0);
-  fTreeEvent->Branch("wcsimeventnums", &(m_data->CurrentWCSimEventNums), bufsize, 0);
+  fTreeEvent->Branch("wcsimfilename", &(m_data->CurrentWCSimFile));
+  fTreeEvent->Branch("wcsimeventnum", &(m_data->CurrentWCSimEventNum));
 
   //fill the output event-independent trees
   //There are 1 unique geom objects, so this is a simple clone of 1 entry
@@ -129,7 +129,9 @@ bool DataOut::Execute(){
   // It puts digits into the output event in the earliest trigger they belong to
 
   //get the WCSim event
-  (*m_data->IDWCSimEvent_Triggered) = (*(m_data->IDWCSimEvent_Raw));
+  // It's a shallow copy, but that's fine since we've already read & triggered
+  // the original WCSim event
+  m_data->IDWCSimEvent_Triggered = m_data->IDWCSimEvent_Raw;
   //prepare the subtriggers
   CreateSubEvents(m_data->IDWCSimEvent_Triggered);
   //remove the digits that aren't in the trigger window(s)
@@ -142,7 +144,7 @@ bool DataOut::Execute(){
   FinaliseSubEvents(m_data->IDWCSimEvent_Triggered);
   
   if(m_data->HasOD) {
-    (*m_data->ODWCSimEvent_Triggered) = (*(m_data->ODWCSimEvent_Raw));
+    m_data->ODWCSimEvent_Triggered = m_data->ODWCSimEvent_Raw;
     CreateSubEvents(m_data->ODWCSimEvent_Triggered);
     RemoveDigits(m_data->ODWCSimEvent_Triggered, fODNDigitPerPMTPerTriggerMap);
     MoveTracks(m_data->ODWCSimEvent_Triggered);
