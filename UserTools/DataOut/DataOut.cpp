@@ -13,6 +13,16 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   verbose = 0;
   m_variables.Get("verbose", verbose);
 
+  //Setup and start the stopwatch
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("nhits") : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch) m_stopwatch->Start();
+
   m_data= &data;
 
   //open the output file
@@ -89,6 +99,8 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   for(int i = 0; i <= m_data->ODNPMTs; i++)
     fODNDigitPerPMTPerTriggerMap[i] = std::map<int, bool>();
 
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
+
   return true;
 }
 
@@ -97,6 +109,7 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
 /////////////////////////////////////////////////////////////////
 
 bool DataOut::Execute(){
+  if(m_stopwatch) m_stopwatch->Start();
 
   Log("DEBUG: DataOut::Execute Starting", DEBUG1, verbose);
 
@@ -157,6 +170,8 @@ bool DataOut::Execute(){
 
   //increment event number
   fEvtNum++;
+
+  if(m_stopwatch) m_stopwatch->Stop();
 
   return true;
 }
@@ -321,6 +336,11 @@ unsigned int DataOut::TimeInTriggerWindowNoDelete(double time) {
 /////////////////////////////////////////////////////////////////
 
 bool DataOut::Finalise(){
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    m_stopwatch->Start();
+  }
+
   //multiple TFiles may be open. Ensure we save to the correct one
   fOutFile.cd(TString::Format("%s:/", fOutFilename.c_str()));
   fTreeEvent->Write();
@@ -332,6 +352,11 @@ bool DataOut::Finalise(){
     delete m_data->ODWCSimEvent_Triggered;
 
   delete fTriggers;
+
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    delete m_stopwatch;
+  }
 
   return true;
 }

@@ -11,6 +11,16 @@ bool ReconDataOut::Initialise(std::string configfile, DataModel &data){
   verbose = 0;
   m_variables.Get("verbose", verbose);
 
+  //Setup and start the stopwatch
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("nhits") : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch) m_stopwatch->Start();
+
   m_data= &data;
 
   //open the output file
@@ -49,11 +59,14 @@ bool ReconDataOut::Initialise(std::string configfile, DataModel &data){
 
   fEvtNum = 0;
 
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
+
   return true;
 }
 
 
 bool ReconDataOut::Execute(){
+  if(m_stopwatch) m_stopwatch->Start();
 
   const int nrecons = fInFilter->GetNRecons();
   ss << "DEBUG: Saving the result of " << nrecons << " reconstructions";
@@ -94,16 +107,28 @@ bool ReconDataOut::Execute(){
   //increment event number
   fEvtNum++;
 
+  if(m_stopwatch) m_stopwatch->Stop();
+
   return true;
 }
 
 
 bool ReconDataOut::Finalise(){
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    m_stopwatch->Start();
+  }
+
   //multiple TFiles may be open. Ensure we save to the correct one
   fOutFile.cd(TString::Format("%s:/", fOutFilename.c_str()));
   fTreeRecon->Write();
   fOutFile.Close();
   delete fTreeRecon;
+
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    delete m_stopwatch;
+  }
 
   return true;
 }

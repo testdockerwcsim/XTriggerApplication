@@ -11,6 +11,16 @@ bool ReconFilter::Initialise(std::string configfile, DataModel &data){
   verbose = 0;
   m_variables.Get("verbose", verbose);
 
+  //Setup and start the stopwatch
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("nhits") : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch) m_stopwatch->Start();
+
   m_data= &data;
 
   //parameters determining what to name the (pre)filtered RecoInfo objects
@@ -69,10 +79,13 @@ bool ReconFilter::Initialise(std::string configfile, DataModel &data){
     Log("WARN: No max_z_pos parameter found. Using a value of 2700 (cm)", WARN, verbose);
   }
 
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
+
   return true;
 }
 
 bool ReconFilter::Execute(){
+  if(m_stopwatch) m_stopwatch->Start();
 
   const int N = m_data->RecoInfo.GetNRecons();
   for(int irecon = 0; irecon < N; irecon++) {
@@ -103,11 +116,22 @@ bool ReconFilter::Execute(){
      << fOutFilter->GetNRecons() << " (" << fOutputFilterName << ")";
   StreamToLog(INFO);
 
+  if(m_stopwatch) m_stopwatch->Stop();
+
   return true;
 }
 
 
 bool ReconFilter::Finalise(){
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    m_stopwatch->Start();
+  }
+
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    delete m_stopwatch;
+  }
 
   return true;
 }

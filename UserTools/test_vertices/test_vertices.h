@@ -21,7 +21,10 @@ class test_vertices: public Tool {
 
  private:
 
-
+  /// The stopwatch, if we're using one
+  util::Stopwatch * m_stopwatch;
+  /// Image filename to save the histogram to, if required
+  std::string m_stopwatch_file;
 
 
 

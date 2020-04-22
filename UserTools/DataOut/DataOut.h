@@ -51,6 +51,11 @@ class DataOut: public Tool {
   std::map<int, std::map<int, bool> > fIDNDigitPerPMTPerTriggerMap;
   std::map<int, std::map<int, bool> > fODNDigitPerPMTPerTriggerMap;
 
+  /// The stopwatch, if we're using one
+  util::Stopwatch * m_stopwatch;
+  /// Image filename to save the histogram to, if required
+  std::string m_stopwatch_file;
+
   int verbose;
 
   std::stringstream ss;

@@ -30,6 +30,11 @@ class ReconFilter: public Tool {
   double fMaxRPos_cm;
   double fMaxZPos_cm;
 
+  /// The stopwatch, if we're using one
+  util::Stopwatch * m_stopwatch;
+  /// Image filename to save the histogram to, if required
+  std::string m_stopwatch_file;
+
   int verbose;
 
   std::stringstream ss;

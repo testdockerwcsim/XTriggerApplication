@@ -13,6 +13,16 @@ bool ReconRandomiser::Initialise(std::string configfile, DataModel &data){
   verbose = 0;
   m_variables.Get("verbose", verbose);
 
+  //Setup and start the stopwatch
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("nhits") : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch) m_stopwatch->Start();
+
   m_data= &data;
 
    //set number of events
@@ -94,11 +104,14 @@ bool ReconRandomiser::Initialise(std::string configfile, DataModel &data){
   fRandomDirection = false;
   //TODO set this to true if the user wants random directions
 
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
+
   return true;
 }
 
 
 bool ReconRandomiser::Execute(){
+  if(m_stopwatch) m_stopwatch->Start();
 
   //Determine how many vertices to generate
   const int N = fRand->Poisson(fNVerticesMean);
@@ -131,13 +144,24 @@ bool ReconRandomiser::Execute(){
   if(fCurrEvent >= fNEvents)
     m_data->vars.Set("StopLoop",1);
 
+  if(m_stopwatch) m_stopwatch->Stop();
+
   return true;
 }
 
 
 bool ReconRandomiser::Finalise(){
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    m_stopwatch->Start();
+  }
 
   delete fRand;
+
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    delete m_stopwatch;
+  }
 
   return true;
 }
