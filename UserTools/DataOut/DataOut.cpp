@@ -59,8 +59,8 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   else {
     m_data->ODWCSimEvent_Triggered = 0;
   }
-  m_event_tree->Branch("wcsimfilename", &(m_data->CurrentWCSimFiles), bufsize, 0);
-  m_event_tree->Branch("wcsimeventnums", &(m_data->CurrentWCSimEventNums), bufsize, 0);
+  m_event_tree->Branch("wcsimfilename", &(m_data->CurrentWCSimFile));
+  m_event_tree->Branch("wcsimeventnum", &(m_data->CurrentWCSimEventNum));
 
   //fill the output event-independent trees
   Log("DEBUG: DataOut::Initialise filling event-independent trees...", DEBUG2, m_verbose);
