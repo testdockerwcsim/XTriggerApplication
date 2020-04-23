@@ -22,7 +22,6 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data;
 
-
   double temp_m_trigger_search_window;
   double temp_m_trigger_search_window_step;
   double temp_m_trigger_save_window_pre;
@@ -87,7 +86,11 @@ bool NHits::Execute(){
 
     std::vector<int> trigger_ns;
     std::vector<int> trigger_ts;
-    GPU_daq::nhits_execute(is->m_PMTid, is->m_time_int, &trigger_ns, &trigger_ts);
+    std::vector<int> m_time_int;
+    for(unsigned int i = 0; i < is->m_time.size(); i++) {
+      m_time_int.push_back(is->m_time[i]);
+    }
+    GPU_daq::nhits_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
     for(int i=0; i<trigger_ns.size(); i++){
       m_data->IDTriggers.AddTrigger(kTriggerNDigits,
                                     trigger_ts[i] - m_trigger_save_window_pre,
@@ -141,7 +144,6 @@ void NHits::AlgNDigits(const SubSample * sample)
     int n_digits_in_window = current_digit - first_digit_in_window + 1; // +1 because difference is 0 when first digit is the only digit in window
     if( n_digits_in_window > m_trigger_threshold) {
       TimeDelta triggertime = sample->AbsoluteDigitTime(current_digit);
-
       m_ss << "DEBUG: Found NHits trigger in SubSample at " << triggertime;
       StreamToLog(DEBUG2);
       m_ss << "DEBUG: Advancing search by posttrigger_save_window " << m_trigger_save_window_post;

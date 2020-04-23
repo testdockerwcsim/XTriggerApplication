@@ -41,8 +41,6 @@ class SubSample{
   std::vector<TimeDelta::short_time_t> m_time;
   /// Vector of charges for all hits in SubSample. Unit: ?
   std::vector<float> m_charge;
-  std::vector<int> m_time_int;
-  std::vector<int> m_charge_int;
 
   /// Return the absolute time (timestamp + digit time) of a digit
   TimeDelta AbsoluteDigitTime(int index) const;

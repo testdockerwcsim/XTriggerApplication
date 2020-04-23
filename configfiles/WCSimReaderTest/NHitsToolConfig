@@ -8,3 +8,5 @@ trigger_od 0
 verbose 3
 DetectorFile inputfiles/detector.txt
 ParameterFile inputfiles/parameters.txt
+use_stopwatch 1
+#stopwatch_file nhits_stopwatch.pdf

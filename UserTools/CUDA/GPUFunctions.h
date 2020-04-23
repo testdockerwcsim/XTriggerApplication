@@ -38,6 +38,6 @@ int nhits_finalize();
 
 //int CUDAFunction(std::vector<int> PMTid, std::vector<int> time);
 
-};
+}
 
 #endif

@@ -9,14 +9,6 @@ SubSample::SubSample(std::vector<int> PMTid, std::vector<TimeDelta::short_time_t
   m_PMTid  = PMTid;
   m_time   = time;
   m_charge = charge;
-  m_time_int.clear();
-  m_charge_int.clear();
-  m_time_int.resize(m_time.size());
-  m_charge_int.resize(m_charge.size());
-  for(unsigned int i = 0; i < m_time.size(); i++) {
-    m_time_int[i] = m_time[i];
-    m_charge_int[i] = m_charge[i];
-  }
   m_timestamp = timestamp;
 }
 
@@ -27,10 +19,6 @@ void SubSample::SortByTime(){
   int save_PMTid;
   double save_charge;
 
-  m_time_int.clear();
-  m_charge_int.clear();
-  m_time_int.resize(m_time.size());
-  m_charge_int.resize(m_charge.size());
 
   for (i = 1; i < m_PMTid.size(); ++i) {
     save_time       = m_time[i];
@@ -44,8 +32,6 @@ void SubSample::SortByTime(){
     m_time[j]     = save_time;
     m_PMTid[j]    = save_PMTid;
     m_charge[j]   = save_charge;
-    m_time_int[j] = save_time;
-    m_charge_int[i] = save_charge;
   }//i
 }
 
@@ -160,13 +146,5 @@ bool SubSample::Append(const std::vector<int> PMTid, const std::vector<TimeDelta
     }
   }
 
-  m_time_int.clear();
-  m_charge_int.clear();
-  m_time_int.resize(m_time.size());
-  m_charge_int.resize(m_charge.size());
-  for(unsigned int i = 0; i < m_time.size(); i++) {
-    m_time_int[i] = m_time[i];
-    m_charge_int[i] = m_charge[i];
-  }
   return true;
 }
