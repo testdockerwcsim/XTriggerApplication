@@ -9,6 +9,9 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
 
+  m_verbose = 0;
+  m_variables.Get("verbose", m_verbose);
+
   m_data= &data;
 
   m_data->triggeroutput=false;
@@ -43,27 +46,27 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("num_threads_per_block_y",   m_num_threads_per_block_y);
   m_variables.Get("num_threads_per_block_x",   m_num_threads_per_block_x);
 
-  printf(" DetectorFile %s \n ", DetectorFile.c_str());
-  printf(" ParameterFile %s \n ",ParameterFile.c_str() );
-  printf(" m_distance_between_vertices %f \n ", m_distance_between_vertices);
-  printf(" m_wall_like_distance %f \n ", m_wall_like_distance);
-  printf(" m_water_like_threshold_number_of_pmts %f \n ", m_water_like_threshold_number_of_pmts);
-  printf(" m_wall_like_threshold_number_of_pmts %f \n ", m_wall_like_threshold_number_of_pmts);
-  printf(" m_coalesce_time %f \n ", m_coalesce_time);
-  printf(" m_trigger_gate_up %f \n ", m_trigger_gate_up);
-  printf(" m_trigger_gate_down %f \n ", m_trigger_gate_down);
-  printf(" m_output_txt %d \n ", m_output_txt);
-  printf(" m_correct_mode %d \n ", m_correct_mode);
-  printf(" m_n_direction_bins_theta %d \n ",   m_n_direction_bins_theta);
-  printf(" m_cylindrical_grid %d \n ",   m_cylindrical_grid);
-  printf(" m_costheta_cone_cut %f \n ",   m_costheta_cone_cut);
-  printf(" m_select_based_on_cone %d \n ",   m_select_based_on_cone);
-  printf(" m_write_output_mode %d \n ", m_write_output_mode);
-  printf(" m_max_n_hits_per_job %d \n ", m_max_n_hits_per_job);
-  printf(" m_trigger_threshold_adjust_for_noise %d \n ", m_trigger_threshold_adjust_for_noise);
-  printf(" m_num_blocks_y %d \n ",   m_num_blocks_y);
-  printf(" m_num_threads_per_block_y %d \n ",   m_num_threads_per_block_y);
-  printf(" m_num_threads_per_block_x %d \n ",   m_num_threads_per_block_x);
+  m_ss << " DetectorFile " << DetectorFile.c_str(); StreamToLog(INFO);
+  m_ss << " ParameterFile " << ParameterFile.c_str() ; StreamToLog(INFO);
+  m_ss << " m_distance_between_vertices " << m_distance_between_vertices; StreamToLog(INFO);
+  m_ss << " m_wall_like_distance " << m_wall_like_distance; StreamToLog(INFO);
+  m_ss << " m_water_like_threshold_number_of_pmts " << m_water_like_threshold_number_of_pmts; StreamToLog(INFO);
+  m_ss << " m_wall_like_threshold_number_of_pmts " << m_wall_like_threshold_number_of_pmts; StreamToLog(INFO);
+  m_ss << " m_coalesce_time " << m_coalesce_time; StreamToLog(INFO);
+  m_ss << " m_trigger_gate_up " << m_trigger_gate_up; StreamToLog(INFO);
+  m_ss << " m_trigger_gate_down " << m_trigger_gate_down; StreamToLog(INFO);
+  m_ss << " m_output_txt " << m_output_txt; StreamToLog(INFO);
+  m_ss << " m_correct_mode " << m_correct_mode; StreamToLog(INFO);
+  m_ss << " m_n_direction_bins_theta " <<   m_n_direction_bins_theta; StreamToLog(INFO);
+  m_ss << " m_cylindrical_grid " <<   m_cylindrical_grid; StreamToLog(INFO);
+  m_ss << " m_costheta_cone_cut " <<   m_costheta_cone_cut; StreamToLog(INFO);
+  m_ss << " m_select_based_on_cone " <<   m_select_based_on_cone; StreamToLog(INFO);
+  m_ss << " m_write_output_mode " << m_write_output_mode; StreamToLog(INFO);
+  m_ss << " m_max_n_hits_per_job " << m_max_n_hits_per_job; StreamToLog(INFO);
+  m_ss << " m_trigger_threshold_adjust_for_noise " << m_trigger_threshold_adjust_for_noise; StreamToLog(INFO);
+  m_ss << " m_num_blocks_y " <<   m_num_blocks_y; StreamToLog(INFO);
+  m_ss << " m_num_threads_per_block_y " <<   m_num_threads_per_block_y; StreamToLog(INFO);
+  m_ss << " m_num_threads_per_block_x " <<   m_num_threads_per_block_x; StreamToLog(INFO);
 
 
   //  gpu_daq_initialize(PMTFile,DetectorFile,ParameterFile);
@@ -150,7 +153,7 @@ bool test_vertices::Execute(){
 				    trigger_ts[i],
 				    std::vector<float>(1, trigger_ns[i]));
 
-      printf(" trigger! time  %d nhits %d \n", trigger_ts[i], trigger_ns[i]);
+      m_ss << " trigger! time "<< trigger_ts[i] << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
     }
 #else
     ;

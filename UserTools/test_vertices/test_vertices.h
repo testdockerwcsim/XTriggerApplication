@@ -41,7 +41,16 @@ class test_vertices: public Tool {
   int m_num_threads_per_block_x;
   int m_write_output_mode;
 
+  int m_verbose;
 
+  std::stringstream m_ss;
+
+  void StreamToLog(int level) {
+    Log(m_ss.str(), level, m_verbose);
+    m_ss.str("");
+  }
+
+  enum LogLevel {FATAL=-1, ERROR=0, WARN=1, INFO=2, DEBUG1=3, DEBUG2=4, DEBUG3=5};
 
 };
 
