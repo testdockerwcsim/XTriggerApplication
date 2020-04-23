@@ -98,7 +98,7 @@ bool NHits::Execute(){
                                     TimeDelta(trigger_ts[i]),
                                     std::vector<float>(1, trigger_ns[i]));
 
-      printf("trigger! time  %d nhits %d \n", trigger_ts[i], trigger_ns[i]);
+      m_ss << "trigger! time  " << trigger_ts[i] << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
     }
 #else
   // Make sure digit times are ordered in time
