@@ -14,6 +14,16 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
   m_verbose = 0;
   m_variables.Get("verbose", m_verbose);
 
+  //Setup and start the stopwatch
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("WCSimReader") : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch) m_stopwatch->Start();
+
   m_data= &data;
 
   //config reading
@@ -110,6 +120,8 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
     m_data->ODPMTDarkRate = 0;
     m_data->ODNPMTs = 0;
   }
+
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
   return true;
 }
@@ -302,6 +314,7 @@ template <typename T> bool WCSimReader::CompareVariable(T v1, T v2, const char *
 }
 
 bool WCSimReader::Execute(){
+  if(m_stopwatch) m_stopwatch->Start();
 
   m_data->IDSamples.clear();
   m_data->ODSamples.clear();
@@ -389,6 +402,8 @@ bool WCSimReader::Execute(){
   if(m_current_event_num >= m_n_events)
     m_data->vars.Set("StopLoop",1);
 
+  if(m_stopwatch) m_stopwatch->Stop();
+
   return true;
 }
 
@@ -410,8 +425,10 @@ SubSample WCSimReader::GetDigits()
     if (idigi == 0){
       // Store times relative to the first digit
       first_time = TimeDelta(digit->GetT());
+      m_ss << "DEBUG: 1st digit time before shifting: " << first_time;
+      StreamToLog(DEBUG1);
     }
-    float T = (TimeDelta(digit->GetT()) - first_time) / TimeDelta::ns;
+    TimeDelta::short_time_t T = (TimeDelta(digit->GetT()) - first_time) / TimeDelta::ns;
     float Q = digit->GetQ();
     PMTid.push_back(ID);
     time.push_back(T);
@@ -444,12 +461,22 @@ SubSample WCSimReader::GetDigits()
 }
 
 bool WCSimReader::Finalise(){
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    m_stopwatch->Start();
+  }
+
   m_ss << "INFO: Read " << m_current_event_num << " WCSim events";
   StreamToLog(INFO);
 
   delete m_chain_opt;
   delete m_chain_event;
   delete m_chain_geom;
+
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    delete m_stopwatch;
+  }
 
   return true;
 }
