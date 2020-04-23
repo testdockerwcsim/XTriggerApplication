@@ -22,21 +22,21 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data;
 
-  double temp_m_trigger_search_window;
-  double temp_m_trigger_search_window_step;
-  double temp_m_trigger_save_window_pre;
-  double temp_m_trigger_save_window_post;
+  double temp_trigger_search_window;
+  double temp_trigger_search_window_step;
+  double temp_trigger_save_window_pre;
+  double temp_trigger_save_window_post;
 
-  m_variables.Get("trigger_search_window",   temp_m_trigger_search_window);
-  m_variables.Get("trigger_search_window_step",   temp_m_trigger_search_window_step);
+  m_variables.Get("trigger_search_window",   temp_trigger_search_window);
+  m_variables.Get("trigger_search_window_step",   temp_trigger_search_window_step);
   m_variables.Get("trigger_threshold",            m_trigger_threshold);
-  m_variables.Get("pretrigger_save_window",  temp_m_trigger_save_window_pre);
-  m_variables.Get("posttrigger_save_window", temp_m_trigger_save_window_post);
+  m_variables.Get("pretrigger_save_window",  temp_trigger_save_window_pre);
+  m_variables.Get("posttrigger_save_window", temp_trigger_save_window_post);
   m_variables.Get("trigger_od",                   m_trigger_OD);
 
-  m_trigger_search_window = TimeDelta(temp_m_trigger_search_window);
-  m_trigger_save_window_pre = TimeDelta(temp_m_trigger_save_window_pre);
-  m_trigger_save_window_post = TimeDelta(temp_m_trigger_save_window_post);
+  m_trigger_search_window = TimeDelta(temp_trigger_search_window);
+  m_trigger_save_window_pre = TimeDelta(temp_trigger_save_window_pre);
+  m_trigger_save_window_post = TimeDelta(temp_trigger_save_window_post);
 
   bool adjust_for_noise;
   m_variables.Get("trigger_threshold_adjust_for_noise", adjust_for_noise);
@@ -63,7 +63,7 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
 
   m_variables.Get("ParameterFile",ParameterFile);
 
-  GPU_daq::nhits_initialize_ToolDAQ(ParameterFile,m_data->IDGeom.size(),temp_m_trigger_search_window, temp_m_trigger_search_window_step, m_trigger_threshold, temp_m_trigger_save_window_pre, temp_m_trigger_save_window_post);
+  GPU_daq::nhits_initialize_ToolDAQ(ParameterFile,m_data->IDGeom.size(),temp_trigger_search_window, temp_trigger_search_window_step, m_trigger_threshold, temp_trigger_save_window_pre, temp_trigger_save_window_post);
 #endif
 
   if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
