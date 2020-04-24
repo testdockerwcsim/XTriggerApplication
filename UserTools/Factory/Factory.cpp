@@ -27,6 +27,7 @@ if (tool=="PrepareSubSamples") ret=new PrepareSubSamples;
 #ifdef EBONSAIEXISTS
 if (tool=="EnergeticBONSAI") ret=new EnergeticBONSAI;
 #endif //EBONSAIEXISTS
+  if (tool=="WCSimRootEventReset") ret=new WCSimRootEventReset;
 return ret;
 }
 

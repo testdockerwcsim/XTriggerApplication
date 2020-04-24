@@ -21,3 +21,4 @@
 #ifdef EBONSAIEXISTS
 #include "EnergeticBONSAI/EnergeticBONSAI.cpp"
 #endif //EBONSAIEXISTS
+#include "WCSimRootEventReset/WCSimRootEventReset.cpp"
