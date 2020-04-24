@@ -78,14 +78,14 @@ int GPU_daq::nhits_initialize(){
     start_c_clock();
   read_user_parameters_nhits();
   if( use_verbose ){
-    printf(" --- user parameters \n");
-    printf(" distance between test vertices = %f cm \n", distance_between_vertices);
-    printf(" time step size = %d ns \n", time_step_size);
-    printf(" water_like_threshold_number_of_pmts = %d \n", water_like_threshold_number_of_pmts);
-    printf(" coalesce_time = %f ns \n", coalesce_time);
-    printf(" trigger_gate_up = %f ns \n", trigger_gate_up);
-    printf(" trigger_gate_down = %f ns \n", trigger_gate_down);
-    printf(" max_n_hits_per_job = %d \n", max_n_hits_per_job);
+    printf(" [2] --- user parameters \n");
+    printf(" [2] distance between test vertices = %f cm \n", distance_between_vertices);
+    printf(" [2] time step size = %d ns \n", time_step_size);
+    printf(" [2] water_like_threshold_number_of_pmts = %d \n", water_like_threshold_number_of_pmts);
+    printf(" [2] coalesce_time = %f ns \n", coalesce_time);
+    printf(" [2] trigger_gate_up = %f ns \n", trigger_gate_up);
+    printf(" [2] trigger_gate_down = %f ns \n", trigger_gate_down);
+    printf(" [2] max_n_hits_per_job = %d \n", max_n_hits_per_job);
   }
   if( use_timing )
     elapsed_parameters = stop_c_clock();
@@ -176,11 +176,11 @@ int GPU_daq::nhits_initialize_ToolDAQ(std::string ParameterFile,int nPMTs, int f
   output_file_base = "all_hits_emerald_threshold_";
   //  if( !read_the_pmts() ) return 0;
   {
-    printf(" --- read pmts \n");
+    printf(" [2] --- read pmts \n");
     n_PMTs = nPMTs;
       
     if( !n_PMTs ) return 0;
-    printf(" detector contains %d PMTs \n", n_PMTs);
+    printf(" [2] detector contains %d PMTs \n", n_PMTs);
   }
   if( use_timing )
     elapsed_pmts = stop_c_clock();
@@ -219,13 +219,13 @@ int GPU_daq::nhits_initialize_ToolDAQ(std::string ParameterFile,int nPMTs, int f
     nhits_threshold_max = fTriggerThreshold;
   }
   if( use_verbose ){
-    printf(" --- user parameters \n");
-    printf(" time step size = %d ns \n", time_step_size);
-    printf(" trigger_gate_up = %f ns \n", trigger_gate_up);
-    printf(" trigger_gate_down = %f ns \n", trigger_gate_down);
-    printf(" max_n_hits_per_job = %d \n", max_n_hits_per_job);
-    printf(" nhits_window = %d \n", nhits_window);
-    printf(" nhits_threshold_min = %d, max = %d \n", nhits_threshold_min, nhits_threshold_max);
+    printf(" [2] --- user parameters \n");
+    printf(" [2] time step size = %d ns \n", time_step_size);
+    printf(" [2] trigger_gate_up = %f ns \n", trigger_gate_up);
+    printf(" [2] trigger_gate_down = %f ns \n", trigger_gate_down);
+    printf(" [2] max_n_hits_per_job = %d \n", max_n_hits_per_job);
+    printf(" [2] nhits_window = %d \n", nhits_window);
+    printf(" [2] nhits_threshold_min = %d, max = %d \n", nhits_threshold_min, nhits_threshold_max);
   }
   if( use_timing )
     elapsed_parameters = stop_c_clock();
@@ -271,7 +271,7 @@ int GPU_daq::nhits_execute(){
 
   while( set_input_file_for_event(n_events) ){
 
-    printf(" ------ analyzing event %d with %d nthresholds (min %d, max %d) \n", 
+    printf(" [2] ------ analyzing event %d with %d nthresholds (min %d, max %d) \n", 
 	   n_events+1, nthresholds, nhits_threshold_min, nhits_threshold_max);
 
     memset(ntriggers, 0, nthresholds*sizeof(unsigned int));
@@ -354,7 +354,7 @@ int GPU_daq::nhits_execute(){
     unsigned int start_time = 0;
     unsigned int min_time = 0;
 
-    printf(" --- execute kernel nhits \n");
+    printf(" [2] --- execute kernel nhits \n");
     while(start_time <= the_max_time) {
       memset(triggerfound, false, nthresholds*sizeof(bool));
       checkCudaErrors(cudaMemset(device_n_pmts_nhits, 0, 1*sizeof(unsigned int)));
@@ -373,13 +373,13 @@ int GPU_daq::nhits_execute(){
       for(unsigned int u=0; u<nthresholds; u++){
 	if( start_times[u] <= start_time ){ // initially true as both zero
 
-	  //	  printf(" %d n_digits found in trigger window [%d, %d] \n", host_n_pmts_nhits[0], start_time, start_time + nhits_window);
+	  //	  printf(" [2] %d n_digits found in trigger window [%d, %d] \n", host_n_pmts_nhits[0], start_time, start_time + nhits_window);
 
 
 	  if( host_n_pmts_nhits[0] > nhits_threshold_min + u ){
 	    triggerfound[u] = true;
 	    ntriggers[u] ++;
-	    //	    printf(" trigger! n triggers %d \n", ntriggers[u]);
+	    //	    printf(" [2] trigger! n triggers %d \n", ntriggers[u]);
 	  }
 	  
 	  if( triggerfound[u] )
@@ -400,7 +400,7 @@ int GPU_daq::nhits_execute(){
       elapsed_kernel_correct_times_and_get_n_pmts_per_time_bin += stop_cuda_clock();
 
     for(unsigned int u=0; u<nthresholds; u++)
-      printf(" --- threshold %d found %d triggers \n", nhits_threshold_min+u, ntriggers[u]);
+      printf(" [2] --- threshold %d found %d triggers \n", nhits_threshold_min+u, ntriggers[u]);
 
     //////////////////
     // write output //
@@ -417,7 +417,7 @@ int GPU_daq::nhits_execute(){
     if( use_timing )
       start_cuda_clock();
     if( use_verbose )
-      printf(" --- deallocate memory \n");
+      printf(" [2] --- deallocate memory \n");
     free_event_memories_nhits();
     if( use_timing )
       elapsed_free += stop_cuda_clock();
@@ -432,7 +432,7 @@ int GPU_daq::nhits_execute(){
   free(start_times);
 
 
-  printf(" ------ analyzed %d events \n", n_events);
+  printf(" [2] ------ analyzed %d events \n", n_events);
 
   ///////////////////////
   // normalize timings //
@@ -471,7 +471,7 @@ int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time, std::v
   //  while( set_input_file_for_event(n_events) ){
   while(1){
 
-    printf(" ------ analyzing event %d with %d nthresholds (min %d, max %d) \n", 
+    printf(" [2] ------ analyzing event %d with %d nthresholds (min %d, max %d) \n", 
 	   n_events+1, nthresholds, nhits_threshold_min, nhits_threshold_max);
 
     memset(ntriggers, 0, nthresholds*sizeof(unsigned int));
@@ -555,7 +555,7 @@ int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time, std::v
     unsigned int start_time = earliest_time;
     unsigned int min_time = 0;
 
-    printf(" --- execute kernel nhits starting from time %d max %d \n", start_time, the_max_time);
+    printf(" [2] --- execute kernel nhits starting from time %d max %d \n", start_time, the_max_time);
     while(start_time <= the_max_time) {
       memset(triggerfound, false, nthresholds*sizeof(bool));
       checkCudaErrors(cudaMemset(device_n_pmts_nhits, 0, 1*sizeof(unsigned int)));
@@ -572,21 +572,21 @@ int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time, std::v
       min_time = the_max_time+1;
 
       // F. Nova verbose output
-      //      printf(" interval (%d, %d) has %d hits \n", start_time, start_time + nhits_window, host_n_pmts_nhits[0]);
+      //      printf(" [2] interval (%d, %d) has %d hits \n", start_time, start_time + nhits_window, host_n_pmts_nhits[0]);
 
       for(unsigned int u=0; u<nthresholds; u++){
 	if( start_times[u] <= start_time ){ // initially true as both zero
 
-	  //	  printf(" %d n_digits found in trigger window [%d, %d] \n", host_n_pmts_nhits[0], start_time, start_time + nhits_window);
+	  //	  printf(" [2] %d n_digits found in trigger window [%d, %d] \n", host_n_pmts_nhits[0], start_time, start_time + nhits_window);
 
 
 	  if( host_n_pmts_nhits[0] > nhits_threshold_min + u ){
 	    triggerfound[u] = true;
 	    ntriggers[u] ++;
-	    //	    printf(" trigger! n triggers %d \n", ntriggers[u]);
+	    //	    printf(" [2] trigger! n triggers %d \n", ntriggers[u]);
 
 	    // F. Nova verbose output
-	    //printf(" found trigger in interval (%d, %d) with %d hits \n", start_time, start_time + nhits_window, host_n_pmts_nhits[0]);
+	    //printf(" [2] found trigger in interval (%d, %d) with %d hits \n", start_time, start_time + nhits_window, host_n_pmts_nhits[0]);
 	    trigger_ns->push_back(host_n_pmts_nhits[0]);
 	    trigger_ts->push_back(start_time + nhits_window - time_step_size);
 
@@ -610,7 +610,7 @@ int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time, std::v
       elapsed_kernel_correct_times_and_get_n_pmts_per_time_bin += stop_cuda_clock();
 
     for(unsigned int u=0; u<nthresholds; u++)
-      printf(" --- threshold %d found %d triggers \n", nhits_threshold_min+u, ntriggers[u]);
+      printf(" [2] --- threshold %d found %d triggers \n", nhits_threshold_min+u, ntriggers[u]);
 
     //////////////////
     // write output //
@@ -627,7 +627,7 @@ int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time, std::v
     if( use_timing )
       start_cuda_clock();
     if( use_verbose )
-      printf(" --- deallocate memory \n");
+      printf(" [2] --- deallocate memory \n");
     free_event_memories_nhits();
     if( use_timing )
       elapsed_free += stop_cuda_clock();
@@ -643,7 +643,7 @@ int GPU_daq::nhits_execute(std::vector<int> PMTid, std::vector<int> time, std::v
   free(start_times);
 
 
-  printf(" ------ analyzed %d events \n", n_events);
+  printf(" [2] ------ analyzed %d events \n", n_events);
 
   ///////////////////////
   // normalize timings //
@@ -678,7 +678,7 @@ int GPU_daq::nhits_finalize(){
   if( use_timing )
     start_cuda_clock();
   if( use_verbose )
-    printf(" --- deallocate tofs memory \n");
+    printf(" [2] --- deallocate tofs memory \n");
   free_global_memories();
   if( use_timing )
     elapsed_tofs_free = stop_cuda_clock();
@@ -692,7 +692,7 @@ int GPU_daq::nhits_finalize(){
   if( use_timing )
     start_cuda_clock();
   if( use_verbose )
-    printf(" --- reset device \n");
+    printf(" [2] --- reset device \n");
   //  cudaDeviceReset();
   if( use_timing )
     elapsed_reset = stop_cuda_clock();
@@ -703,32 +703,32 @@ int GPU_daq::nhits_finalize(){
   // print timing //
   //////////////////
   if( use_timing ){
-    printf(" user parameters time : %f ms \n", elapsed_parameters);
-    printf(" read pmts execution time : %f ms \n", elapsed_pmts);
-    printf(" read detector execution time : %f ms \n", elapsed_detector);
-    printf(" make test vertices execution time : %f ms \n", elapsed_vertices);
-    printf(" setup threads candidates execution time : %f ms \n", elapsed_threads_candidates);
-    printf(" make table of tofs execution time : %f ms \n", elapsed_tof);
-    printf(" allocate tofs memory on device execution time : %f ms \n", elapsed_memory_tofs_dev);
-    printf(" fill tofs memory on device execution time : %f ms \n", elapsed_tofs_copy_dev);
-    printf(" deallocate tofs memory execution time : %f ms \n", elapsed_tofs_free);
-    printf(" device reset execution time : %f ms \n", elapsed_reset);
-    printf(" read input execution time : %f ms (%f) \n", elapsed_input, elapsed_input/elapsed_total);
-    printf(" allocate candidates memory on host execution time : %f ms (%f) \n", elapsed_memory_candidates_host, elapsed_memory_candidates_host/elapsed_total);
-    printf(" setup threads execution time : %f ms (%f) \n", elapsed_threads, elapsed_threads/elapsed_total);
-    printf(" allocate memory on device execution time : %f ms (%f) \n", elapsed_memory_dev, elapsed_memory_dev/elapsed_total);
-    printf(" fill memory on device execution time : %f ms (%f) \n", elapsed_copy_dev, elapsed_copy_dev/elapsed_total);
-    printf(" correct kernel execution time : %f ms (%f) \n", elapsed_kernel_correct_times_and_get_n_pmts_per_time_bin, elapsed_kernel_correct_times_and_get_n_pmts_per_time_bin/elapsed_total);
-    printf(" allocate candidates memory on device execution time : %f ms (%f) \n", elapsed_candidates_memory_dev, elapsed_candidates_memory_dev/elapsed_total);
-    printf(" copy candidates to host execution time : %f ms (%f) \n", elapsed_candidates_copy_host, elapsed_candidates_copy_host/elapsed_total);
-    printf(" choose candidates execution time : %f ms (%f) \n", choose_candidates, choose_candidates/elapsed_total);
-    printf(" candidates kernel execution time : %f ms (%f) \n", elapsed_candidates_kernel, elapsed_candidates_kernel/elapsed_total);
-    printf(" coalesce triggers execution time : %f ms (%f) \n", elapsed_coalesce, elapsed_coalesce/elapsed_total);
-    printf(" separate triggers into gates execution time : %f ms (%f) \n", elapsed_gates, elapsed_gates/elapsed_total);
-    printf(" write output execution time : %f ms (%f) \n", elapsed_write_output, elapsed_write_output/elapsed_total);
-    printf(" deallocate memory execution time : %f ms (%f) \n", elapsed_free, elapsed_free/elapsed_total);
+    printf(" [2] user parameters time : %f ms \n", elapsed_parameters);
+    printf(" [2] read pmts execution time : %f ms \n", elapsed_pmts);
+    printf(" [2] read detector execution time : %f ms \n", elapsed_detector);
+    printf(" [2] make test vertices execution time : %f ms \n", elapsed_vertices);
+    printf(" [2] setup threads candidates execution time : %f ms \n", elapsed_threads_candidates);
+    printf(" [2] make table of tofs execution time : %f ms \n", elapsed_tof);
+    printf(" [2] allocate tofs memory on device execution time : %f ms \n", elapsed_memory_tofs_dev);
+    printf(" [2] fill tofs memory on device execution time : %f ms \n", elapsed_tofs_copy_dev);
+    printf(" [2] deallocate tofs memory execution time : %f ms \n", elapsed_tofs_free);
+    printf(" [2] device reset execution time : %f ms \n", elapsed_reset);
+    printf(" [2] read input execution time : %f ms (%f) \n", elapsed_input, elapsed_input/elapsed_total);
+    printf(" [2] allocate candidates memory on host execution time : %f ms (%f) \n", elapsed_memory_candidates_host, elapsed_memory_candidates_host/elapsed_total);
+    printf(" [2] setup threads execution time : %f ms (%f) \n", elapsed_threads, elapsed_threads/elapsed_total);
+    printf(" [2] allocate memory on device execution time : %f ms (%f) \n", elapsed_memory_dev, elapsed_memory_dev/elapsed_total);
+    printf(" [2] fill memory on device execution time : %f ms (%f) \n", elapsed_copy_dev, elapsed_copy_dev/elapsed_total);
+    printf(" [2] correct kernel execution time : %f ms (%f) \n", elapsed_kernel_correct_times_and_get_n_pmts_per_time_bin, elapsed_kernel_correct_times_and_get_n_pmts_per_time_bin/elapsed_total);
+    printf(" [2] allocate candidates memory on device execution time : %f ms (%f) \n", elapsed_candidates_memory_dev, elapsed_candidates_memory_dev/elapsed_total);
+    printf(" [2] copy candidates to host execution time : %f ms (%f) \n", elapsed_candidates_copy_host, elapsed_candidates_copy_host/elapsed_total);
+    printf(" [2] choose candidates execution time : %f ms (%f) \n", choose_candidates, choose_candidates/elapsed_total);
+    printf(" [2] candidates kernel execution time : %f ms (%f) \n", elapsed_candidates_kernel, elapsed_candidates_kernel/elapsed_total);
+    printf(" [2] coalesce triggers execution time : %f ms (%f) \n", elapsed_coalesce, elapsed_coalesce/elapsed_total);
+    printf(" [2] separate triggers into gates execution time : %f ms (%f) \n", elapsed_gates, elapsed_gates/elapsed_total);
+    printf(" [2] write output execution time : %f ms (%f) \n", elapsed_write_output, elapsed_write_output/elapsed_total);
+    printf(" [2] deallocate memory execution time : %f ms (%f) \n", elapsed_free, elapsed_free/elapsed_total);
   }
-  printf(" total execution time : %f ms \n", elapsed_total);
+  printf(" [2] total execution time : %f ms \n", elapsed_total);
 
   return 1;
 
