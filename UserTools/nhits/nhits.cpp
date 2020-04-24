@@ -166,9 +166,9 @@ void NHits::AlgNDigits(const SubSample * sample)
       StreamToLog(DEBUG2);
 
       triggers->AddTrigger(kTriggerNDigits,
-                           TimeDelta(triggertime) - m_trigger_save_window_pre + sample->m_timestamp,
-                           TimeDelta(triggertime) + m_trigger_save_window_post + sample->m_timestamp,
-                           TimeDelta(triggertime) + sample->m_timestamp,
+                           triggertime - m_trigger_save_window_pre + sample->m_timestamp,
+                           triggertime + m_trigger_save_window_post + sample->m_timestamp,
+                           triggertime + sample->m_timestamp,
                            std::vector<float>(1, n_digits));
     }
   }//loop over Digits
