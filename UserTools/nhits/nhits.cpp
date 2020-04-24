@@ -98,9 +98,9 @@ bool NHits::Execute(){
     GPU_daq::nhits_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
     for(int i=0; i<trigger_ns.size(); i++){
       m_data->IDTriggers.AddTrigger(kTriggerNDigits,
-                                    TimeDelta(trigger_ts[i]) - m_trigger_save_window_pre,
-                                    TimeDelta(trigger_ts[i]) + m_trigger_save_window_post,
-                                    TimeDelta(trigger_ts[i]),
+                                    TimeDelta(trigger_ts[i]) - m_trigger_save_window_pre + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) + m_trigger_save_window_post + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) + is->m_timestamp,
                                     std::vector<float>(1, trigger_ns[i]));
 
       m_ss << "trigger! time  " << trigger_ts[i] << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
@@ -166,9 +166,9 @@ void NHits::AlgNDigits(const SubSample * sample)
       StreamToLog(DEBUG2);
 
       triggers->AddTrigger(kTriggerNDigits,
-                           TimeDelta(triggertime) - m_trigger_save_window_pre,
-                           TimeDelta(triggertime) + m_trigger_save_window_post,
-                           TimeDelta(triggertime),
+                           TimeDelta(triggertime) - m_trigger_save_window_pre + sample->m_timestamp,
+                           TimeDelta(triggertime) + m_trigger_save_window_post + sample->m_timestamp,
+                           TimeDelta(triggertime) + sample->m_timestamp,
                            std::vector<float>(1, n_digits));
     }
   }//loop over Digits
