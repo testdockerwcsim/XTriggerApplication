@@ -98,8 +98,8 @@ bool NHits::Execute(){
     GPU_daq::nhits_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
     for(int i=0; i<trigger_ns.size(); i++){
       m_data->IDTriggers.AddTrigger(kTriggerNDigits,
-                                    TimeDelta(trigger_ts[i] - m_trigger_save_window_pre),
-                                    TimeDelta(trigger_ts[i] + m_trigger_save_window_post),
+                                    TimeDelta(trigger_ts[i]) - m_trigger_save_window_pre,
+                                    TimeDelta(trigger_ts[i]) + m_trigger_save_window_post,
                                     TimeDelta(trigger_ts[i]),
                                     std::vector<float>(1, trigger_ns[i]));
 
@@ -166,8 +166,8 @@ void NHits::AlgNDigits(const SubSample * sample)
       StreamToLog(DEBUG2);
 
       triggers->AddTrigger(kTriggerNDigits,
-                           TimeDelta(triggertime - m_trigger_save_window_pre),
-                           TimeDelta(triggertime + m_trigger_save_window_post),
+                           TimeDelta(triggertime) - m_trigger_save_window_pre,
+                           TimeDelta(triggertime) + m_trigger_save_window_post,
                            TimeDelta(triggertime),
                            std::vector<float>(1, n_digits));
     }
