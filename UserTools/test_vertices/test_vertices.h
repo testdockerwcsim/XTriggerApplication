@@ -41,7 +41,10 @@ class test_vertices: public Tool {
   int m_num_threads_per_block_x;
   int m_write_output_mode;
 
+#ifdef GPU   
+  /// integer times to run over GPU card
   std::vector<int> m_time_int;
+#endif
 
   int m_verbose;
 

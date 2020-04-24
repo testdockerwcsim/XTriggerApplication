@@ -33,7 +33,10 @@ class NHits: public Tool {
   /// CPU version of the NDigits algorithm
   void AlgNDigits(const SubSample * samples);
 
+#ifdef GPU   
+  /// integer times to run over GPU card
   std::vector<int> m_time_int;
+#endif
 
   /// The stopwatch, if we're using one
   util::Stopwatch * m_stopwatch;
