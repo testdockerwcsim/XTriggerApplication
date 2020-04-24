@@ -214,7 +214,7 @@ void DataOut::CreateSubEvents(WCSimRootEvent * WCSimEvent)
     d->SetT(time);
   }
 
-  // Change trigger times and create new SuEvents where necessary
+  // Change trigger times and create new SubEvents where necessary
   for(int i = 0; i < n; i++) {
     if(i)
       WCSimEvent->AddSubEvent();
