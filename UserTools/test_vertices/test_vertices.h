@@ -41,6 +41,8 @@ class test_vertices: public Tool {
   int m_num_threads_per_block_x;
   int m_write_output_mode;
 
+  std::vector<int> m_time_int;
+
   int m_verbose;
 
   std::stringstream m_ss;

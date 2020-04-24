@@ -33,6 +33,8 @@ class NHits: public Tool {
   /// CPU version of the NDigits algorithm
   void AlgNDigits(const SubSample * samples);
 
+  std::vector<int> m_time_int;
+
   /// The stopwatch, if we're using one
   util::Stopwatch * m_stopwatch;
   /// Image filename to save the histogram to, if required

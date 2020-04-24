@@ -78,7 +78,7 @@ bool NHits::Execute(){
 
   std::vector<SubSample> & samples = m_trigger_OD ? (m_data->ODSamples) : (m_data->IDSamples);
 
-  m_ss << " qqq Number of data samples " << samples.size();
+  m_ss << " Number of data samples " << samples.size();
   StreamToLog(DEBUG1);
 
   for( std::vector<SubSample>::iterator is=samples.begin(); is!=samples.end(); ++is){
@@ -86,7 +86,7 @@ bool NHits::Execute(){
 
     std::vector<int> trigger_ns;
     std::vector<int> trigger_ts;
-    std::vector<int> m_time_int;
+    m_time_int.clear();
     for(unsigned int i = 0; i < is->m_time.size(); i++) {
       m_time_int.push_back(is->m_time[i]);
     }

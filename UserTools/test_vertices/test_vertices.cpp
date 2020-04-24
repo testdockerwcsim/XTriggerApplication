@@ -141,7 +141,7 @@ bool test_vertices::Execute(){
 
     std::vector<int> trigger_ns;
     std::vector<int> trigger_ts;
-    std::vector<int> m_time_int;
+    m_time_int.clear();
     for(unsigned int i = 0; i < is->m_time.size(); i++) {
       m_time_int.push_back(is->m_time[i]);
     }
