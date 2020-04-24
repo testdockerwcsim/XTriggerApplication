@@ -109,6 +109,13 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
  m_num_threads_per_block_x,
  m_write_output_mode
 );
+
+  int npmts = m_data->IDNPMTs;
+  double dark_rate_kHZ = m_data->IDPMTDarkRate;
+  double dark_rate_Hz = dark_rate_kHZ * 1000;
+  double average_occupancy = dark_rate_Hz * m_coalesce_time * npmts;
+  m_time_int.reserve(2*(int)average_occupancy);
+
 #endif
 
   // can acess variables directly like this and would be good if you could impliment in your code

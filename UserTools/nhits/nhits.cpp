@@ -40,18 +40,19 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
 
   bool adjust_for_noise;
   m_variables.Get("trigger_threshold_adjust_for_noise", adjust_for_noise);
-  if(adjust_for_noise) {
-    int npmts = m_trigger_OD ? m_data->ODNPMTs : m_data->IDNPMTs;
-    double dark_rate_kHZ = m_trigger_OD ? m_data->ODPMTDarkRate : m_data->IDPMTDarkRate;
-    double trigger_window_seconds = m_trigger_search_window / TimeDelta::s;
-    double dark_rate_Hz = dark_rate_kHZ * 1000;
-    double average_occupancy = dark_rate_Hz * trigger_window_seconds * npmts;
-
-    m_ss << "INFO: Average number of PMTs in detector active in a " << m_trigger_search_window
+  int npmts = m_trigger_OD ? m_data->ODNPMTs : m_data->IDNPMTs;
+  double dark_rate_kHZ = m_trigger_OD ? m_data->ODPMTDarkRate : m_data->IDPMTDarkRate;
+  double trigger_window_seconds = m_trigger_search_window / TimeDelta::s;
+  double dark_rate_Hz = dark_rate_kHZ * 1000;
+  double average_occupancy = dark_rate_Hz * trigger_window_seconds * npmts;
+  
+  m_ss << "INFO: Average number of PMTs in detector active in a " << m_trigger_search_window
        << "ns window with a dark noise rate of " << dark_rate_kHZ
        << "kHz is " << average_occupancy
        << " (" << npmts << " total PMTs)";
-    StreamToLog(INFO);
+  StreamToLog(INFO);
+
+  if(adjust_for_noise) {
     m_ss << "INFO: Updating the NDigits threshold, from " << m_trigger_threshold
        << " to " << m_trigger_threshold + round(average_occupancy) << std::endl;
     StreamToLog(INFO);
@@ -64,6 +65,10 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("ParameterFile",ParameterFile);
 
   GPU_daq::nhits_initialize_ToolDAQ(ParameterFile,m_data->IDGeom.size(),temp_trigger_search_window, temp_trigger_search_window_step, m_trigger_threshold, temp_trigger_save_window_pre, temp_trigger_save_window_post);
+
+
+  m_time_int.reserve(2*(int)average_occupancy);
+
 #endif
 
   if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
