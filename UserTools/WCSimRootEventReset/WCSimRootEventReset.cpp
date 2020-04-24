@@ -27,7 +27,7 @@ bool WCSimRootEventReset::Initialise(std::string configfile, DataModel &data){
   /// YOUR CODE HERE
 
 
-  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, verbose);
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
   return true;
 }
@@ -39,9 +39,12 @@ bool WCSimRootEventReset::Execute(){
 
   //Clear the WCSimRootEvents to prevent memory leaks
   // that happen if we've added more than 1 trigger to the
-  m_data->IDWCSimEvent_Triggered->Clear();
+  if(m_data->IDWCSimEvent_Triggered->GetNumberOfSubEvents())
+    m_data->IDWCSimEvent_Triggered->Clear();
   if(m_data->HasOD) {
-    m_data->ODWCSimEvent_Triggered->Clear();
+    if(m_data->IDWCSimEvent_Triggered->GetNumberOfSubEvents())
+      m_data->ODWCSimEvent_Triggered->Clear();
+  }
 
   if(m_stopwatch) m_stopwatch->Stop();
 
@@ -52,14 +55,14 @@ bool WCSimRootEventReset::Execute(){
 bool WCSimRootEventReset::Finalise(){
 
   if(m_stopwatch) {
-    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, verbose);
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
     m_stopwatch->Start();
   }
 
   //// YOUR CODE HERE
 
   if(m_stopwatch) {
-    Log(m_stopwatch->Result("Finalise"), INFO, verbose);
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
     delete m_stopwatch;
   }
 
