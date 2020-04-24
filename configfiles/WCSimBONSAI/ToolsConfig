@@ -6,3 +6,4 @@ bonsai1 BONSAI configfiles/WCSimBONSAI/BONSAIToolConfig
 enerbonsai1 EnergeticBONSAI configfiles/WCSimBONSAI/EnergeticBONSAIToolConfig
 reconout ReconDataOut configfiles/WCSimBONSAI/ReconDataOutToolConfig
 reconreset ReconReset configfiles/WCSimBONSAI/ReconResetToolConfig
+eventreset1 WCSimRootEventReset configfiles/WCSimBONSAI/WCSimRootEventResetConfig

@@ -5,3 +5,4 @@ WCSim_ASCI_Reader WCSimASCIReader configfiles/GPUtest/WCSimASCIReaderConfig
 GPU_Processor nhits configfiles/GPUtest/GPUProcessorConfig
 #GPU_Processor test_vertices configfiles/GPUtest/GPUProcessorConfig
 Trigger_Output TriggerOutput configfiles/GPUtest/TriggerOutputConfig
+eventreset1 WCSimRootEventReset configfiles/GPUtest/WCSimRootEventResetConfig
