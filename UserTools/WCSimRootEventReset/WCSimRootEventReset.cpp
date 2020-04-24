@@ -37,7 +37,11 @@ bool WCSimRootEventReset::Execute(){
 
   if(m_stopwatch) m_stopwatch->Start();
 
-  //// YOUR CODE HERE
+  //Clear the WCSimRootEvents to prevent memory leaks
+  // that happen if we've added more than 1 trigger to the
+  m_data->IDWCSimEvent_Triggered->Clear();
+  if(m_data->HasOD) {
+    m_data->ODWCSimEvent_Triggered->Clear();
 
   if(m_stopwatch) m_stopwatch->Stop();
 

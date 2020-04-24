@@ -1,21 +1,18 @@
 # WCSimRootEventReset
 
-WCSimRootEventReset
+WCSimRootEventReset clears WCSimRootEvents in the DataModel, in order to prevent memory leaks when there are multiple triggers in the object
 
 ## Data
 
-Describe any data formats WCSimRootEventReset creates, destroys, changes, analyzes, or its usage.
-
+Calls `Clear()` on these objects in the DataModel
+`IDWCSimEvent_Triggered`
+`ODWCSimEvent_Triggered`
 
 
 
 ## Configuration
 
-Describe any configuration variables for WCSimRootEventReset.
-
 ```
-param1 value1
-param2 value2
 use_stopwatch BOOL
 stopwatch_file FILENAME
 verbose LEVEL
