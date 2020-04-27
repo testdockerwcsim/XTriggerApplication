@@ -29,6 +29,8 @@ class NHits: public Tool {
   TimeDelta m_trigger_save_window_post;
   /// Trigger on OD digits, rather than ID digits?
   bool m_trigger_OD;
+  /// degrade data type from float to int
+  bool m_degrade_data;
 
   /// CPU version of the NDigits algorithm
   void AlgNDigits(const SubSample * samples);
