@@ -147,7 +147,7 @@ void NHits::AlgNDigits(const SubSample * sample)
     }else{
       //F. Nova degrade info from float to int to match GPU run
       int digit_time = (int)sample->m_time.at(current_digit);
-      while(TimeDelta(sample->m_time[first_digit_in_window]) < TimeDelta(digit_time) - m_trigger_search_window){
+      while(TimeDelta((int)sample->m_time[first_digit_in_window]) <= TimeDelta(digit_time) - m_trigger_search_window){
 	++first_digit_in_window;
       }
     }
