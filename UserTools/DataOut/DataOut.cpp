@@ -4,7 +4,6 @@
 DataOut::DataOut():Tool(){}
 
 /////////////////////////////////////////////////////////////////
-
 bool DataOut::Initialise(std::string configfile, DataModel &data){
 
   if(configfile!="")  m_variables.Initialise(configfile);
@@ -35,14 +34,14 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
 
   //other options
   m_save_multiple_hits_per_trigger = true;
-  m_variables.Get("save_multiple_digits_per_trigger", m_save_multiple_hits_per_trigger);
-  Log("WARN: TODO save_multiple_digits_per_trigger is not currently implemented", WARN, m_verbose);
+  m_variables.Get("save_multiple_hits_per_trigger", m_save_multiple_hits_per_trigger);
+  Log("WARN: TODO save_multiple_hits_per_trigger is not currently implemented", WARN, m_verbose);
   double trigger_offset_temp = 0;
   m_variables.Get("trigger_offset", trigger_offset_temp);
   m_trigger_offset = TimeDelta(trigger_offset_temp);
-  m_save_only_failed_digits = false;
-  m_variables.Get("save_only_failed_digits", m_save_only_failed_digits);
-  Log("WARN: TODO save_only_failed_digits is not currently implemented", WARN, m_verbose);
+  m_save_only_failed_hits = false;
+  m_variables.Get("save_only_failed_hits", m_save_only_failed_hits);
+  Log("WARN: TODO save_only_failed_hits is not currently implemented", WARN, m_verbose);
 
   //setup the out event tree
   Log("DEBUG: DataOut::Initialise setting up output event tree...", DEBUG2, m_verbose);
@@ -101,17 +100,6 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   m_all_triggers = new TriggerInfo();
   m_event_num = 0;
 
-  Log("DEBUG: DataOut::Initialise creating ID trigger maps...", DEBUG2, m_verbose);
-  m_ss << "DEBUG:   entries: " << m_data->IDNPMTs;
-  StreamToLog(DEBUG2);
-  for(int i = 0; i <= m_data->IDNPMTs; i++)
-    m_id_nhits_per_pmt_per_trigger[i] = std::map<int, bool>();
-  Log("DEBUG: DataOut::Initialise creating OD trigger maps...", DEBUG2, m_verbose);
-  m_ss << "DEBUG:   entries: " << m_data->ODNPMTs;
-  StreamToLog(DEBUG2);
-  for(int i = 0; i <= m_data->ODNPMTs; i++)
-    m_od_nhits_per_pmt_per_trigger[i] = std::map<int, bool>();
-
   if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
   return true;
@@ -125,11 +113,6 @@ bool DataOut::Execute(){
   if(m_stopwatch) m_stopwatch->Start();
 
   Log("DEBUG: DataOut::Execute Starting", DEBUG1, m_verbose);
-
-  for(int i = 0; i <= m_data->IDNPMTs; i++)
-    m_id_nhits_per_pmt_per_trigger[i].clear();
-  for(int i = 0; i <= m_data->ODNPMTs; i++)
-    m_od_nhits_per_pmt_per_trigger[i].clear();
 
   //Gather together all the trigger windows
   m_all_triggers->Clear();
@@ -151,8 +134,8 @@ bool DataOut::Execute(){
 
   //Note: the trigger ranges vector can contain overlapping ranges
   //we want to make sure the triggers output aren't overlapping
-  // This is actually handled in DataOut::FillDigits()
-  // It puts digits into the output event in the earliest trigger they belong to
+  // This is actually handled in DataOut::FillHits()
+  // It puts hits into the output event in the earliest trigger they belong to
 
   //Fill the WCSimRootEvent with hit/trigger information, and truth information (if available)
   ExecuteSubDet(m_data->IDWCSimEvent_Triggered, m_data->IDSamples, m_data->IDWCSimEvent_Raw);
@@ -187,13 +170,13 @@ void DataOut::ExecuteSubDet(WCSimRootEvent * wcsim_event, std::vector<SubSample>
   CreateSubEvents(wcsim_event);
 
   //Get the difference between the WCSim "date" and the time of the first TriggerApp trigger,
-  // in order for the digits to have the correct absolute time.
+  // in order for the hits to have the correct absolute time.
   // Also add the trigger offset from the config file
   TimeDelta time_shift = GetOffset(original_wcsim_event);
 
   //For every hit, if it's in a trigger window,
   //add it to the appropriate WCSimRootTrigger in the WCSimRootEvent
-  FillDigits(wcsim_event, time_shift, samples);
+  FillHits(wcsim_event, time_shift, samples);
 
   //If this is an MC file, we also need to add
   // - true tracks
@@ -201,7 +184,7 @@ void DataOut::ExecuteSubDet(WCSimRootEvent * wcsim_event, std::vector<SubSample>
   if(m_data->IsMC)
     AddTruthInfo(wcsim_event, original_wcsim_event, time_shift);
 
-  //Set some trigger header infromation that requires all the digits to be 
+  //Set some trigger header infromation that requires all the hits to be 
   // present to calculate e.g. sumq
   FinaliseSubEvents(wcsim_event);  
 }
@@ -226,7 +209,7 @@ TimeDelta DataOut::GetOffset(WCSimRootEvent * original_wcsim_event) {
   TimeDelta time_shift(0);
 
   if(m_data->IsMC) {
-    // Move all digit times in trigger 0 to be relative to that trigger,
+    // Move all hit times in trigger 0 to be relative to that trigger,
     // i.e. move them by the difference of the old header date and the
     // new taken from the trigger
     WCSimRootTrigger * trig0 = original_wcsim_event->GetTrigger(0);
@@ -251,7 +234,7 @@ TimeDelta DataOut::GetOffset(WCSimRootEvent * original_wcsim_event) {
   return time_shift;
 }
 /////////////////////////////////////////////////////////////////
-void DataOut::FillDigits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shift, std::vector<SubSample> & samples) {
+void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shift, std::vector<SubSample> & samples) {
   unsigned int trigger_window_to_check;
   TimeDelta time;
   std::vector<int> photon_id_temp;
@@ -261,8 +244,8 @@ void DataOut::FillDigits(WCSimRootEvent * wcsim_event, const TimeDelta & time_sh
     Log("WARN: TODO Sorting by time, and doing time window checks, will not be required after #49");
     is->SortByTime();
     //loop over every hit
-    const unsigned int ndigits = is->m_time.size();
-    for(int ihit = 0; ihit < ndigits; ihit++) {
+    const unsigned int nhits = is->m_time.size();
+    for(int ihit = 0; ihit < nhits; ihit++) {
       time = is->m_time[ihit];
       //hit time is before trigger window
       if(time < m_all_triggers->m_starttime.at(trigger_window_to_check))
@@ -277,8 +260,8 @@ void DataOut::FillDigits(WCSimRootEvent * wcsim_event, const TimeDelta & time_sh
       }
       //hit is in this window. Let's save it
 
-      // Move all digits by the *negative* shift. If 5 seconds are added to the
-      // trigger time, the digit times (relative to the trigger) must be moved 5
+      // Move all hits by the *negative* shift. If 5 seconds are added to the
+      // trigger time, the hit times (relative to the trigger) must be moved 5
       // seconds back, so they remain at the same absolute time.
       time -= time_shift / TimeDelta::ns; //Is the time shift in the right place?
       wcsim_event->GetTrigger(trigger_window_to_check)->AddCherenkovDigiHit(is->m_charge[ihit],
@@ -296,18 +279,18 @@ void DataOut::FinaliseSubEvents(WCSimRootEvent * wcsim_event) {
   const int n = m_all_triggers->m_N;
   for(int i = 0; i < n; i++) {
     WCSimRootTrigger * trig = wcsim_event->GetTrigger(i);
-    TClonesArray * digits = trig->GetCherenkovDigiHits();
+    TClonesArray * hits = trig->GetCherenkovDigiHits();
     double sumq = 0;
     int ntubeshit = 0;
     for(int j = 0; j < trig->GetNcherenkovdigihits_slots(); j++) {
-      WCSimRootCherenkovDigiHit * digi = (WCSimRootCherenkovDigiHit *)digits->At(j);
+      WCSimRootCherenkovDigiHit * digi = (WCSimRootCherenkovDigiHit *)hits->At(j);
       if(digi) {
 	sumq += digi->GetQ();
 	ntubeshit++;
       }
     }//j
     trig->SetSumQ(sumq);
-    //this is actually number of digits, not number of unique PMTs with digits
+    //this is actually number of hits, not number of unique PMTs with hits
     trig->SetNumDigitizedTubes(ntubeshit);
   }//i
 }
