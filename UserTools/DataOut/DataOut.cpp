@@ -68,9 +68,9 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   //There are 1 unique geom objects, so this is a simple clone of 1 entry
   if(m_data->IsMC) {
     Log("DEBUG:   Geometry...", DEBUG2, m_verbose);
-    m_tree_geom = m_data->WCSimGeomTree->CloneTree(1);
-    m_tree_geom->Write();
-    delete m_tree_geom;
+    TTree * geom_tree = m_data->WCSimGeomTree->CloneTree(1);
+    geom_tree->Write();
+    delete geom_tree;
   }
   else {
     Log("WARN: TODO Geometry tree filling is not yet implemented for data");
@@ -80,20 +80,20 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
   // plus a new branch with the wcsim filename 
   if(m_data->IsMC) {
     Log("DEBUG:   Options & file names...", DEBUG2, m_verbose);
-    m_tree_options = m_data->WCSimOptionsTree->CloneTree();
-    m_ss << "DEBUG:     entries: " << m_tree_options->GetEntries();
+    TTree * options_tree = m_data->WCSimOptionsTree->CloneTree();
+    m_ss << "DEBUG:     entries: " << options_tree->GetEntries();
     StreamToLog(DEBUG2);
     TObjString * wcsimfilename = new TObjString();
-    TBranch * branch = m_tree_options->Branch("wcsimfilename", &wcsimfilename);
-    for(int i = 0; i < m_tree_options->GetEntries(); i++) {
+    TBranch * branch = options_tree->Branch("wcsimfilename", &wcsimfilename);
+    for(int i = 0; i < options_tree->GetEntries(); i++) {
       m_data->WCSimOptionsTree->GetEntry(i);
-      m_tree_options->GetEntry(i);
+      options_tree->GetEntry(i);
       wcsimfilename->SetString(m_data->WCSimOptionsTree->GetFile()->GetName());
       branch->Fill();
     }//i
-    m_tree_options->Write();
+    options_tree->Write();
     delete wcsimfilename;
-    delete m_tree_options;
+    delete options_tree;
   }
 
   Log("DEBUG: DataOut::Initialise creating trigger info...", DEBUG2, m_verbose);

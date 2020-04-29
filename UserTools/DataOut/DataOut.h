@@ -53,8 +53,6 @@ class DataOut: public Tool {
   TFile * m_output_file;
   /// Tree contain WCSimRootEvent(s), and the original WCSim filename / event number
   TTree * m_event_tree;
-  TTree * m_tree_geom;
-  TTree * m_tree_options;
 
   /// Combined list of triggers from all sources (ID+OD)
   TriggerInfo * m_all_triggers;
