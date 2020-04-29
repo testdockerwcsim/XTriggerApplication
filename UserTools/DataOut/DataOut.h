@@ -26,18 +26,31 @@ class DataOut: public Tool {
 
 
  private:
-  void CreateSubEvents(WCSimRootEvent * WCSimEvent);
-  void FinaliseSubEvents(WCSimRootEvent * WCSimEvent);
-  void RemoveDigits(WCSimRootEvent * WCSimEvent,
-		    std::map<int, std::map<int, bool> > & NDigitPerPMTPerTriggerMap);
-  void MoveTracks(WCSimRootEvent * WCSimEvent);
-  int  TimeInTriggerWindow(TimeDelta time);
-  unsigned int TimeInTriggerWindowNoDelete(TimeDelta time);
+  /// Runs other methods to take information from the DataModel and create/populate the WCSimRootEvent
+  void ExecuteSubDet(WCSimRootEvent * wcsim_event, std::vector<SubSample> & samples, WCSimRootEvent * original_wcsim_event = 0);
+  /// If there are multiple triggers in the event,
+  ///  create subevents (i.e. new WCSimRootTrigger's) in the WCSimRootEvent
+  /// Also sets the time correctly
+  void CreateSubEvents(WCSimRootEvent * wcsim_event);
+  /// Get the difference between the WCSim "date" and the time of the first TriggerApp trigger,
+  ///  in order for the digits to have the correct absolute time.
+  ///  Also add the trigger offset from the config file
+  TimeDelta GetOffset(WCSimRootEvent * original_wcsim_event = 0);
+  /// For every hit, if it's in a trigger window,
+  ///  add it to the appropriate WCSimRootTrigger in the WCSimRootEvent
+  void FillDigits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shift, std::vector<SubSample> & samples);
+  /// If this is an MC file, we also need to add
+  /// - true tracks
+  /// - true hits
+  void AddTruthInfo(WCSimRootEvent * wcsim_event, WCSimRootEvent * original_wcsim_event, const TimeDelta & time_shift);
+  //Set some trigger header infromation that requires all the digits to be 
+  // present to calculate e.g. sumq
+  void FinaliseSubEvents(WCSimRootEvent * wcsim_event);
 
   /// Output ROOT filename that this tool RECREATE's
   std::string m_output_filename;
   /// Output ROOT file
-  TFile m_output_file;
+  TFile * m_output_file;
   /// Tree contain WCSimRootEvent(s), and the original WCSim filename / event number
   TTree * m_event_tree;
   TTree * m_tree_geom;
@@ -46,7 +59,7 @@ class DataOut: public Tool {
   /// Combined list of triggers from all sources (ID+OD)
   TriggerInfo * m_all_triggers;
   /// A time used to offset all digit times. Set by config file
-  double m_trigger_offset;
+  TimeDelta m_trigger_offset;
 
   /// Current event number
   int m_event_num;
