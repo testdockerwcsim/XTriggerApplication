@@ -155,58 +155,36 @@ void NHits::AlgNDigits(const SubSample * sample)
 
     // if # of digits in window over threshold, issue trigger
     int n_digits_in_window = current_digit - first_digit_in_window + 1; // +1 because difference is 0 when first digit is the only digit in window
-    if( !m_degrade_CPU ){
-      if( n_digits_in_window > m_trigger_threshold) {
-	TimeDelta triggertime = sample->AbsoluteDigitTime(current_digit);
-	m_ss << "DEBUG: Found NHits trigger in SubSample at " << triggertime;
-	StreamToLog(DEBUG2);
-	m_ss << "DEBUG: Advancing search by posttrigger_save_window " << m_trigger_save_window_post;
-	StreamToLog(DEBUG2);
-	while(sample->AbsoluteDigitTime(current_digit) < triggertime + m_trigger_save_window_post){
-	  ++current_digit;
-	  if (current_digit >= ndigits){
-	    // Break if we run out of digits
-	    break;
-	  }
-	}
-	--current_digit; // We want the last digit *within* post-trigger-window
-	int n_digits = current_digit - first_digit_in_window + 1;
-	m_ss << "DEBUG: Number of digits between (trigger_time - trigger_search_window) and (trigger_time + posttrigger_save_window):" << n_digits;
-	StreamToLog(DEBUG2);
 
-	triggers->AddTrigger(kTriggerNDigits,
-			     triggertime - m_trigger_save_window_pre + sample->m_timestamp,
-			     triggertime + m_trigger_save_window_post + sample->m_timestamp,
-			     triggertime + sample->m_timestamp,
-			     std::vector<float>(1, n_digits));
-      }
-    }else{
-      if( n_digits_in_window > m_trigger_threshold) {
-	int triggertime = (int)(sample->AbsoluteDigitTime(current_digit)/TimeDelta::ns);
-	m_ss << "DEBUG: Found NHits trigger in SubSample at " << triggertime;
-	StreamToLog(DEBUG2);
-	m_ss << "DEBUG: Advancing search by posttrigger_save_window " << m_trigger_save_window_post;
-	StreamToLog(DEBUG2);
-	while(sample->AbsoluteDigitTime(current_digit) < triggertime + m_trigger_save_window_post){
-	  ++current_digit;
-	  if (current_digit >= ndigits){
-	    // Break if we run out of digits
-	    break;
-	  }
+    if( n_digits_in_window > m_trigger_threshold) {
+      TimeDelta triggertime = sample->AbsoluteDigitTime(current_digit);
+      
+      if( m_degrade_CPU )	
+	triggertime = ((uint64_t) (triggertime /TimeDelta::ns)) * TimeDelta::ns;
+      
+      m_ss << "DEBUG: Found NHits trigger in SubSample at " << triggertime;
+      StreamToLog(DEBUG2);
+      m_ss << "DEBUG: Advancing search by posttrigger_save_window " << m_trigger_save_window_post;
+      StreamToLog(DEBUG2);
+      while(sample->AbsoluteDigitTime(current_digit) < triggertime + m_trigger_save_window_post){
+	++current_digit;
+	if (current_digit >= ndigits){
+	  // Break if we run out of digits
+	  break;
 	}
-	--current_digit; // We want the last digit *within* post-trigger-window
-	int n_digits = current_digit - first_digit_in_window + 1;
-	m_ss << "DEBUG: Number of digits between (trigger_time - trigger_search_window) and (trigger_time + posttrigger_save_window):" << n_digits;
-	StreamToLog(DEBUG2);
-	
-	triggers->AddTrigger(kTriggerNDigits,
-			     triggertime - m_trigger_save_window_pre + sample->m_timestamp,
-			     triggertime + m_trigger_save_window_post + sample->m_timestamp,
-			     triggertime + sample->m_timestamp,
-			     std::vector<float>(1, n_digits));
       }
-    }//loop over Digits
-  }
+      --current_digit; // We want the last digit *within* post-trigger-window
+      int n_digits = current_digit - first_digit_in_window + 1;
+      m_ss << "DEBUG: Number of digits between (trigger_time - trigger_search_window) and (trigger_time + posttrigger_save_window):" << n_digits;
+      StreamToLog(DEBUG2);
+      
+      triggers->AddTrigger(kTriggerNDigits,
+			   triggertime - m_trigger_save_window_pre + sample->m_timestamp,
+			   triggertime + m_trigger_save_window_post + sample->m_timestamp,
+			   triggertime + sample->m_timestamp,
+			   std::vector<float>(1, n_digits));
+    }
+  }//loop over Digits
   m_ss << "INFO: Found " << triggers->m_N << " NDigit trigger(s) from " << (m_trigger_OD ? "OD" : "ID");
   StreamToLog(INFO);
 }
