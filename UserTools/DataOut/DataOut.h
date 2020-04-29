@@ -34,37 +34,51 @@ class DataOut: public Tool {
   int  TimeInTriggerWindow(TimeDelta time);
   unsigned int TimeInTriggerWindowNoDelete(TimeDelta time);
 
-  std::string fOutFilename;
-  TFile fOutFile;
-  TTree * fTreeEvent;
-  TTree * fTreeGeom;
-  TTree * fTreeOptions;
-  TString * fWCSimFilename;
+  /// Output ROOT filename that this tool RECREATE's
+  std::string m_output_filename;
+  /// Output ROOT file
+  TFile m_output_file;
+  /// Tree contain WCSimRootEvent(s), and the original WCSim filename / event number
+  TTree * m_event_tree;
+  TTree * m_tree_geom;
+  TTree * m_tree_options;
 
-  TriggerInfo * fTriggers;
-  double fTriggerOffset;
+  /// Combined list of triggers from all sources (ID+OD)
+  TriggerInfo * m_all_triggers;
+  /// A time used to offset all digit times. Set by config file
+  double m_trigger_offset;
 
-  int fEvtNum;
+  /// Current event number
+  int m_event_num;
 
-  bool fSaveOnlyFailedDigits;
-  bool fSaveMultiDigiPerTrigger;
-  std::map<int, std::map<int, bool> > fIDNDigitPerPMTPerTriggerMap;
-  std::map<int, std::map<int, bool> > fODNDigitPerPMTPerTriggerMap;
+  /// If true, saves digits that failed the trigger, rather those that passed
+  bool m_save_only_failed_digits;
+  /// If false, only 1 digit is allowed to be saved per trigger, rather than all digits from that trigger
+  bool m_save_multiple_hits_per_trigger;
+  /// For each PMT, for each trigger, has an ID digit been saved already?
+  std::map<int, std::map<int, bool> > m_id_nhits_per_pmt_per_trigger;
+  /// For each PMT, for each trigger, has an OD digit been saved already?
+  std::map<int, std::map<int, bool> > m_od_nhits_per_pmt_per_trigger;
 
   /// The stopwatch, if we're using one
   util::Stopwatch * m_stopwatch;
   /// Image filename to save the histogram to, if required
   std::string m_stopwatch_file;
 
+  /// Verbosity level, as defined in tool parameter file
   int m_verbose;
 
-  std::stringstream ss;
+  /// For easy formatting of Log messages
+  std::stringstream m_ss;
 
+  /// Print the current value of the streamer at the set log level,
+  ///  then clear the streamer
   void StreamToLog(int level) {
-    Log(ss.str(), level, m_verbose);
-    ss.str("");
+    Log(m_ss.str(), level, m_verbose);
+    m_ss.str("");
   }
 
+  /// Log level enumerations
   enum LogLevel {FATAL=-1, ERROR=0, WARN=1, INFO=2, DEBUG1=3, DEBUG2=4, DEBUG3=5};
 };
 
