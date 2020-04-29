@@ -155,8 +155,8 @@ bool test_vertices::Execute(){
     GPU_daq::test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
     for(int i=0; i<trigger_ns.size(); i++){
       m_data->IDTriggers.AddTrigger(kTriggerUndefined,
-				    TimeDelta(trigger_ts[i]) + m_trigger_gate_down + is->m_timestamp, 
-				    TimeDelta(trigger_ts[i]) + m_trigger_gate_up + is->m_timestamp,
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
 				    TimeDelta(trigger_ts[i]) + is->m_timestamp,
 				    std::vector<float>(1, trigger_ns[i]));
 
