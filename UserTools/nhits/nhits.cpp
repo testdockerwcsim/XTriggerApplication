@@ -33,7 +33,7 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("pretrigger_save_window",  temp_trigger_save_window_pre);
   m_variables.Get("posttrigger_save_window", temp_trigger_save_window_post);
   m_variables.Get("trigger_od",                   m_trigger_OD);
-  m_variables.Get("degrade_data",                   m_degrade_data);
+  m_variables.Get("degrade_CPU",                   m_degrade_CPU);
 
   m_trigger_search_window = TimeDelta(temp_trigger_search_window);
   m_trigger_save_window_pre = TimeDelta(temp_trigger_save_window_pre);
@@ -53,7 +53,7 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
        << " (" << npmts << " total PMTs)";
   StreamToLog(INFO);
 
-  m_ss << "INFO: m_degrade_data " << m_degrade_data; StreamToLog(INFO);
+  m_ss << "INFO: m_degrade_CPU " << m_degrade_CPU; StreamToLog(INFO);
 
   if(adjust_for_noise) {
     m_ss << "INFO: Updating the NDigits threshold, from " << m_trigger_threshold
@@ -139,7 +139,7 @@ void NHits::AlgNDigits(const SubSample * sample)
   for(;current_digit < ndigits; ++current_digit) {
     // Update first digit in trigger window
 
-    if( !m_degrade_data ){
+    if( !m_degrade_CPU ){
       TimeDelta::short_time_t digit_time = sample->m_time.at(current_digit);
       while(TimeDelta(sample->m_time[first_digit_in_window]) < TimeDelta(digit_time) - m_trigger_search_window){
 	++first_digit_in_window;
@@ -155,7 +155,7 @@ void NHits::AlgNDigits(const SubSample * sample)
 
     // if # of digits in window over threshold, issue trigger
     int n_digits_in_window = current_digit - first_digit_in_window + 1; // +1 because difference is 0 when first digit is the only digit in window
-    if( !m_degrade_data ){
+    if( !m_degrade_CPU ){
       if( n_digits_in_window > m_trigger_threshold) {
 	TimeDelta triggertime = sample->AbsoluteDigitTime(current_digit);
 	m_ss << "DEBUG: Found NHits trigger in SubSample at " << triggertime;
