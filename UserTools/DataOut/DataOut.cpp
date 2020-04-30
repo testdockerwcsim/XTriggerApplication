@@ -112,8 +112,6 @@ bool DataOut::Initialise(std::string configfile, DataModel &data){
 bool DataOut::Execute(){
   if(m_stopwatch) m_stopwatch->Start();
 
-  Log("DEBUG: DataOut::Execute Starting", DEBUG1, m_verbose);
-
   //Gather together all the trigger windows
   m_all_triggers->Clear();
   m_all_triggers->AddTriggers(&(m_data->IDTriggers));
