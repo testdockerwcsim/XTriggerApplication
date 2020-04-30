@@ -245,15 +245,24 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shif
     is->SortByTime();
     //loop over every hit
     const unsigned int nhits = is->m_time.size();
+    int counter = 0;
     for(int ihit = 0; ihit < nhits; ihit++) {
       time = is->m_time[ihit];
+      m_ss << "Hit " << ihit << " is at time " << time << std::endl
+	   << "Checking hit is in range [" << m_all_triggers->m_starttime.at(trigger_window_to_check)
+	   << ", " << m_all_triggers->m_endtime.at(trigger_window_to_check) << "]";
+      StreamToLog(DEBUG3);
+      
       //hit time is before trigger window
-      if(time < m_all_triggers->m_starttime.at(trigger_window_to_check))
+      if(time < m_all_triggers->m_starttime.at(trigger_window_to_check)) {
+	Log("Too early", DEBUG3, m_verbose);
 	continue;
+      }
       //hit time is after trigger window; check the next trigger window
       else if(time > m_all_triggers->m_endtime.at(trigger_window_to_check)) {
 	ihit--;
 	trigger_window_to_check++;
+	Log("Too late", DEBUG3, m_verbose);
 	if(trigger_window_to_check >= m_all_triggers->m_N)
 	  break;
 	continue;
@@ -268,6 +277,8 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shif
 									    time / TimeDelta::ns, //do i need to do any division here?
 									    is->m_PMTid[ihit],
 									    photon_id_temp);
+      m_ss << "Saved hit " << counter++;
+      StreamToLog(DEBUG3);
     }//ihit
   }//loop over SubSamples
 }
