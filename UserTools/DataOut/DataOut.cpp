@@ -247,7 +247,7 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shif
     const unsigned int nhits = is->m_time.size();
     int counter = 0;
     for(int ihit = 0; ihit < nhits; ihit++) {
-      time = is->m_time[ihit];
+      time = is->AbsoluteDigitTime(ihit);
       m_ss << "Hit " << ihit << " is at time " << time << std::endl
 	   << "Checking hit is in range [" << m_all_triggers->m_starttime.at(trigger_window_to_check)
 	   << ", " << m_all_triggers->m_endtime.at(trigger_window_to_check) << "]";
@@ -283,6 +283,7 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shif
 }
 /////////////////////////////////////////////////////////////////
 void DataOut::AddTruthInfo(WCSimRootEvent * wcsim_event, WCSimRootEvent * original_wcsim_event, const TimeDelta & time_shift) {
+  
 }
 /////////////////////////////////////////////////////////////////
 void DataOut::FinaliseSubEvents(WCSimRootEvent * wcsim_event) {
