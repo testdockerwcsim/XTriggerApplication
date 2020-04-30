@@ -351,7 +351,34 @@ void DataOut::AddTruthInfo(WCSimRootEvent * wcsim_event, WCSimRootEvent * origin
   }//itrack
 
   //set true digit parent info
-  WCSimRootCherenkovDigiHit * digit;
+  // This is messy, since the WCSim digit order
+  // is different to the TriggerApplication digit order
+  WCSimRootCherenkovDigiHit * new_digit;
+  WCSimRootCherenkovDigiHit * old_digit;
+  //not looping over "slots", because we just wrote this file, so we know there are no gaps
+  for(int idigit = 0; idigit < new_trig->GetNcherenkovdigihits(); idigit++) {
+    TObject * obj = new_trig->GetCherenkovDigiHits()->At(idigit);
+    if(!obj) continue;
+    new_digit = dynamic_cast<WCSimRootCherenkovDigiHit*>(obj);
+    int tube_id = new_digit->GetTubeId();
+    double time = new_digit->GetT() + time_shift / TimeDelta::ns;
+    //Now we find the new digit
+    bool found = false;
+    for(int idigit_old = 0; idigit_old < old_trig->GetNcherenkovdigihits_slots(); idigit_old++) {
+      TObject * obj = old_trig->GetCherenkovDigiHits()->At(idigit_old);
+      if(!obj) continue;
+      old_digit = dynamic_cast<WCSimRootCherenkovDigiHit*>(obj);
+      // First check tube id
+      if(tube_id != old_digit->GetTubeId()) continue;
+      // Then the time. Assume if we're within 0.5 ns it's the same hit
+      if(abs(time - old_digit->GetT()) > 0.5) continue;
+      found = true;
+      break;
+    }//idigit_old
+    if(found) {
+      new_digit->SetPhotonIds(old_digit->GetPhotonIds());
+    }
+  }//idigit
 }
 /////////////////////////////////////////////////////////////////
 void DataOut::FinaliseSubEvents(WCSimRootEvent * wcsim_event) {
