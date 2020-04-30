@@ -64,10 +64,14 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
   m_chain_opt->GetEntry(0);
   m_wcsim_event_ID = 0;
   m_chain_event->SetBranchAddress("wcsimrootevent",   &m_wcsim_event_ID);
+  // Force deletion to prevent memory leak
+  m_chain_event->GetBranch("wcsimrootevent")->SetAutoDelete(kTRUE);
   if(m_wcsim_opt->GetGeomHasOD()) {
     Log("INFO: The geometry has an OD. Will add OD digits to m_data", INFO, m_verbose);
     m_wcsim_event_OD = 0;
     m_chain_event->SetBranchAddress("wcsimrootevent_OD",   &m_wcsim_event_OD);
+    // Force deletion to prevent memory leak
+    m_chain_event->GetBranch("wcsimrootevent_OD")->SetAutoDelete(kTRUE);
     m_data->HasOD = true;
   }
   else {
