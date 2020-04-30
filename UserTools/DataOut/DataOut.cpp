@@ -283,17 +283,19 @@ void DataOut::FinaliseSubEvents(WCSimRootEvent * wcsim_event) {
     WCSimRootTrigger * trig = wcsim_event->GetTrigger(i);
     TClonesArray * hits = trig->GetCherenkovDigiHits();
     double sumq = 0;
-    int ntubeshit = 0;
+    int nhits = 0;
     for(int j = 0; j < trig->GetNcherenkovdigihits_slots(); j++) {
       WCSimRootCherenkovDigiHit * digi = (WCSimRootCherenkovDigiHit *)hits->At(j);
       if(digi) {
 	sumq += digi->GetQ();
-	ntubeshit++;
+	nhits++;
       }
     }//j
     trig->SetSumQ(sumq);
     //this is actually number of hits, not number of unique PMTs with hits
-    trig->SetNumDigitizedTubes(ntubeshit);
+    trig->SetNumDigitizedTubes(nhits);
+    m_ss << "DEBUG: Trigger " << i << " has " << nhits << " hits";
+    StreamToLog(DEBUG1);
   }//i
 }
 /////////////////////////////////////////////////////////////////
