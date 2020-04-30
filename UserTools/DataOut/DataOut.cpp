@@ -283,7 +283,75 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shif
 }
 /////////////////////////////////////////////////////////////////
 void DataOut::AddTruthInfo(WCSimRootEvent * wcsim_event, WCSimRootEvent * original_wcsim_event, const TimeDelta & time_shift) {
-  
+  //get the "triggers", where everything is stored
+  WCSimRootTrigger * new_trig = wcsim_event->GetTrigger(0);
+  WCSimRootTrigger * old_trig = original_wcsim_event->GetTrigger(0);
+
+  //set vertex info
+  const int nvtx = old_trig->GetNvtxs();
+  new_trig->SetNvtxs(nvtx);
+  for(int ivtx = 0; ivtx < nvtx; ivtx++) {
+    new_trig->SetVtxsvol(ivtx, old_trig->GetVtxsvol(ivtx));
+    for(int idim = 0; idim < 3; idim++) {
+      new_trig->SetVtxs(ivtx, idim, old_trig->GetVtxs(ivtx, idim));
+    }//idim
+  }//ivtx
+
+  //set generic event info
+  new_trig->SetMode(old_trig->GetMode());
+  new_trig->SetVecRecNumber(old_trig->GetVecRecNumber());
+  new_trig->SetJmu(old_trig->GetJmu());
+  new_trig->SetJp(old_trig->GetJp());
+  new_trig->SetNpar(old_trig->GetNpar());
+
+  //set pi0 info
+  const WCSimRootPi0 * pi0 = old_trig->GetPi0Info();
+  Float_t pi0_vtx[3];
+  Int_t   pi0_gamma_id[2];
+  Float_t pi0_gamma_e[2];
+  Float_t pi0_gamma_vtx[2][3];
+  for(int i = 0; i < 3; i++)
+    pi0_vtx[i] = pi0->GetPi0Vtx(i);
+  for(int i = 0; i < 2; i++) {
+    pi0_gamma_id[i] = pi0->GetGammaID(i);
+    pi0_gamma_e [i] = pi0->GetGammaE (i);
+    for(int j = 0; j < 3; j++)
+      pi0_gamma_vtx[i][j] = pi0->GetGammaVtx(i, j);
+  }//i
+  new_trig->SetPi0Info(pi0_vtx, pi0_gamma_id, pi0_gamma_e, pi0_gamma_vtx);
+
+  //set true hit info
+  new_trig->SetNumTubesHit(old_trig->GetNumTubesHit());
+  WCSimRootCherenkovHit * hit;
+  WCSimRootCherenkovHitTime * hit_time;
+  for(int ihit = 0; ihit < old_trig->GetNcherenkovhits(); ihit++) {
+    TObject * obj = old_trig->GetCherenkovHits()->At(ihit);
+    if(!obj) continue;
+    hit = dynamic_cast<WCSimRootCherenkovHit*>(obj);
+    int tube_id = hit->GetTubeID();
+    std::vector<float> true_times;
+    std::vector<int>   primary_parent_id;
+    for(int itime = hit->GetTotalPe(0); itime < hit->GetTotalPe(0) + hit->GetTotalPe(1); itime++) {
+      TObject * obj = old_trig->GetCherenkovHitTimes()->At(itime);
+      if(!obj) continue;
+      hit_time = dynamic_cast<WCSimRootCherenkovHitTime*>(obj);
+      true_times       .push_back(hit_time->GetTruetime());
+      primary_parent_id.push_back(hit_time->GetParentID());
+    }//itime
+    new_trig->AddCherenkovHit(tube_id, true_times, primary_parent_id);
+  }//ihit
+
+  //set true track info
+  WCSimRootTrack * track;
+  for(int itrack = 0; itrack < old_trig->GetNtrack_slots(); itrack++) {
+    TObject * obj = old_trig->GetTracks()->At(itrack);
+    if(!obj) continue;
+    track = dynamic_cast<WCSimRootTrack*>(obj);
+    new_trig->AddTrack(track);
+  }//itrack
+
+  //set true digit parent info
+  WCSimRootCherenkovDigiHit * digit;
 }
 /////////////////////////////////////////////////////////////////
 void DataOut::FinaliseSubEvents(WCSimRootEvent * wcsim_event) {
