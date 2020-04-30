@@ -218,7 +218,7 @@ TimeDelta DataOut::GetOffset(WCSimRootEvent * original_wcsim_event) {
     // The old time (stored in ns)
     TimeDelta old_trigger_time = trig0->GetHeader()->GetDate() * TimeDelta::ns;
     // The difference
-    TimeDelta time_shift = new_trigger_time - old_trigger_time;
+    time_shift += new_trigger_time - old_trigger_time;
     m_ss << "DEBUG: Trigger date shift from " << old_trigger_time << " to " << new_trigger_time << ": " << time_shift;
     StreamToLog(DEBUG2);
   }
@@ -263,8 +263,7 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shif
 	ihit--;
 	trigger_window_to_check++;
 	Log("Too late", DEBUG3, m_verbose);
-	if(trigger_window_to_check >= m_all_triggers->m_N)
-	  break;
+	if(trigger_window_to_check >= m_all_triggers->m_N) break;
 	continue;
       }
       //hit is in this window. Let's save it
