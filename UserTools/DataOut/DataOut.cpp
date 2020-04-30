@@ -138,10 +138,12 @@ bool DataOut::Execute(){
   // It puts hits into the output event in the earliest trigger they belong to
 
   //Fill the WCSimRootEvent with hit/trigger information, and truth information (if available)
-  ExecuteSubDet(m_data->IDWCSimEvent_Triggered, m_data->IDSamples, m_data->IDWCSimEvent_Raw);
-  if(m_data->HasOD) {
-    ExecuteSubDet(m_data->ODWCSimEvent_Triggered, m_data->ODSamples, m_data->ODWCSimEvent_Raw);
-  }
+  if(m_all_triggers->m_N) {
+    ExecuteSubDet(m_data->IDWCSimEvent_Triggered, m_data->IDSamples, m_data->IDWCSimEvent_Raw);
+    if(m_data->HasOD) {
+      ExecuteSubDet(m_data->ODWCSimEvent_Triggered, m_data->ODSamples, m_data->ODWCSimEvent_Raw);
+    }
+  }//>=1 trigger found
 
   //Fill the tree with what we've just created
   m_event_tree->Fill();
