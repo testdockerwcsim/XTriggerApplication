@@ -132,7 +132,7 @@ bool NHits::Execute(){
   // - which trigger readout windows each hit is associated with
   // - which hits should be masked from future triggers
   for( std::vector<SubSample>::iterator is=samples.begin(); is!=samples.end(); ++is) {
-    (*is).TellMeAboutTheTriggers(m_data->IDTriggers);
+    (*is).TellMeAboutTheTriggers(m_data->IDTriggers, m_verbose);
   }//loop over SubSamples
 
   if(m_stopwatch) m_stopwatch->Stop();

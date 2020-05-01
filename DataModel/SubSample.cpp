@@ -174,13 +174,15 @@ bool SubSample::Append(const std::vector<int> PMTid, const std::vector<TimeDelta
   return true;
 }
 
-void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers) {
+void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers, const int verbose) {
 
   //loop over triggers to get the start/end of the readout & mask windows
   const unsigned int num_triggers = triggers.m_num_triggers;
   std::vector<util::Window> readout_windows(num_triggers - m_start_trigger);
   std::vector<util::Window> mask_windows(num_triggers - m_start_trigger);
-  std::cout << "DEBUG: Trigger times before sorting:";
+  if(util::DEBUG2 <= verbose)
+    util::Log("DEBUG: Trigger times before sorting:", util::DEBUG1);
+  std::stringstream ss;
   for(unsigned int itrigger = m_start_trigger; itrigger < num_triggers; itrigger++) {
     util::Window readout(itrigger,
 			 triggers.m_readout_start_time[itrigger],
@@ -190,13 +192,15 @@ void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers) {
 		      triggers.m_mask_start_time[itrigger],
 		      triggers.m_mask_end_time[itrigger]);
     mask_windows[itrigger - m_start_trigger] = mask;
-    std::cout << std::endl << " " << itrigger << "\tReadout:\t"
-	      << readout_windows[itrigger].m_start << "\t"
-	      << readout_windows[itrigger].m_end << "\tMask:\t"
-	      << mask_windows[itrigger].m_start << "\t"
-	      << mask_windows[itrigger].m_end;
+    if(util::DEBUG2 <= verbose) {
+      ss << "DEBUG: Trigger: " << itrigger
+	 << "\tReadout windows: " << readout_windows[itrigger].m_start
+	 << "\t" << readout_windows[itrigger].m_end
+	 << "\tMask windows: " << mask_windows[itrigger].m_start
+	 << "\t" << mask_windows[itrigger].m_end;
+      util::Log(ss, util::DEBUG2);
+    }//DEBUG1
   }//itrigger
-  std::cout << std::endl;
 
   //iterate m_start_trigger, so we don't try masking hits from the same triggers next time this is called
   m_start_trigger += num_triggers;
@@ -207,18 +211,21 @@ void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers) {
   //  loop over hits (hits are also time sorted)
   std::sort(readout_windows.rbegin(), readout_windows.rend(), util::WindowSorter);
   std::sort(mask_windows.rbegin(), mask_windows.rend(), util::WindowSorter);
-  std::cout << "DEBUG: Trigger times after sorting:";
-  for(unsigned int itrigger = 0; itrigger < readout_windows.size(); itrigger++) {
-    std::cout << std::endl << " " << readout_windows[itrigger].m_trigger_num << "\tReadout:\t"
-	      << readout_windows[itrigger].m_start << "\t"
-	      << readout_windows[itrigger].m_end << "\tMask:\t"
-	      << mask_windows[itrigger].m_start << "\t"
-	      << mask_windows[itrigger].m_end;
-  }//itrigger
-  std::cout << std::endl;
+
+  if(util::DEBUG1 <= verbose) {
+    util::Log("DEBUG: Trigger times after sorting:", util::DEBUG1);
+    for(unsigned int itrigger = 0; itrigger < readout_windows.size(); itrigger++) {
+      ss << "DEBUG: Trigger: " << itrigger
+	 << "\tReadout windows: " << readout_windows[itrigger].m_start
+	 << "\t" << readout_windows[itrigger].m_end
+	 << "\tMask windows: " << mask_windows[itrigger].m_start
+	 << "\t" << mask_windows[itrigger].m_end;
+      util::Log(ss, util::DEBUG1);
+    }//itrigger
+  }//DEBUG1
 
   //ensure the hits are sorted in time
-  if (not IsSortedByTime())
+  if(!IsSortedByTime())
     SortByTime();
 
   //loop over hits
@@ -229,41 +236,64 @@ void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers) {
     //Is the hit in this readout window?
     for(std::vector<util::Window>::reverse_iterator it = readout_windows.rbegin();
 	it != readout_windows.rend(); ++it) {
+      if(util::DEBUG3 >= verbose) {
+	ss << "DEBUG: READOUT " << (*it).m_start << "\t" << (*it).m_end << "\t" << (*it).m_trigger_num;
+	util::Log(ss, util::DEBUG3);
+      }//DEBUG3
       //the trigger time is later than this hit
-      std::cout << (*it).m_start << "\t" << (*it).m_end << "\t" << (*it).m_trigger_num << std::endl;
       if(hit_time < (*it).m_start) {
-	std::cout << "DEBUG: Hit time " << hit_time << " earlier than all subsequent trigger readouts" << std::endl;
+	if(util::DEBUG2 >= verbose) {
+	  ss << "DEBUG: Hit time " << hit_time << " earlier than all subsequent trigger readouts";
+	  util::Log(ss, util::DEBUG2);
+	}//DEBUG2
 	break;
       }
       //the trigger time is earlier than this hit
       else if (hit_time > (*it).m_end) {
-	std::cout << "DEBUG: Hit time " << hit_time << " later than last trigger window. Removing last window from readout vector" << std::endl;
+	if(util::DEBUG2 >= verbose) {
+	  ss << "DEBUG: Hit time " << hit_time << " later than last trigger window. Removing last window from readout vector";
+	  util::Log(ss, util::DEBUG2);
+	}//DEBUG2
 	readout_windows.pop_back();
       }
       //the hit is in this trigger
       else {
-	//std::cout << "DEBUG: Hit time " << hit_time << " in trigger readout window " << (*it).m_trigger_num << std::endl;
+	if(util::DEBUG3 >= verbose) {
+	  ss << "DEBUG: Hit time " << hit_time << " in trigger readout window " << (*it).m_trigger_num;
+	  util::Log(ss, util::DEBUG3);
+	}//DEBUG3
 	m_trigger_readout_windows[ihit].push_back((*it).m_trigger_num);
       }
     }//readout_windows
     //Is the hit in this mask window?
     for(std::vector<util::Window>::reverse_iterator it = mask_windows.rbegin();
 	it != mask_windows.rend(); ++it) {
+      if(util::DEBUG3 >= verbose) {
+	ss << "DEBUG: MASK " << (*it).m_start << "\t" << (*it).m_end << "\t" << (*it).m_trigger_num;
+	util::Log(ss, util::DEBUG3);
+      }//DEBUG3
       //the trigger time is later than this hit
-      std::cout << "MASK " << (*it).m_start << "\t" << (*it).m_end << "\t" << (*it).m_trigger_num << std::endl;
       if(hit_time < (*it).m_start) {
-	std::cout << "DEBUG: Hit time " << hit_time << " earlier than all subsequent trigger masks" << std::endl;
+	if(util::DEBUG2 >= verbose) {
+	  ss << "DEBUG: Hit time " << hit_time << " earlier than all subsequent trigger masks";
+	  util::Log(ss, util::DEBUG2);
+	}//DEBUG2
 	break;
       }
       //the trigger time is earlier than this hit
       else if (hit_time > (*it).m_end) {
-	std::cout << "DEBUG: Hit time " << hit_time << " later than last trigger window. Removing last window from mask vector" << std::endl;
+	if(util::DEBUG2 >= verbose) {
+	  ss << "DEBUG: Hit time " << hit_time << " later than last trigger window. Removing last window from mask vector";
+	  util::Log(ss, util::DEBUG2);
+	}//DEBUG2
 	mask_windows.pop_back();
       }
       //the hit is in this trigger
       else {
-	std::cout << "DEBUG: Hit time " << hit_time << " in trigger mask window " << (*it).m_trigger_num << std::endl;
-	m_masked[ihit] = true;
+	if(util::DEBUG3 >= verbose) {
+	  ss << "DEBUG: Hit time " << hit_time << " in trigger mask window " << (*it).m_trigger_num;
+	  util::Log(ss, util::DEBUG3);
+	}//DEBUG3
       }
     }//mask_windows
   }//ihit

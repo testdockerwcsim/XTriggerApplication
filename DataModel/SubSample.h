@@ -65,7 +65,7 @@ class SubSample{
 
   /// Picks up the trigger readout and mask windows from the input, and sets
   ///  digit m_trigger_readout_windows and m_masked appropriately
-  void TellMeAboutTheTriggers(const TriggerInfo & triggers);
+  void TellMeAboutTheTriggers(const TriggerInfo & triggers, const int verbose);
 
  private:
 
