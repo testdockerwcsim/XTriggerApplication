@@ -32,9 +32,8 @@ class DataOut: public Tool {
   ///  create subevents (i.e. new WCSimRootTrigger's) in the WCSimRootEvent
   /// Also sets the time correctly
   void CreateSubEvents(WCSimRootEvent * wcsim_event);
-  /// Get the difference between the WCSim "date" and the time of the first TriggerApp trigger,
-  ///  in order for the hits to have the correct absolute time.
-  ///  Also add the trigger offset from the config file
+  //Get the WCSim "date", used later to give the hits the correct absolute time.
+  // Also add the trigger offset from the config file
   TimeDelta GetOffset(WCSimRootEvent * original_wcsim_event = 0);
   /// For every hit, if it's in a trigger window,
   ///  add it to the appropriate WCSimRootTrigger in the WCSimRootEvent
