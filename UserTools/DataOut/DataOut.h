@@ -37,7 +37,7 @@ class DataOut: public Tool {
   TimeDelta GetOffset(WCSimRootEvent * original_wcsim_event = 0);
   /// For every hit, if it's in a trigger window,
   ///  add it to the appropriate WCSimRootTrigger in the WCSimRootEvent
-  void FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shift, std::vector<SubSample> & samples);
+  void FillHits(WCSimRootEvent * wcsim_event, std::vector<SubSample> & samples);
   /// If this is an MC file, we also need to add
   /// - true tracks
   /// - true hits

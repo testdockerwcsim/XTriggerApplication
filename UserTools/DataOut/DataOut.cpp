@@ -175,7 +175,7 @@ void DataOut::ExecuteSubDet(WCSimRootEvent * wcsim_event, std::vector<SubSample>
 
   //For every hit, if it's in a trigger window,
   //add it to the appropriate WCSimRootTrigger in the WCSimRootEvent
-  FillHits(wcsim_event, time_shift, samples);
+  FillHits(wcsim_event, samples);
 
   //If this is an MC file, we also need to add
   // - true tracks
@@ -229,7 +229,7 @@ TimeDelta DataOut::GetOffset(WCSimRootEvent * original_wcsim_event) {
   return time_shift;
 }
 /////////////////////////////////////////////////////////////////
-void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shift, std::vector<SubSample> & samples) {
+void DataOut::FillHits(WCSimRootEvent * wcsim_event, std::vector<SubSample> & samples) {
   unsigned int trigger_window_to_check;
   TimeDelta time;
   std::vector<int> photon_id_temp;
@@ -263,9 +263,10 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shif
 	continue;
       }
 
-      // + time_shift adds the WCSim Date, and adds the user-defined "offset"
-      // - trigger_time because hits are defined relative to their trigger time
-      time += time_shift - m_all_triggers->m_triggertime.at(trigger_window_to_check);
+      // + m_trigger_offset adds the user-defined "offset"
+      // - trigger time ("Date") because hits are defined relative to their trigger time
+      time += m_trigger_offset -
+	(wcsim_event->GetTrigger(trigger_window_to_check)->GetHeader()->GetDate() * TimeDelta::ns);
 
       //hit is in this window. Let's save it
       wcsim_event->GetTrigger(trigger_window_to_check)->AddCherenkovDigiHit(is->m_charge[ihit],
