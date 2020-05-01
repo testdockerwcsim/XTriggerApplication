@@ -236,13 +236,13 @@ void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers, const int v
     //Is the hit in this readout window?
     for(std::vector<util::Window>::reverse_iterator it = readout_windows.rbegin();
 	it != readout_windows.rend(); ++it) {
-      if(util::DEBUG3 >= verbose) {
+      if(util::DEBUG3 <= verbose) {
 	ss << "DEBUG: READOUT " << (*it).m_start << "\t" << (*it).m_end << "\t" << (*it).m_trigger_num;
 	util::Log(ss, util::DEBUG3);
       }//DEBUG3
       //the trigger time is later than this hit
       if(hit_time < (*it).m_start) {
-	if(util::DEBUG2 >= verbose) {
+	if(util::DEBUG2 <= verbose) {
 	  ss << "DEBUG: Hit time " << hit_time << " earlier than all subsequent trigger readouts";
 	  util::Log(ss, util::DEBUG2);
 	}//DEBUG2
@@ -250,7 +250,7 @@ void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers, const int v
       }
       //the trigger time is earlier than this hit
       else if (hit_time > (*it).m_end) {
-	if(util::DEBUG2 >= verbose) {
+	if(util::DEBUG2 <= verbose) {
 	  ss << "DEBUG: Hit time " << hit_time << " later than last trigger window. Removing last window from readout vector";
 	  util::Log(ss, util::DEBUG2);
 	}//DEBUG2
@@ -258,7 +258,7 @@ void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers, const int v
       }
       //the hit is in this trigger
       else {
-	if(util::DEBUG3 >= verbose) {
+	if(util::DEBUG3 <= verbose) {
 	  ss << "DEBUG: Hit time " << hit_time << " in trigger readout window " << (*it).m_trigger_num;
 	  util::Log(ss, util::DEBUG3);
 	}//DEBUG3
@@ -268,13 +268,13 @@ void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers, const int v
     //Is the hit in this mask window?
     for(std::vector<util::Window>::reverse_iterator it = mask_windows.rbegin();
 	it != mask_windows.rend(); ++it) {
-      if(util::DEBUG3 >= verbose) {
+      if(util::DEBUG3 <= verbose) {
 	ss << "DEBUG: MASK " << (*it).m_start << "\t" << (*it).m_end << "\t" << (*it).m_trigger_num;
 	util::Log(ss, util::DEBUG3);
       }//DEBUG3
       //the trigger time is later than this hit
       if(hit_time < (*it).m_start) {
-	if(util::DEBUG2 >= verbose) {
+	if(util::DEBUG2 <= verbose) {
 	  ss << "DEBUG: Hit time " << hit_time << " earlier than all subsequent trigger masks";
 	  util::Log(ss, util::DEBUG2);
 	}//DEBUG2
@@ -282,7 +282,7 @@ void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers, const int v
       }
       //the trigger time is earlier than this hit
       else if (hit_time > (*it).m_end) {
-	if(util::DEBUG2 >= verbose) {
+	if(util::DEBUG2 <= verbose) {
 	  ss << "DEBUG: Hit time " << hit_time << " later than last trigger window. Removing last window from mask vector";
 	  util::Log(ss, util::DEBUG2);
 	}//DEBUG2
@@ -290,7 +290,7 @@ void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers, const int v
       }
       //the hit is in this trigger
       else {
-	if(util::DEBUG3 >= verbose) {
+	if(util::DEBUG3 <= verbose) {
 	  ss << "DEBUG: Hit time " << hit_time << " in trigger mask window " << (*it).m_trigger_num;
 	  util::Log(ss, util::DEBUG3);
 	}//DEBUG3
