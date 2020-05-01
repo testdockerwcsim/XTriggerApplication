@@ -270,11 +270,11 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shif
       // Move all hits by the *negative* shift. If 5 seconds are added to the
       // trigger time, the hit times (relative to the trigger) must be moved 5
       // seconds back, so they remain at the same absolute time.
-      time -= time_shift / TimeDelta::ns; //Is the time shift in the right place?
+      time -= time_shift;
 
       //hit is in this window. Let's save it
       wcsim_event->GetTrigger(trigger_window_to_check)->AddCherenkovDigiHit(is->m_charge[ihit],
-									    time / TimeDelta::ns, //do i need to do any division here?
+									    time / TimeDelta::ns,
 									    is->m_PMTid[ihit],
 									    photon_id_temp);
       m_ss << "Saved hit " << counter++;
