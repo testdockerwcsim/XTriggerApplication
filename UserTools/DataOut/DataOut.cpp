@@ -169,8 +169,7 @@ void DataOut::ExecuteSubDet(WCSimRootEvent * wcsim_event, std::vector<SubSample>
   //Also sets the time correctly
   CreateSubEvents(wcsim_event);
 
-  //Get the difference between the WCSim "date" and the time of the first TriggerApp trigger,
-  // in order for the hits to have the correct absolute time.
+  //Get the WCSim "date", used later to give the hits the correct absolute time.
   // Also add the trigger offset from the config file
   TimeDelta time_shift = GetOffset(original_wcsim_event);
 
@@ -209,17 +208,13 @@ TimeDelta DataOut::GetOffset(WCSimRootEvent * original_wcsim_event) {
   TimeDelta time_shift(0);
 
   if(m_data->IsMC) {
-    // Move all hit times in trigger 0 to be relative to that trigger,
-    // i.e. move them by the difference of the old header date and the
-    // new taken from the trigger
+    // Get the original event trigger time ("date"). Subtraction of this is used
+    // when we want to store the hits with their new trigger offsets
     WCSimRootTrigger * trig0 = original_wcsim_event->GetTrigger(0);
-    // The new time
-    TimeDelta new_trigger_time = m_all_triggers->m_triggertime.at(0);
     // The old time (stored in ns)
     TimeDelta old_trigger_time = trig0->GetHeader()->GetDate() * TimeDelta::ns;
-    // The difference
-    time_shift += new_trigger_time - old_trigger_time;
-    m_ss << "DEBUG: Trigger date shift from " << old_trigger_time << " to " << new_trigger_time << ": " << time_shift;
+    time_shift += old_trigger_time;
+    m_ss << "DEBUG: Trigger date shift from input WCSim file is " << old_trigger_time;
     StreamToLog(DEBUG2);
   }
 
@@ -267,10 +262,9 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shif
 	continue;
       }
 
-      // Move all hits by the *negative* shift. If 5 seconds are added to the
-      // trigger time, the hit times (relative to the trigger) must be moved 5
-      // seconds back, so they remain at the same absolute time.
-      time -= time_shift;
+      // + time_shift adds the WCSim Date, and adds the user-defined "offset"
+      // - trigger_time because hits are defined relative to their trigger time
+      time += time_shift - m_all_triggers->m_triggertime.at(trigger_window_to_check);
 
       //hit is in this window. Let's save it
       wcsim_event->GetTrigger(trigger_window_to_check)->AddCherenkovDigiHit(is->m_charge[ihit],
@@ -354,32 +348,45 @@ void DataOut::AddTruthInfo(WCSimRootEvent * wcsim_event, WCSimRootEvent * origin
   //set true digit parent info
   // This is messy, since the WCSim digit order
   // is different to the TriggerApplication digit order
-  WCSimRootCherenkovDigiHit * new_digit;
-  WCSimRootCherenkovDigiHit * old_digit;
-  //not looping over "slots", because we just wrote this file, so we know there are no gaps
-  for(int idigit = 0; idigit < new_trig->GetNcherenkovdigihits(); idigit++) {
-    TObject * obj = new_trig->GetCherenkovDigiHits()->At(idigit);
-    if(!obj) continue;
-    new_digit = dynamic_cast<WCSimRootCherenkovDigiHit*>(obj);
-    int tube_id = new_digit->GetTubeId();
-    double time = new_digit->GetT() + time_shift / TimeDelta::ns;
-    //Now we find the new digit
-    bool found = false;
-    for(int idigit_old = 0; idigit_old < old_trig->GetNcherenkovdigihits_slots(); idigit_old++) {
-      TObject * obj = old_trig->GetCherenkovDigiHits()->At(idigit_old);
+  //we're looping over triggers here
+  for(int itrigger = 0; itrigger < m_all_triggers->m_N; itrigger++) {
+    if(itrigger)
+      new_trig = wcsim_event->GetTrigger(itrigger);
+    double this_trigger_time = new_trig->GetHeader()->GetDate();
+    WCSimRootCherenkovDigiHit * new_digit;
+    WCSimRootCherenkovDigiHit * old_digit;
+    //not looping over "slots", because we just wrote this file, so we know there are no gaps
+    for(int idigit = 0; idigit < new_trig->GetNcherenkovdigihits(); idigit++) {
+      TObject * obj = new_trig->GetCherenkovDigiHits()->At(idigit);
       if(!obj) continue;
-      old_digit = dynamic_cast<WCSimRootCherenkovDigiHit*>(obj);
-      // First check tube id
-      if(tube_id != old_digit->GetTubeId()) continue;
-      // Then the time. Assume if we're within 0.5 ns it's the same hit
-      if(abs(time - old_digit->GetT()) > 0.5) continue;
-      found = true;
-      break;
-    }//idigit_old
-    if(found) {
-      new_digit->SetPhotonIds(old_digit->GetPhotonIds());
-    }
-  }//idigit
+      new_digit = dynamic_cast<WCSimRootCherenkovDigiHit*>(obj);
+      int tube_id = new_digit->GetTubeId();
+      //get the time
+      double time = new_digit->GetT();
+      //and convert it back to the original (i.e. relative to WCSim's Date(), rather than 
+      // TriggerApp's individual triggers' Date()s)
+      // - time_shift subtracts the WCSim Date, and subtracts the user-defined "offset"
+      // + this_trigger_time because hits are defined relative to their trigger time
+      time += - (time_shift / TimeDelta::ns) + this_trigger_time;
+
+      //Now we find the new digit
+      bool found = false;
+      for(int idigit_old = 0; idigit_old < old_trig->GetNcherenkovdigihits_slots(); idigit_old++) {
+	TObject * obj = old_trig->GetCherenkovDigiHits()->At(idigit_old);
+	if(!obj) continue;
+	old_digit = dynamic_cast<WCSimRootCherenkovDigiHit*>(obj);
+	// First check tube id
+	if(tube_id != old_digit->GetTubeId()) continue;
+	// Then the time. Assume if we're within 0.5 ns it's the same hit
+	if(abs(time - old_digit->GetT()) > 0.5) continue;
+	found = true;
+	break;
+      }//idigit_old
+      if(found) {
+	new_digit->SetPhotonIds(old_digit->GetPhotonIds());
+      }
+    }//idigit
+  }//itrigger
 }
 /////////////////////////////////////////////////////////////////
 void DataOut::FinaliseSubEvents(WCSimRootEvent * wcsim_event) {
