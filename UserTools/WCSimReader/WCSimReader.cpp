@@ -185,8 +185,7 @@ bool WCSimReader::CompareTree(TChain * chain, int mode)
     modestr = "WCSimRootOptions";
   }
   else if(mode == 1) {
-    //wcsim_geom_0 = new WCSimRootGeom(*m_wcsim_geom); //this operation doesn't work in WCSim
-    Log("WARN: geometry not being checked for equality between files. TODO - uncomment this line after WCSim PR 281", WARN, m_verbose);
+    wcsim_geom_0 = new WCSimRootGeom(*m_wcsim_geom); //this operation doesn't work in WCSim
     modestr = "WCSimRootGeom";
   }
   //loop over all the other entries
@@ -212,7 +211,7 @@ bool WCSimReader::CompareTree(TChain * chain, int mode)
       //WCSimWCAddDarkNoise
       std::vector<string> pmtlocs;
       pmtlocs.push_back("tank");
-      pmtlocs.push_back("OD");
+      if(m_data->HasOD) pmtlocs.push_back("OD");
       for(unsigned int i = 0; i < pmtlocs.size(); i++) {
 	diff_file = diff_file || CompareVariable(wcsim_opt_0->GetPMTDarkRate(pmtlocs.at(i)),
 						 m_wcsim_opt->GetPMTDarkRate(pmtlocs.at(i)),
@@ -282,8 +281,7 @@ bool WCSimReader::CompareTree(TChain * chain, int mode)
 
     }//mode == 0
     else if(mode == 1) {
-      //diff_file = !wcsim_geom_0->CompareAllVariables(m_wcsim_geom);
-      Log("WARN: geometry not being checked for equality between files. TODO - uncomment this line after WCSim PR 281", WARN, m_verbose);
+      diff_file = !wcsim_geom_0->CompareAllVariables(m_wcsim_geom);
     }//mode == 1
     if(diff_file) {
       m_ss << "ERROR: Difference between " << modestr << " tree between input file 0 and " << i;
@@ -295,8 +293,7 @@ bool WCSimReader::CompareTree(TChain * chain, int mode)
     delete wcsim_opt_0;
   }
   else if(mode == 1) {
-    //delete wcsim_geom_0;
-    Log("WARN: geometry not being checked for equality between files. TODO - uncomment this line after WCSim PR 281", WARN, m_verbose);
+    delete wcsim_geom_0;
   }
   if(diff) {
     m_ss << "ERROR: Difference between " << modestr << " trees";
