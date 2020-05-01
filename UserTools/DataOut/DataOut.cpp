@@ -235,6 +235,7 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, const TimeDelta & time_shif
   std::vector<int> photon_id_temp;
   //Loop over all SubSamples
   for(std::vector<SubSample>::iterator is=samples.begin(); is!=samples.end(); ++is){
+    trigger_window_to_check = 0;
     // Make sure hit times are ordered in time
     Log("WARN: TODO Sorting by time, and doing time window checks, will not be required after #49");
     is->SortByTime();
