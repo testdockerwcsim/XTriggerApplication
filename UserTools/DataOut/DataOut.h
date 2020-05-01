@@ -31,8 +31,8 @@ class DataOut: public Tool {
   void RemoveDigits(WCSimRootEvent * WCSimEvent,
 		    std::map<int, std::map<int, bool> > & NDigitPerPMTPerTriggerMap);
   void MoveTracks(WCSimRootEvent * WCSimEvent);
-  int  TimeInTriggerWindow(double time);
-  unsigned int TimeInTriggerWindowNoDelete(double time);
+  int  TimeInTriggerWindow(TimeDelta time);
+  unsigned int TimeInTriggerWindowNoDelete(TimeDelta time);
 
   std::string fOutFilename;
   TFile fOutFile;
@@ -51,12 +51,17 @@ class DataOut: public Tool {
   std::map<int, std::map<int, bool> > fIDNDigitPerPMTPerTriggerMap;
   std::map<int, std::map<int, bool> > fODNDigitPerPMTPerTriggerMap;
 
-  int verbose;
+  /// The stopwatch, if we're using one
+  util::Stopwatch * m_stopwatch;
+  /// Image filename to save the histogram to, if required
+  std::string m_stopwatch_file;
+
+  int m_verbose;
 
   std::stringstream ss;
 
   void StreamToLog(int level) {
-    Log(ss.str(), level, verbose);
+    Log(ss.str(), level, m_verbose);
     ss.str("");
   }
 
