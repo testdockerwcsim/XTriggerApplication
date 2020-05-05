@@ -117,13 +117,12 @@ bool DataOut::Execute(){
   m_all_triggers->AddTriggers(&(m_data->IDTriggers));
   if(m_data->HasOD)
     m_all_triggers->AddTriggers(&(m_data->ODTriggers));
-  m_all_triggers->SortByStartTime();
-  m_ss << "INFO: Have " << m_all_triggers->m_N << " triggers to save times:";
+  m_ss << "INFO: Have " << m_all_triggers->m_num_triggers << " triggers to save times:";
   StreamToLog(INFO);
-  for(int i = 0; i < m_all_triggers->m_N; i++) {
-    m_ss << "INFO: \t[" << m_all_triggers->m_starttime.at(i)
-       << ", " << m_all_triggers->m_endtime.at(i) << "] "
-       << m_all_triggers->m_triggertime.at(i) << " with type "
+  for(int i = 0; i < m_all_triggers->m_num_triggers; i++) {
+    m_ss << "INFO: \t[" << m_all_triggers->m_readout_start_time.at(i)
+       << ", " << m_all_triggers->m_readout_end_time.at(i) << "] "
+       << m_all_triggers->m_trigger_time.at(i) << " ns with type "
        << WCSimEnumerations::EnumAsString(m_all_triggers->m_type.at(i)) << " extra info";
     for(unsigned int ii = 0; ii < m_all_triggers->m_info.at(i).size(); ii++)
       m_ss << " " << m_all_triggers->m_info.at(i).at(ii);
@@ -136,7 +135,7 @@ bool DataOut::Execute(){
   // It puts hits into the output event in the earliest trigger they belong to
 
   //Fill the WCSimRootEvent with hit/trigger information, and truth information (if available)
-  if(m_all_triggers->m_N) {
+  if(m_all_triggers->m_num_triggers) {
     ExecuteSubDet(m_data->IDWCSimEvent_Triggered, m_data->IDSamples, m_data->IDWCSimEvent_Raw);
     if(m_data->HasOD) {
       ExecuteSubDet(m_data->ODWCSimEvent_Triggered, m_data->ODSamples, m_data->ODWCSimEvent_Raw);
@@ -189,7 +188,7 @@ void DataOut::ExecuteSubDet(WCSimRootEvent * wcsim_event, std::vector<SubSample>
 }
 /////////////////////////////////////////////////////////////////
 void DataOut::CreateSubEvents(WCSimRootEvent * wcsim_event) {
-  const int n = m_all_triggers->m_N;
+  const int n = m_all_triggers->m_num_triggers;
   if (n==0) return;
 
   // Change trigger times and create new SubEvents where necessary
@@ -197,7 +196,7 @@ void DataOut::CreateSubEvents(WCSimRootEvent * wcsim_event) {
     if(i)
       wcsim_event->AddSubEvent();
     WCSimRootTrigger * trig = wcsim_event->GetTrigger(i);
-    trig->SetHeader(m_event_num, 0, (m_all_triggers->m_triggertime.at(i) / TimeDelta::ns), i+1);
+    trig->SetHeader(m_event_num, 0, (m_all_triggers->m_trigger_time.at(i) / TimeDelta::ns), i+1);
     trig->SetTriggerInfo(m_all_triggers->m_type.at(i), m_all_triggers->m_info.at(i));
     trig->SetMode(0);
   }//i
@@ -245,21 +244,21 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, std::vector<SubSample> & sa
     for(int ihit = 0; ihit < nhits; ihit++) {
       time = is->AbsoluteDigitTime(ihit);
       m_ss << "Hit " << ihit << " is at time " << time << std::endl
-	   << "Checking hit is in range [" << m_all_triggers->m_starttime.at(trigger_window_to_check)
-	   << ", " << m_all_triggers->m_endtime.at(trigger_window_to_check) << "]";
+	   << "Checking hit is in range [" << m_all_triggers->m_readout_start_time.at(trigger_window_to_check)
+	   << ", " << m_all_triggers->m_readout_end_time.at(trigger_window_to_check) << "]";
       StreamToLog(DEBUG3);
       
       //hit time is before trigger window
-      if(time < m_all_triggers->m_starttime.at(trigger_window_to_check)) {
+      if(time < m_all_triggers->m_readout_start_time.at(trigger_window_to_check)) {
 	Log("Too early", DEBUG3, m_verbose);
 	continue;
       }
       //hit time is after trigger window; check the next trigger window
-      else if(time > m_all_triggers->m_endtime.at(trigger_window_to_check)) {
+      else if(time > m_all_triggers->m_readout_end_time.at(trigger_window_to_check)) {
 	ihit--;
 	trigger_window_to_check++;
 	Log("Too late", DEBUG3, m_verbose);
-	if(trigger_window_to_check >= m_all_triggers->m_N) break;
+	if(trigger_window_to_check >= m_all_triggers->m_num_triggers) break;
 	continue;
       }
 
@@ -351,7 +350,7 @@ void DataOut::AddTruthInfo(WCSimRootEvent * wcsim_event, WCSimRootEvent * origin
   // This is messy, since the WCSim digit order
   // is different to the TriggerApplication digit order
   //we're looping over triggers here
-  for(int itrigger = 0; itrigger < m_all_triggers->m_N; itrigger++) {
+  for(int itrigger = 0; itrigger < m_all_triggers->m_num_triggers; itrigger++) {
     if(itrigger)
       new_trig = wcsim_event->GetTrigger(itrigger);
     double this_trigger_time = new_trig->GetHeader()->GetDate();
@@ -393,7 +392,7 @@ void DataOut::AddTruthInfo(WCSimRootEvent * wcsim_event, WCSimRootEvent * origin
 }
 /////////////////////////////////////////////////////////////////
 void DataOut::FinaliseSubEvents(WCSimRootEvent * wcsim_event) {
-  const int n = m_all_triggers->m_N;
+  const int n = m_all_triggers->m_num_triggers;
   for(int i = 0; i < n; i++) {
     WCSimRootTrigger * trig = wcsim_event->GetTrigger(i);
     TClonesArray * hits = trig->GetCherenkovDigiHits();
