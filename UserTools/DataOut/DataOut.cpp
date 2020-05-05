@@ -235,9 +235,9 @@ void DataOut::FillHits(WCSimRootEvent * wcsim_event, std::vector<SubSample> & sa
   WCSimRootTrigger * wcsim_trigger;
   //Loop over all SubSamples
   for(std::vector<SubSample>::iterator is=samples.begin(); is!=samples.end(); ++is){
-    const unsigned int nhits = is->m_time.size();
-    int counter = 0;
-    for(int ihit = 0; ihit < nhits; ihit++) {
+    const size_t nhits = is->m_time.size();
+    unsigned int counter = 0;
+    for(size_t ihit = 0; ihit < nhits; ihit++) {
       //skip if hit is not in a readout window
       if(!is->m_trigger_readout_windows[ihit].size())
 	continue;
