@@ -23,8 +23,6 @@ class EnergeticBONSAI: public Tool {
 
   /// Instance of energetic-BONSAI
   WCSimEBonsai * m_ebonsai;
-  /// Read in the digits in each trigger period to here
-  WCSimRootTrigger * m_trigger;
   /// Read in the total number of hits in the given trigger
   int m_in_nhits;
   /// Read in the PMT IDs of all hits in the given trigger
