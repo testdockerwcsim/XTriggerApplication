@@ -27,7 +27,6 @@ class BONSAI: public Tool {
   bool FileExists(std::string pathname, std::string filename);
 
   WCSimBonsai * m_bonsai;
-  WCSimRootTrigger * m_trigger;
   int m_in_nhits;
   std::vector<int>   * m_in_PMTIDs;
   std::vector<float> * m_in_Ts;
