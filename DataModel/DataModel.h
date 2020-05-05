@@ -92,9 +92,11 @@ class DataModel {
   WCSimRootEvent * IDWCSimEvent_Raw;
   /// The original, unmodified `WCSimRootEvent` for the OD
   WCSimRootEvent * ODWCSimEvent_Raw;
-  /// The triggered `WCSimRootEvent` for the ID (digits are sorted into trigger windows)
+  /// DEPRECATED! The triggered `WCSimRootEvent` for the ID (digits are sorted into trigger windows)
+  __attribute__((deprecated))
   WCSimRootEvent * IDWCSimEvent_Triggered;
-  /// The triggered `WCSimRootEvent` for the OD (digits are sorted into trigger windows)
+  /// DEPRECATED! The triggered `WCSimRootEvent` for the OD (digits are sorted into trigger windows)
+  __attribute__((deprecated))
   WCSimRootEvent * ODWCSimEvent_Triggered;
 
   /// Store the dimensionality, number of reconstructed vertices and the highest nclusters warning threshold passed
