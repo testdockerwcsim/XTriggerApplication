@@ -66,78 +66,71 @@ bool BONSAI::Execute(){
   float out_vertex[4], out_direction[6], out_maxlike[3];
   int   out_nsel[2];
   double dout_vertex[3], dout_direction[3], dout_cone[2];
-  
-  for (int itrigger = 0 ; itrigger < m_data->IDWCSimEvent_Triggered->GetNumberOfEvents(); itrigger++) {
-    m_trigger = m_data->IDWCSimEvent_Triggered->GetTrigger(itrigger);
 
-    //clear the previous triggers' digit information
-    m_in_PMTIDs->clear();
-    m_in_Ts->clear();
-    m_in_Qs->clear();
+  //Loop over SubSamples
+  for(std::vector<SubSample>::iterator is = m_data->IDSamples.begin(); is != m_data->IDSamples.end(); ++is){
 
-    //get the number of digits
-    m_in_nhits = m_trigger->GetNcherenkovdigihits();
-    int nhits_slots = m_trigger->GetNcherenkovdigihits_slots();
+    for (int itrigger = 0; itrigger < m_data->IDTriggers.m_num_triggers; itrigger++) {
+      //clear the previous triggers' hit information
+      m_in_PMTIDs->clear();
+      m_in_Ts->clear();
+      m_in_Qs->clear();
 
-    //don't run bonsai on large or small events
-    if(m_in_nhits < m_nhits_min || m_in_nhits > m_nhits_max) {
-      m_ss << "INFO: " << m_in_nhits << " digits in current trigger. Not running BONSAI";
-      StreamToLog(INFO);
-      return true;
-    }
+      //fill the inputs to BONSAI with the current triggers' digit information
+      //loop over all hits
+      const size_t nhits_in_subsample = is->m_time.size();
+      for(size_t ihit = 0; ihit < nhits_in_subsample; ihit++) {
+	//see if the hit belongs to this trigger
+	if(std::find(is->m_trigger_readout_windows[ihit].begin(),
+		     is->m_trigger_readout_windows[ihit].end(),
+		     itrigger) == is->m_trigger_readout_windows[ihit].end())
+	  continue;
 
-    //fill the inputs to BONSAI with the current triggers' digit information
-    long n_not_found = 0;
-    for (long idigi=0; idigi < nhits_slots; idigi++) {
-      TObject *element = (m_trigger->GetCherenkovDigiHits())->At(idigi);
-      WCSimRootCherenkovDigiHit *digi = 
-	dynamic_cast<WCSimRootCherenkovDigiHit*>(element);
-      if(!digi) {
-	n_not_found++;
-	//this happens regularly because removing digits doesn't shrink the TClonesArray
-	m_ss << "DEBUG: Digit " << idigi << " of " << m_in_nhits << " not found in WCSimRootTrigger";
+	//it belongs. Add it to the BONSAI input arrays
+	m_ss << "DEBUG: Hit " << ihit << " at time " << is->m_time[ihit];
 	StreamToLog(DEBUG2);
-	continue;
+	m_in_PMTIDs->push_back(is->m_PMTid[ihit]);
+	m_in_Ts    ->push_back(is->m_time[ihit]);
+	m_in_Qs    ->push_back(is->m_charge[ihit]);
+      }//ihit
+
+      //get the number of hits
+      m_in_nhits = m_in_PMTIDs->size();
+
+      //don't run bonsai on large or small events
+      if(m_in_nhits < m_nhits_min || m_in_nhits > m_nhits_max) {
+	m_ss << "INFO: " << m_in_nhits << " hits in current trigger. Not running BONSAI";
+	StreamToLog(INFO);
+	return true;
       }
-      m_ss << "DEBUG: Digit " << idigi << " at time " << digi->GetT();
-      StreamToLog(DEBUG2);
-      m_in_PMTIDs->push_back(digi->GetTubeId());
-      m_in_Ts    ->push_back(digi->GetT());
-      m_in_Qs    ->push_back(digi->GetQ());
-    }//idigi
-    int digits_found = nhits_slots - n_not_found;
-    if(m_in_nhits != digits_found) {
-      m_ss << "WARN: BONSAI expected " << m_in_nhits << " digits. Found " << digits_found;
-      StreamToLog(WARN);
-      m_in_nhits = digits_found;
-    }
     
-    m_ss << "DEBUG: BONSAI running over " << m_in_nhits << " digits";
-    StreamToLog(DEBUG1);
+      m_ss << "DEBUG: BONSAI running over " << m_in_nhits << " hits";
+      StreamToLog(DEBUG1);
 
-    //call BONSAI
-    m_bonsai->BonsaiFit( out_vertex, out_direction, out_maxlike, out_nsel, &m_in_nhits, m_in_PMTIDs->data(), m_in_Ts->data(), m_in_Qs->data());
+      //call BONSAI
+      m_bonsai->BonsaiFit( out_vertex, out_direction, out_maxlike, out_nsel, &m_in_nhits, m_in_PMTIDs->data(), m_in_Ts->data(), m_in_Qs->data());
 
-    m_ss << "DEBUG: Vertex reconstructed at x, y, z, t:";
-    for(int i = 0; i < 4; i++) {
-      m_ss << " " << out_vertex[i] << ",";
-    }
-    StreamToLog(DEBUG1);
+      m_ss << "DEBUG: Vertex reconstructed at x, y, z, t:";
+      for(int i = 0; i < 4; i++) {
+	m_ss << " " << out_vertex[i] << ",";
+      }
+      StreamToLog(DEBUG1);
 
-    //fill the data model with the result
-    // need to convert to double...
-    for(int i = 0; i < 3; i++) {
-      dout_vertex[i]    = out_vertex[i];
-      dout_direction[i] = out_direction[i];
-    }
-    for(int i = 0; i < 2; i++)
-      dout_cone[i] = out_direction[i+3];
+      //fill the data model with the result
+      // need to convert to double...
+      for(int i = 0; i < 3; i++) {
+	dout_vertex[i]    = out_vertex[i];
+	dout_direction[i] = out_direction[i];
+      }
+      for(int i = 0; i < 2; i++)
+	dout_cone[i] = out_direction[i+3];
 
-    TimeDelta vertex_time = (m_trigger->GetHeader()->GetDate() + out_vertex[3]) * TimeDelta::ns;
-    m_data->RecoInfo.AddRecon(kReconBONSAI, itrigger, m_in_nhits, vertex_time, &(dout_vertex[0]), out_maxlike[2], out_maxlike[1],
-			      &(dout_direction[0]), &(dout_cone[0]), out_direction[5]);
-
-  }//itrigger
+      TimeDelta vertex_time = m_data->IDTriggers.m_trigger_time.at(itrigger) + TimeDelta(out_vertex[3] * TimeDelta::ns);
+      m_data->RecoInfo.AddRecon(kReconBONSAI, itrigger, m_in_nhits,
+				vertex_time, &(dout_vertex[0]), out_maxlike[2], out_maxlike[1],
+				&(dout_direction[0]), &(dout_cone[0]), out_direction[5]);
+    }//itrigger
+  }//ID SubSamples
 
   if(m_stopwatch) m_stopwatch->Stop();
 
