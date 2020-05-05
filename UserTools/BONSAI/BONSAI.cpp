@@ -92,7 +92,7 @@ bool BONSAI::Execute(){
       if(m_in_nhits < m_nhits_min || m_in_nhits > m_nhits_max) {
 	m_ss << "INFO: " << m_in_nhits << " hits in current trigger. Not running BONSAI";
 	StreamToLog(INFO);
-	return true;
+	continue;
       }
     
       m_ss << "DEBUG: BONSAI running over " << m_in_nhits << " hits";

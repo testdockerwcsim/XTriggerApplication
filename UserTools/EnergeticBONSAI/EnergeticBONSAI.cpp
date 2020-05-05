@@ -98,9 +98,9 @@ bool EnergeticBONSAI::Execute(){
 
     //don't run energetic bonsai on large or small events
     if(m_in_nhits < m_nhits_min || m_in_nhits > m_nhits_max) {
-      m_ss << "INFO: " << m_in_nhits << " digits in current trigger. Not running BONSAI";
+      m_ss << "INFO: " << m_in_nhits << " digits in current trigger. Not running Energetic BONSAI";
       StreamToLog(INFO);
-      return true;
+      continue;
     }
 
     //fill the inputs to energetic BONSAI with the current triggers' digit information
