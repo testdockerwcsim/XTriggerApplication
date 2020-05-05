@@ -1,17 +1,8 @@
 #include "BONSAI.h"
 
-BONSAI::BONSAI():Tool(){}
+#include "Utilities.h"
 
-bool BONSAI::FileExists(std::string pathname, std::string filename) {
-  string filepath = pathname + "/" + filename;
-  bool exists = access(filepath.c_str(), F_OK) != -1;
-  if(!exists) {
-    m_ss << "FATAL: " << filepath << " not found or inaccessible";
-    StreamToLog(FATAL);
-    return false;
-  }
-  return true;
-}
+BONSAI::BONSAI():Tool(){}
 
 bool BONSAI::Initialise(std::string configfile, DataModel &data){
   
@@ -33,7 +24,7 @@ bool BONSAI::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data;
 
-  if(!FileExists(std::getenv("BONSAIDIR"), "libWCSimBonsai.so")) {
+  if(!util::FileExists(std::getenv("BONSAIDIR"), "libWCSimBonsai.so")) {
     Log("FATAL: BONSAI library not found. Ensure the BONSAI library exists at $BONSAIDIR/libWCSimBonsai.so. For more information about BONSAI, see https://github.com/hyperk/hk-BONSAI", FATAL, m_verbose);
     return false;
   }

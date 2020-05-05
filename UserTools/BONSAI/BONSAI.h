@@ -13,7 +13,6 @@
 
 class BONSAI: public Tool {
 
-
  public:
 
   BONSAI();
@@ -23,8 +22,6 @@ class BONSAI: public Tool {
 
 
  private:
-
-  bool FileExists(std::string pathname, std::string filename);
 
   /// This is the class that runs the BONSAI low-energy reconstruction algorithm
   WCSimBonsai * m_bonsai;
