@@ -145,10 +145,6 @@ bool DataOut::Execute(){
   //Fill the tree with what we've just created
   m_event_tree->Fill();
 
-  //make sure the triggers are reset for the next event
-  m_data->IDTriggers.Clear();
-  m_data->ODTriggers.Clear();
-
   //increment event number
   m_event_num++;
 
