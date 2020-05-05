@@ -40,7 +40,7 @@ bool BONSAI::Initialise(std::string configfile, DataModel &data){
   m_bonsai->Init(geo);
   m_data->WCSimGeomTree->ResetBranchAddresses();
 
-  //allocate memory for the digit vectors
+  //allocate memory for the hit vectors
   m_in_PMTIDs = new std::vector<int>  (m_nhits_max);
   m_in_Ts     = new std::vector<float>(m_nhits_max);
   m_in_Qs     = new std::vector<float>(m_nhits_max);
@@ -67,7 +67,7 @@ bool BONSAI::Execute(){
       m_in_Ts->clear();
       m_in_Qs->clear();
 
-      //fill the inputs to BONSAI with the current triggers' digit information
+      //fill the inputs to BONSAI with the current triggers' hit information
       //loop over all hits
       const size_t nhits_in_subsample = is->m_time.size();
       for(size_t ihit = 0; ihit < nhits_in_subsample; ihit++) {
