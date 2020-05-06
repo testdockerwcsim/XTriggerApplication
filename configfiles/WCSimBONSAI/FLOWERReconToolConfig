@@ -6,5 +6,5 @@ nhitsmax 1000
 overwrite_nearest_neighbours false
 flower_verbose 1
 use_stopwatch 1
-#stopwatch_file energetic_bonsai_stopwatch.pdf
+#stopwatch_file flower_recon_stopwatch.pdf
 verbose 3

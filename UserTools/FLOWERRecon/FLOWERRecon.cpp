@@ -14,7 +14,7 @@ bool FLOWERRecon::Initialise(std::string configfile, DataModel &data){
   //Setup and start the stopwatch
   bool use_stopwatch = false;
   m_variables.Get("use_stopwatch", use_stopwatch);
-  m_stopwatch = use_stopwatch ? new util::Stopwatch("EnergeticBONSAI") : 0;
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("FLOWERRecon") : 0;
 
   m_stopwatch_file = "";
   m_variables.Get("stopwatch_file", m_stopwatch_file);
