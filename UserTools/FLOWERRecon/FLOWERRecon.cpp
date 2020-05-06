@@ -23,7 +23,7 @@ bool FLOWERRecon::Initialise(std::string configfile, DataModel &data){
   Log("TODO: detector_name should come from the geometry, rather than the parameter file", WARN, m_verbose);
   m_overwrite_nearest = false;
   m_variables.Get("overwrite_nearest_neighbours", m_overwrite_nearest);
-  m_flower = new WCSimFlower(m_detector_name.c_str(), geo, m_overwrite_nearest, flower_verbose);
+  m_flower = new WCSimFLOWER(m_detector_name.c_str(), geo, m_overwrite_nearest, flower_verbose);
 
   //override any FLOWER assumptions
   m_flower->SetDarkRate(m_data->IDPMTDarkRate);

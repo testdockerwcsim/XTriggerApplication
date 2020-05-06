@@ -80,7 +80,7 @@ Once the container has started to run the software
   * This runs an example toolchain with two versions of the `dummy` tool. It's essentially a Hello World tool
 
 You're then free to install any applications in your container you wish for development
-* If you are using optional packages (e.g. [hk-BONSAI](https://github.com/hyperk/hk-BONSAI) or [energetic-bonsai](https://github.com/JostMigenda/energetic-bonsai)) install them in `$HYPERKDIR` and they will automatically be found whenever you start your container (and `Build.h` and `$LD_LIBRARY_PATH` will be set appropriately).
+* If you are using optional packages (e.g. [hk-BONSAI](https://github.com/hyperk/hk-BONSAI) or [FLOWER](https://github.com/JostMigenda/energetic-bonsai)) install them in `$HYPERKDIR` and they will automatically be found whenever you start your container (and `Build.h` and `$LD_LIBRARY_PATH` will be set appropriately).
   * If you do install such packages, remember to `source Setup.sh` (or exit the container and come back in if you've installed them in `$HYPERKDIR`), and `make clean; make` again, in order to build the tools that depend on the optional packages (e.g. the BONSAI tool for the hk-BONSAI package)
 
 Notes: 
@@ -99,7 +99,7 @@ Notes:
     * Versions of WCSim older than v1.8.0 will almost certainly not work. (`kTriggerNoTrig` added in v1.8.0; `WCSimRootOptions` added in v1.7.0)
   * Note that you also need ROOT setup (a WCSim prerequisite)
 * (Optional) If you want to run the BONSAI tool, make sure you have sourced [hk-BONSAI](https://github.com/hyperk/hk-BONSAI) i.e. that you have `$BONSAIDIR` set
-* (Optional) If you want to run the EnergeticBONSAI tool, make sure you have sourced [energetic-bonsai](https://github.com/JostMigenda/energetic-bonsai) i.e. that you have `$EBONSAIDIR` set
+* (Optional) If you want to run the FLOWER tool, make sure you have sourced [FLOWER](https://github.com/JostMigenda/energetic-bonsai) i.e. that you have `$FLOWERDIR` set
   * Note: you need to use the library branch at https://github.com/tdealtry/energetic-bonsai/tree/library (PR pending)
 
 * Run `./GetToolDAQ.sh`

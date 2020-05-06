@@ -12,10 +12,12 @@ if [ "$TrigGERAppinDOCKer" = "indubitably" ]; then
     #Setup BONSAI, if it's there
     if [ -d $HYPERKDIR/hk-BONSAI ]; then
         export BONSAIDIR=$HYPERKDIR/hk-BONSAI
+	export PATH=$BONSAIDIR/rootbonsai:$PATH
     fi
-    #Setup energetic BONSAI, if it's there
-    if [ -d $HYPERKDIR/energetic-bonsai ]; then
-        export EBONSAIDIR=$HYPERKDIR/energetic-bonsai
+    #Setup FLOWER, if it's there
+    if [ -d $HYPERKDIR/flower ]; then
+        export FLOWERDIR=$HYPERKDIR/FLOWER
+	export PATH=$FLOWERDIR/rootflower:$PATH
     fi
 fi
 
@@ -41,12 +43,10 @@ else
     export LD_LIBRARY_PATH=$BONSAIDIR:$LD_LIBRARY_PATH
 fi
 
-#Check if we've got energetic bonsai
-if [ -z "$EBONSAIDIR" ]; then
-    echo "Running without energetic BONSAI";
+#Check if we've got FLOWER
+if [ -z "$FLOWERDIR" ]; then
+    echo "Running without FLOWER";
 else
-    echo "#define EBONSAIEXISTS" >> Build.h
-    export LD_LIBRARY_PATH=$EBONSAIDIR:$LD_LIBRARY_PATH
+    echo "#define FLOWEREXISTS" >> Build.h
+    export LD_LIBRARY_PATH=$FLOWERDIR:$LD_LIBRARY_PATH
 fi
-
-
