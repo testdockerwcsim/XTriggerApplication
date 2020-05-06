@@ -1,9 +1,9 @@
-#include "EnergeticBONSAI.h"
+#include "FLOWERRecon.h"
 
-EnergeticBONSAI::EnergeticBONSAI():Tool(){}
+FLOWERRecon::FLOWERRecon():Tool(){}
 
 
-bool EnergeticBONSAI::Initialise(std::string configfile, DataModel &data){
+bool FLOWERRecon::Initialise(std::string configfile, DataModel &data){
 
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
@@ -13,9 +13,9 @@ bool EnergeticBONSAI::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data;
 
-  //setup energetic BONSAI with the geometry info
-  int ebonsai_verbose = 0;
-  m_variables.Get("ebonsai_verbose", ebonsai_verbose);
+  //setup FLOWER with the geometry info
+  int flower_verbose = 0;
+  m_variables.Get("flower_verbose", flower_verbose);
   WCSimRootGeom * geo = 0;
   m_data->WCSimGeomTree->SetBranchAddress("wcsimrootgeom", &geo);
   m_data->WCSimGeomTree->GetEntry(0);
@@ -23,13 +23,13 @@ bool EnergeticBONSAI::Initialise(std::string configfile, DataModel &data){
   Log("TODO: detector_name should come from the geometry, rather than the parameter file", WARN, m_verbose);
   m_overwrite_nearest = false;
   m_variables.Get("overwrite_nearest_neighbours", m_overwrite_nearest);
-  m_ebonsai = new WCSimEBonsai(m_detector_name.c_str(), geo, m_overwrite_nearest, ebonsai_verbose);
+  m_flower = new WCSimFlower(m_detector_name.c_str(), geo, m_overwrite_nearest, flower_verbose);
 
-  //override any energetic BONSAI assumptions
-  m_ebonsai->SetDarkRate(m_data->IDPMTDarkRate);
-  m_ebonsai->SetNPMTs(m_data->IDNPMTs);
+  //override any FLOWER assumptions
+  m_flower->SetDarkRate(m_data->IDPMTDarkRate);
+  m_flower->SetNPMTs(m_data->IDNPMTs);
   
-  //tell energetic BONSAI how many PMTs are turned off
+  //tell FLOWER how many PMTs are turned off
   m_n_working_pmts = m_data->IDNPMTs;
   m_variables.Get("n_working_pmts", m_n_working_pmts);
   if(m_n_working_pmts > m_data->IDNPMTs) {
@@ -39,7 +39,7 @@ bool EnergeticBONSAI::Initialise(std::string configfile, DataModel &data){
     StreamToLog(WARN);
     m_n_working_pmts = m_data->IDNPMTs;
   }
-  m_ebonsai->SetNWorkingPMTs(m_n_working_pmts);
+  m_flower->SetNWorkingPMTs(m_n_working_pmts);
 
   //Get the reconstructed events filter you want to save
   if(!m_variables.Get("input_filter_name", m_input_filter_name)) {
@@ -63,7 +63,7 @@ bool EnergeticBONSAI::Initialise(std::string configfile, DataModel &data){
 }
 
 
-bool EnergeticBONSAI::Execute(){
+bool FLOWERRecon::Execute(){
 
   for(int ireco = 0; ireco < m_input_filter->GetNRecons(); ireco++) {
     //get the vertex
@@ -83,14 +83,14 @@ bool EnergeticBONSAI::Execute(){
     m_in_nhits = m_trigger->GetNcherenkovdigihits();
     int nhits_slots = m_trigger->GetNcherenkovdigihits_slots();
 
-    //don't run energetic bonsai on large or small events
+    //don't run FLOWER on large or small events
     if(m_in_nhits < m_nhits_min || m_in_nhits > m_nhits_max) {
-      m_ss << "INFO: " << m_in_nhits << " digits in current trigger. Not running BONSAI";
+      m_ss << "INFO: " << m_in_nhits << " digits in current trigger. Not running FLOWER";
       StreamToLog(INFO);
       return true;
     }
 
-    //fill the inputs to energetic BONSAI with the current triggers' digit information
+    //fill the inputs to FLOWER with the current triggers' digit information
     long n_not_found = 0;
     for (long idigi=0; idigi < nhits_slots; idigi++) {
       TObject *element = (m_trigger->GetCherenkovDigiHits())->At(idigi);
@@ -110,18 +110,18 @@ bool EnergeticBONSAI::Execute(){
     }//idigi
     int digits_found = nhits_slots - n_not_found;
     if(m_in_nhits != digits_found) {
-      m_ss << "WARN: Energetic BONSAI expected " << m_in_nhits << " digits. Found " << digits_found;
+      m_ss << "WARN: FLOWER expected " << m_in_nhits << " digits. Found " << digits_found;
       StreamToLog(WARN);
       m_in_nhits = digits_found;
     }
     
-    m_ss << "DEBUG: Energetic BONSAI running over " << m_in_nhits << " digits";
+    m_ss << "DEBUG: FLOWER running over " << m_in_nhits << " digits";
     StreamToLog(DEBUG1);
 
     //get the energy
-    double energy = m_ebonsai->GetEnergy(*m_in_Ts, *m_in_PMTIDs, &(m_vertex[0]));
+    double energy = m_flower->GetEnergy(*m_in_Ts, *m_in_PMTIDs, &(m_vertex[0]));
 
-    m_ss << "INFO: Energetic BONSAI reconstructed energy " << energy;
+    m_ss << "INFO: FLOWER reconstructed energy " << energy;
     StreamToLog(INFO);
 
   }//ireco
@@ -130,9 +130,9 @@ bool EnergeticBONSAI::Execute(){
 }
 
 
-bool EnergeticBONSAI::Finalise(){
+bool FLOWERRecon::Finalise(){
 
-  delete m_ebonsai;
+  delete m_flower;
   delete m_in_PMTIDs;
   delete m_in_Ts;
 
