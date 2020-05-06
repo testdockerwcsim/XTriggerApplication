@@ -14,6 +14,16 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
   m_verbose = 0;
   m_variables.Get("verbose", m_verbose);
 
+  //Setup and start the stopwatch
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("WCSimReader") : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch) m_stopwatch->Start();
+
   m_data= &data;
 
   //config reading
@@ -49,22 +59,26 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
     return false;
 
   //set branch addresses
-  m_wcsim_opt = new WCSimRootOptions();
+  m_wcsim_opt = 0;
   m_chain_opt  ->SetBranchAddress("wcsimrootoptions", &m_wcsim_opt);
   m_chain_opt->GetEntry(0);
-  m_wcsim_event_ID = new WCSimRootEvent();
+  m_wcsim_event_ID = 0;
   m_chain_event->SetBranchAddress("wcsimrootevent",   &m_wcsim_event_ID);
+  // Force deletion to prevent memory leak
+  m_chain_event->GetBranch("wcsimrootevent")->SetAutoDelete(kTRUE);
   if(m_wcsim_opt->GetGeomHasOD()) {
     Log("INFO: The geometry has an OD. Will add OD digits to m_data", INFO, m_verbose);
-    m_wcsim_event_OD = new WCSimRootEvent();
+    m_wcsim_event_OD = 0;
     m_chain_event->SetBranchAddress("wcsimrootevent_OD",   &m_wcsim_event_OD);
+    // Force deletion to prevent memory leak
+    m_chain_event->GetBranch("wcsimrootevent_OD")->SetAutoDelete(kTRUE);
     m_data->HasOD = true;
   }
   else {
     m_wcsim_event_OD = 0;
     m_data->HasOD = false;
   }
-  m_wcsim_geom = new WCSimRootGeom();
+  m_wcsim_geom = 0;
   m_chain_geom ->SetBranchAddress("wcsimrootgeom",    &m_wcsim_geom);
 
   //set number of events
@@ -88,8 +102,8 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
   std::cerr << "OD PMTs are not currently stored in WCSimRootGeom. When they are TODO fill IDGeom & ODGeom depending on where the PMT is" << std::endl;
   m_chain_geom->GetEntry(0);
   for(int ipmt = 0; ipmt < m_wcsim_geom->GetWCNumPMT(); ipmt++) {
-    WCSimRootPMT pmt = m_wcsim_geom->GetPMT(ipmt);
-    PMTInfo pmt_light(pmt.GetTubeNo(), pmt.GetPosition(0), pmt.GetPosition(1), pmt.GetPosition(2));
+    const WCSimRootPMT * pmt = m_wcsim_geom->GetPMTPtr(ipmt);
+    PMTInfo pmt_light(pmt->GetTubeNo(), pmt->GetPosition(0), pmt->GetPosition(1), pmt->GetPosition(2));
     m_data->IDGeom.push_back(pmt_light);
   }//ipmt
 
@@ -97,13 +111,6 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
   m_data->WCSimGeomTree = m_chain_geom;
   m_data->WCSimOptionsTree = m_chain_opt;
   m_data->WCSimEventTree = m_chain_event;
-  m_data->IDWCSimEvent_Raw = m_wcsim_event_ID;
-  m_data->ODWCSimEvent_Raw = m_wcsim_event_OD;
-
-  //setup the TObjArray to store the filenames
-  //int nfiles = m_chain_event->GetListOfFiles()->GetEntries();
-  m_data->CurrentWCSimFiles = new TObjArray();
-  m_data->CurrentWCSimFiles->SetOwner(true);
 
   //store the relevant options
   m_data->IsMC = true;
@@ -117,6 +124,8 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
     m_data->ODPMTDarkRate = 0;
     m_data->ODNPMTs = 0;
   }
+
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
   return true;
 }
@@ -176,8 +185,7 @@ bool WCSimReader::CompareTree(TChain * chain, int mode)
     modestr = "WCSimRootOptions";
   }
   else if(mode == 1) {
-    //wcsim_geom_0 = new WCSimRootGeom(*m_wcsim_geom); //this operation doesn't work in WCSim
-    Log("WARN: geometry not being checked for equality between files. TODO - uncomment this line after WCSim PR 281", WARN, m_verbose);
+    wcsim_geom_0 = new WCSimRootGeom(*m_wcsim_geom); //this operation doesn't work in WCSim
     modestr = "WCSimRootGeom";
   }
   //loop over all the other entries
@@ -203,7 +211,7 @@ bool WCSimReader::CompareTree(TChain * chain, int mode)
       //WCSimWCAddDarkNoise
       std::vector<string> pmtlocs;
       pmtlocs.push_back("tank");
-      pmtlocs.push_back("OD");
+      if(m_data->HasOD) pmtlocs.push_back("OD");
       for(unsigned int i = 0; i < pmtlocs.size(); i++) {
 	diff_file = diff_file || CompareVariable(wcsim_opt_0->GetPMTDarkRate(pmtlocs.at(i)),
 						 m_wcsim_opt->GetPMTDarkRate(pmtlocs.at(i)),
@@ -273,8 +281,7 @@ bool WCSimReader::CompareTree(TChain * chain, int mode)
 
     }//mode == 0
     else if(mode == 1) {
-      //diff_file = !wcsim_geom_0->CompareAllVariables(m_wcsim_geom);
-      Log("WARN: geometry not being checked for equality between files. TODO - uncomment this line after WCSim PR 281", WARN, m_verbose);
+      diff_file = !wcsim_geom_0->CompareAllVariables(m_wcsim_geom);
     }//mode == 1
     if(diff_file) {
       m_ss << "ERROR: Difference between " << modestr << " tree between input file 0 and " << i;
@@ -286,8 +293,7 @@ bool WCSimReader::CompareTree(TChain * chain, int mode)
     delete wcsim_opt_0;
   }
   else if(mode == 1) {
-    //delete wcsim_geom_0;
-    Log("WARN: geometry not being checked for equality between files. TODO - uncomment this line after WCSim PR 281", WARN, m_verbose);
+    delete wcsim_geom_0;
   }
   if(diff) {
     m_ss << "ERROR: Difference between " << modestr << " trees";
@@ -309,6 +315,8 @@ template <typename T> bool WCSimReader::CompareVariable(T v1, T v2, const char *
 }
 
 bool WCSimReader::Execute(){
+  if(m_stopwatch) m_stopwatch->Start();
+
   m_data->IDSamples.clear();
   m_data->ODSamples.clear();
 
@@ -333,15 +341,18 @@ bool WCSimReader::Execute(){
     return false;
   }
 
+  //make sure the event is pointed to in the data model
+  m_data->IDWCSimEvent_Raw = m_wcsim_event_ID;
+  m_data->ODWCSimEvent_Raw = m_wcsim_event_OD;
+
   //store the WCSim filename(s) and event number(s) for the current event(s)
-  m_data->CurrentWCSimFiles->Clear();
-  m_data->CurrentWCSimEventNums.clear();
-  TObjString * fname = new TObjString(m_chain_event->GetFile()->GetName());
-  int event_in_wcsim_file = m_current_event_num - m_chain_event->GetTreeOffset()[m_chain_event->GetTreeNumber()];
-  m_ss << "DEBUG: Current event is event " << event_in_wcsim_file << " from WCSim file " << fname->String() << " " << m_chain_event->GetTreeOffset()[m_chain_event->GetTreeNumber()];
+  m_data->CurrentWCSimFile.String() = m_chain_event->GetFile()->GetName();
+  m_data->CurrentWCSimEventNum      = m_current_event_num 
+    - m_chain_event->GetTreeOffset()[m_chain_event->GetTreeNumber()];
+  m_ss << "DEBUG: Current event is event " << m_data->CurrentWCSimEventNum
+       << " from WCSim file " << m_data->CurrentWCSimFile.String()
+       << " Tree offset is " << m_chain_event->GetTreeOffset()[m_chain_event->GetTreeNumber()];
   StreamToLog(DEBUG1);
-  m_data->CurrentWCSimFiles->Add(fname);
-  m_data->CurrentWCSimEventNums.push_back(event_in_wcsim_file);
 
   //store digit info in the transient data model
   //ID
@@ -370,11 +381,14 @@ bool WCSimReader::Execute(){
 	  last  = time;
       }//ihit
       m_data->IDTriggers.AddTrigger(m_wcsim_trigger->GetTriggerType(),
-				    first,
-				    last,
+				    trigger_time - first, //readout
+				    last - trigger_time,
+				    trigger_time - first, //mask
+				    last - trigger_time,
 				    trigger_time,
 				    m_wcsim_trigger->GetTriggerInfo());
       subid_all.Append(subid_this);
+      Log("WARN: Trigger added to TriggerInfo. Note that the mask time has been set to the entire readout window", WARN, m_verbose);
     }//itrigger
     m_data->IDSamples.push_back(subid_all);
   }//
@@ -391,6 +405,8 @@ bool WCSimReader::Execute(){
   //and flag to exit the Execute() loop, if appropriate
   if(m_current_event_num >= m_n_events)
     m_data->vars.Set("StopLoop",1);
+
+  if(m_stopwatch) m_stopwatch->Stop();
 
   return true;
 }
@@ -413,8 +429,10 @@ SubSample WCSimReader::GetDigits()
     if (idigi == 0){
       // Store times relative to the first digit
       first_time = TimeDelta(digit->GetT());
+      m_ss << "DEBUG: 1st digit time before shifting: " << first_time;
+      StreamToLog(DEBUG1);
     }
-    float T = (TimeDelta(digit->GetT()) - first_time) / TimeDelta::ns;
+    TimeDelta::short_time_t T = (TimeDelta(digit->GetT()) - first_time) / TimeDelta::ns;
     float Q = digit->GetQ();
     PMTid.push_back(ID);
     time.push_back(T);
@@ -447,20 +465,22 @@ SubSample WCSimReader::GetDigits()
 }
 
 bool WCSimReader::Finalise(){
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    m_stopwatch->Start();
+  }
+
   m_ss << "INFO: Read " << m_current_event_num << " WCSim events";
   StreamToLog(INFO);
-
-  delete m_data->CurrentWCSimFiles;
 
   delete m_chain_opt;
   delete m_chain_event;
   delete m_chain_geom;
 
-  delete m_wcsim_opt;
-  delete m_wcsim_event_ID;
-  if(m_wcsim_event_OD)
-    delete m_wcsim_event_OD;
-  delete m_wcsim_geom;
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    delete m_stopwatch;
+  }
 
   return true;
 }
