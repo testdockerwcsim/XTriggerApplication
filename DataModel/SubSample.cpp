@@ -232,7 +232,7 @@ void SubSample::TellMeAboutTheTriggers(const TriggerInfo & triggers, const int v
   size_t n_hits = m_time.size();
   TimeDelta hit_time;
   for(size_t ihit = 0; ihit < n_hits; ihit++) {
-    hit_time = m_time[ihit];
+    hit_time = AbsoluteDigitTime(ihit);
     //Is the hit in this readout window?
     for(std::vector<util::Window>::reverse_iterator it = readout_windows.rbegin();
 	it != readout_windows.rend(); ++it) {
