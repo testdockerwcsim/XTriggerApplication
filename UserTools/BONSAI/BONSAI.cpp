@@ -101,6 +101,8 @@ bool BONSAI::Execute(){
     
     m_ss << "DEBUG: BONSAI running over " << m_in_nhits << " hits";
     StreamToLog(DEBUG1);
+    m_ss << "DEBUG: First hit time relative to trigger: " << m_in_Ts->at(0);
+    StreamToLog(DEBUG1);
 
     //call BONSAI
     m_bonsai->BonsaiFit( out_vertex, out_direction, out_maxlike, out_nsel, &m_in_nhits, m_in_PMTIDs->data(), m_in_Ts->data(), m_in_Qs->data());
