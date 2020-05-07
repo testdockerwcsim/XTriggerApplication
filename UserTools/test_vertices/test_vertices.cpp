@@ -11,6 +11,15 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
 
   m_verbose = 0;
   m_variables.Get("verbose", m_verbose);
+  //Setup and start the stopwatch
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("test_vertices") : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch) m_stopwatch->Start();
 
   m_data= &data;
 
@@ -133,13 +142,14 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
 
   //and pull them out with the get function in the same way 
 
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
   return true;
 }
 
 
 bool test_vertices::Execute(){
-
+  if(m_stopwatch) m_stopwatch->Start();
 
   std::vector<SubSample> & samples = m_data->IDSamples;
 
@@ -157,6 +167,8 @@ bool test_vertices::Execute(){
       m_data->IDTriggers.AddTrigger(kTriggerUndefined,
 				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
 				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
 				    TimeDelta(trigger_ts[i]) + is->m_timestamp,
 				    std::vector<float>(1, trigger_ns[i]));
 
@@ -168,16 +180,27 @@ bool test_vertices::Execute(){
   }
 
 
+  if(m_stopwatch) m_stopwatch->Stop();
+
   return true;
 
 }
 
 
 bool test_vertices::Finalise(){
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    m_stopwatch->Start();
+  }
 
 #ifdef GPU
   GPU_daq::test_vertices_finalize();
 #endif
+
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    delete m_stopwatch;
+  }
 
   return true;
 }

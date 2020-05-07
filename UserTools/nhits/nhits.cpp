@@ -103,6 +103,8 @@ bool NHits::Execute(){
       m_data->IDTriggers.AddTrigger(kTriggerNDigits,
                                     TimeDelta(trigger_ts[i]) - m_trigger_save_window_pre + is->m_timestamp,
                                     TimeDelta(trigger_ts[i]) + m_trigger_save_window_post + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) - m_trigger_save_window_pre + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) + m_trigger_save_window_post + is->m_timestamp,
                                     TimeDelta(trigger_ts[i]) + is->m_timestamp,
                                     std::vector<float>(1, trigger_ns[i]));
 
@@ -113,7 +115,13 @@ bool NHits::Execute(){
   is->SortByTime();
   AlgNDigits(&(*is));
 #endif
-  }
+  }//loop over SubSamples
+  //Now we have all the triggers, get the SubSample to determine
+  // - which trigger readout windows each hit is associated with
+  // - which hits should be masked from future triggers
+  for( std::vector<SubSample>::iterator is=samples.begin(); is!=samples.end(); ++is) {
+    (*is).TellMeAboutTheTriggers(m_data->IDTriggers, m_verbose);
+  }//loop over SubSamples
 
   if(m_stopwatch) m_stopwatch->Stop();
 
@@ -181,11 +189,13 @@ void NHits::AlgNDigits(const SubSample * sample)
       triggers->AddTrigger(kTriggerNDigits,
 			   triggertime - m_trigger_save_window_pre + sample->m_timestamp,
 			   triggertime + m_trigger_save_window_post + sample->m_timestamp,
+			   triggertime - m_trigger_save_window_pre + sample->m_timestamp,
+			   triggertime + m_trigger_save_window_post + sample->m_timestamp,
 			   triggertime + sample->m_timestamp,
 			   std::vector<float>(1, n_digits));
     }
   }//loop over Digits
-  m_ss << "INFO: Found " << triggers->m_N << " NDigit trigger(s) from " << (m_trigger_OD ? "OD" : "ID");
+  m_ss << "INFO: Found " << triggers->m_num_triggers << " NDigit trigger(s) from " << (m_trigger_OD ? "OD" : "ID");
   StreamToLog(INFO);
 }
 
