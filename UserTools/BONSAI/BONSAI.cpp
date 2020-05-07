@@ -71,7 +71,9 @@ bool BONSAI::Execute(){
       //fill the inputs to BONSAI with the current triggers' hit information
       //loop over all hits
       const size_t nhits_in_subsample = is->m_time.size();
-      for(size_t ihit = 0; ihit < nhits_in_subsample; ihit++) {
+      //starting at m_first_unique, rather than 0, to avoid double-counting hits
+      // that are in multiple SubSamples
+      for(size_t ihit = is->m_first_unique; ihit < nhits_in_subsample; ihit++) {
 	//see if the hit belongs to this trigger
 	if(std::find(is->m_trigger_readout_windows[ihit].begin(),
 		     is->m_trigger_readout_windows[ihit].end(),
