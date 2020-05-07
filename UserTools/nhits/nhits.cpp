@@ -151,6 +151,7 @@ void NHits::AlgNDigits(const SubSample * sample)
 
   // Where to store the triggers we find
   TriggerInfo * triggers = m_trigger_OD ? &(m_data->ODTriggers) : &(m_data->IDTriggers);
+  const int num_triggers_start = triggers->m_num_triggers;
 
   // Loop over all digits
   std::deque<TimeDelta> times;
@@ -210,7 +211,9 @@ void NHits::AlgNDigits(const SubSample * sample)
     }//trigger found
   }//loop over Digits
   
-  m_ss << "INFO: Found " << triggers->m_num_triggers << " NDigit trigger(s) from " << (m_trigger_OD ? "OD" : "ID");
+  m_ss << "INFO: Found " << triggers->m_num_triggers - num_triggers_start
+       << " NDigit trigger(s) from " << (m_trigger_OD ? "OD" : "ID")
+       << " Total triggers found there: " << triggers->m_num_triggers;
   StreamToLog(INFO);
 }
 
