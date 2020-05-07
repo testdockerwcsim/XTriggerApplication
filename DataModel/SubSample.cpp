@@ -129,12 +129,12 @@ std::vector<SubSample> SubSample::Split(TimeDelta target_width, TimeDelta target
       }
       ihit_first = i + 1;
     }
-  }
+  }//i (loop over m_time)
   // Add final SubSample
   SubSample new_sample;
   new_sample.Append(temp_PMTid, temp_time, temp_charge, temp_timestamp);
-  split_samples.push_back(new_sample);
   new_sample.m_first_unique = ihit_first_unique - ihit_first;
+  split_samples.push_back(new_sample);
 
   return split_samples;
 }
