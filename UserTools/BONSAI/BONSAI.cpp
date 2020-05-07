@@ -58,14 +58,15 @@ bool BONSAI::Execute(){
   int   out_nsel[2];
   double dout_vertex[3], dout_direction[3], dout_cone[2];
 
-  //Loop over SubSamples
-  for(std::vector<SubSample>::iterator is = m_data->IDSamples.begin(); is != m_data->IDSamples.end(); ++is){
+  //loop over ID triggers
+  for (int itrigger = 0; itrigger < m_data->IDTriggers.m_num_triggers; itrigger++) {
+    //clear the previous triggers' hit information
+    m_in_PMTIDs->clear();
+    m_in_Ts->clear();
+    m_in_Qs->clear();
 
-    for (int itrigger = 0; itrigger < m_data->IDTriggers.m_num_triggers; itrigger++) {
-      //clear the previous triggers' hit information
-      m_in_PMTIDs->clear();
-      m_in_Ts->clear();
-      m_in_Qs->clear();
+    //Loop over ID SubSamples
+    for(std::vector<SubSample>::iterator is = m_data->IDSamples.begin(); is != m_data->IDSamples.end(); ++is){
 
       //fill the inputs to BONSAI with the current triggers' hit information
       //loop over all hits
@@ -120,8 +121,8 @@ bool BONSAI::Execute(){
       m_data->RecoInfo.AddRecon(kReconBONSAI, itrigger, m_in_nhits,
 				vertex_time, &(dout_vertex[0]), out_maxlike[2], out_maxlike[1],
 				&(dout_direction[0]), &(dout_cone[0]), out_direction[5]);
-    }//itrigger
-  }//ID SubSamples
+    }//ID SubSamples
+  }//itrigger
 
   if(m_stopwatch) m_stopwatch->Stop();
 
