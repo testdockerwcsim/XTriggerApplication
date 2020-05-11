@@ -80,6 +80,10 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
     m_ss << "WARN: first_event set to value more than the number of events in the file. Reading just the last event in the file, number: " << m_first_event_num;
     StreamToLog(WARN);
   }
+  else if(m_first_event_num < 0) {
+    m_first_event_num = 0;
+    Log("WARN: first_event set to negative value. Set to 0", WARN, m_verbose);
+  }
   m_current_event_num = m_first_event_num;
 
   //ensure that the geometry & options are the same for each file
