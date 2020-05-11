@@ -3,4 +3,5 @@
 infile $WCSIMDIR/wcsim.root
 #filelist wcsimfilelist
 nevents -1
+first_event 0
 verbose 3
