@@ -22,6 +22,15 @@ class LEAFRecon: public Tool {
 
  private:
 
+  /// The result of a LEAF fit
+  BQFitter::FitterOutput m_leaf_result;
+  /// Number of hits in a trigger
+  int m_in_nhits;
+
+  /// Below this number of hits in a trigger, don't run LEAF. Equality is run. Set in config file
+  unsigned int m_nhits_min;
+  /// Above this number of hits in a trigger, don't run LEAF. Equality is run. Set in config file
+  unsigned int m_nhits_max;
 
   /// The stopwatch, if we're using one
   util::Stopwatch * m_stopwatch;
