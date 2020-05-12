@@ -10,6 +10,7 @@
 typedef enum EReconstructers {
   kReconUndefined = -1,
   kReconBONSAI,
+  kReconLEAF,
   kReconTestVerticesNoDirection,
   kReconTestVertices,
   kReconRandomNoDirection,

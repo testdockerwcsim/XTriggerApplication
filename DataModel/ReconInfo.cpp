@@ -81,6 +81,9 @@ std::string ReconInfo::EnumAsString(Reconstructer_t r)
   case (kReconBONSAI):
     return "BONSAI";
     break;
+  case (kReconLEAF):
+    return "LEAF";
+    break;
   case (kReconTestVerticesNoDirection):
     return "TestVertices_NoDirection";
     break;
@@ -178,6 +181,7 @@ bool ReconInfo::ShouldProvideDirection(Reconstructer_t r)
 {
   switch(r) {
   case(kReconBONSAI):
+  case(kReconLEAF):
   case(kReconTestVertices):
   case(kReconRandom):
     return true;
