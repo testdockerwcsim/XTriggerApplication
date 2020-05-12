@@ -21,4 +21,6 @@
 #ifdef EBONSAIEXISTS
 #include "EnergeticBONSAI/EnergeticBONSAI.cpp"
 #endif //EBONSAIEXISTS
+#ifdef LEAFEXISTS
 #include "LEAFRecon/LEAFRecon.cpp"
+#endif //LEAFEXISTS

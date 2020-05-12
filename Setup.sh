@@ -36,4 +36,11 @@ else
     export LD_LIBRARY_PATH=$EBONSAIDIR:$LD_LIBRARY_PATH
 fi
 
+if [ -z "$LEAFDIR" ]; then
+    echo "Running without LEAF";
+else
+    echo "#define LEAFEXISTS" >> Build.h
+    export LD_LIBRARY_PATH=$LEAFDIR:$LD_LIBRARY_PATH
+fi
+
 

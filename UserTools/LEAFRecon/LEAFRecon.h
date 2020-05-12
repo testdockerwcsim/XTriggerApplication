@@ -7,6 +7,8 @@
 #include "Tool.h"
 #include "Stopwatch.h"
 
+#include "BQFitter.hh"
+
 class LEAFRecon: public Tool {
 
 
