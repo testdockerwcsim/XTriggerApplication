@@ -61,7 +61,18 @@ bool LEAFRecon::Execute(){
     for(std::vector<SubSample>::iterator is = m_data->IDSamples.begin(); is != m_data->IDSamples.end(); ++is){
 
       // Give hits to the fitter one-by-one
-      for(int ihit = 0; ihit < m_in_nhits; ihit++) {
+      //loop over all hits
+      const size_t nhits_in_subsample = is->m_time.size();
+      //starting at m_first_unique, rather than 0, to avoid double-counting hits
+      // that are in multiple SubSamples
+      for(size_t ihit = is->m_first_unique; ihit < nhits_in_subsample; ihit++) {
+	//see if the hit belongs to this trigger
+	if(std::find(is->m_trigger_readout_windows[ihit].begin(),
+		     is->m_trigger_readout_windows[ihit].end(),
+		     itrigger) == is->m_trigger_readout_windows[ihit].end())
+	  continue;
+
+	//it belongs. Give it to LEAF
 	BQFitter::GetME()->AddHit(is->m_time[ihit], is->m_charge[ihit], i_hybrid, is->m_PMTid[ihit]);
 	m_in_nhits++;
       }//ihit
