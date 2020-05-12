@@ -95,7 +95,8 @@ bool LEAFRecon::Execute(){
     StreamToLog(DEBUG1);
 
     //run the fit
-    m_leaf_result = BQFitter::GetME()->MakeFit();
+    Log("TODO: Just using 50cm PMTs in the fit. When we include mPMTs too, need to call MakeFit with true", WARN, m_verbose);
+    m_leaf_result = BQFitter::GetME()->MakeFit(false);
 
     m_ss << "DEBUG: Vertex reconstructed at x, y, z, t:";
     for(int i = 0; i < 3; i++) {
