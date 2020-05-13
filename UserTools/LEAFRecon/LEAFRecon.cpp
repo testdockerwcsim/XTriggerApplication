@@ -50,6 +50,9 @@ bool LEAFRecon::Execute(){
   const int i_hybrid = 0;
   Log("TODO: Assuming all hits are from 50cm PMTs. When we include mPMTs too, they need to be added with i_hybrid = 1", WARN, m_verbose);
 
+  std::vector<double> true_vertex(3);
+  double true_time;
+
   //loop over ID triggers
   for (int itrigger = 0; itrigger < m_data->IDTriggers.m_num_triggers; itrigger++) {
 
@@ -73,6 +76,8 @@ bool LEAFRecon::Execute(){
 	  continue;
 
 	//it belongs. Give it to LEAF
+	m_ss << "DEBUG: Hit " << ihit << " at time " << is->m_time[ihit];
+	StreamToLog(DEBUG2);
 	BQFitter::GetME()->AddHit(is->m_time[ihit], is->m_charge[ihit], i_hybrid, is->m_PMTid[ihit]);
 	m_in_nhits++;
       }//ihit
@@ -86,10 +91,14 @@ bool LEAFRecon::Execute(){
       continue;
     }
 
-    // Send True Position to LEAF for check
-    std::vector<double> vVtxTrue(3,0.);
-    Log("TODO: True vertex currently assumed to be at detector centre. Should get this from WCSimRootEvent for MC", WARN, m_verbose);
-    BQFitter::GetME()->SetTrueVertexInfo(vVtxTrue,0);
+    if(m_data->IsMC) {
+      // Send True Position to LEAF for check
+      for(int idim = 0; idim < 3; idim++)
+	true_vertex[idim] = m_data->IDWCSimEvent_Raw->GetTrigger(0)->GetVtxs(0, idim);
+      true_time = m_data->IDWCSimEvent_Raw->GetTrigger(0)->GetHeader()->GetDate();
+      Log("TODO: True vertex currently assumed to be the first vertex from the first trigger in the WCSimRootEvent. Some complicated truth matching should occur for multi-vertex events...", WARN, m_verbose);
+      BQFitter::GetME()->SetTrueVertexInfo(true_vertex, true_time);
+    }//IsMC
 
     m_ss << "DEBUG: LEAF running over " << m_in_nhits << " hits";
     StreamToLog(DEBUG1);
@@ -99,25 +108,44 @@ bool LEAFRecon::Execute(){
     m_leaf_result = BQFitter::GetME()->MakeFit(false);
 
     m_ss << "DEBUG: Vertex reconstructed at x, y, z, t:";
-    for(int i = 0; i < 3; i++) {
-      m_ss << " " << m_leaf_result.Vtx[i] << ",";
-    }
+    for(int idim = 0; idim < 3; idim++)
+      m_ss << " " << m_leaf_result.Vtx[idim] << ",";
     m_ss << " " << m_leaf_result.Time;
     StreamToLog(DEBUG1);
 
+    if(m_data->IsMC) {
+      m_ss << "DEBUG: True vertex at x, y, z, t:";
+      for(int idim = 0; idim < 3; idim++)
+	m_ss << " " << true_vertex[idim] << ",";
+      m_ss << " " << true_time;
+      StreamToLog(DEBUG1);
+      m_ss << "DEBUG: Difference between true & reconstructed:"
+	   << " NLL: " << m_leaf_result.True_NLLDiff
+	   << " time: " << m_leaf_result.True_TimeDiff
+	   << " position: " << m_leaf_result.True_TistDiff;
+      StreamToLog(DEBUG1);
+    }
+
     //fill the data model with the result
+    // - Time is in unit???
+    // - Vertex is x,y,z in unit???
+    // - Direction variables are returned 3 times: 0=20", 1=mPMT, 2=combined
+    // - Direction is returned as a unit vector???
+    // - Goodness of time/vertex & direction fits. Higher/lower??? number means a better fit
     TimeDelta vertex_time = m_data->IDTriggers.m_trigger_time.at(itrigger) + TimeDelta(m_leaf_result.Time * TimeDelta::ns);
-    double cone[2] = {0,0};
+    double time_goodness = 0; //No goodness of fit for time-only fit by LEAF
+    double cone[2] = {0,0}; //No cone reconstructed by LEAF
+    Log("TODO: Filling ReconInfo with results for 50cm PMTs only. When we include mPMTs, need to use the 2nd dimension of dimension quantities (i.e. 0=50cm, 1=mPMT, 2=combined)", WARN, m_verbose);
     m_data->RecoInfo.AddRecon(kReconLEAF, itrigger, m_in_nhits,
-			      vertex_time, &(m_leaf_result.Vtx[0]), m_leaf_result.Good, 0,
-			      &(m_leaf_result.dir[0][0]), &(cone[0]), m_leaf_result.dirKS[0]);
+			      vertex_time, &(m_leaf_result.Vtx[0]), m_leaf_result.Good, time_goodness,
+			      &(m_leaf_result.dir[0][0]), &(cone[0]), m_leaf_result.dir_goodness[0]);
     m_ss << "TODO: LEAF reconstruction result is not filling TriggerApp's ReconInfo class correctly. Need to find out:" << std::endl
-	 << "\tIs there are goodness of fit related to time only?" << std::endl
-	 << "\tWhat the 3x3 direction matrix means" << std::endl
-	 << "\tIs there a Cherenkov cone reconstructed?" << std::endl
-	 << "\tWhat the 3 direction KS's mean" << std::endl
-	 << "\tIs there an energy?" << std::endl
+	 << "\tIs direction returned as a 3-vector?" << std::endl
 	 << "\tAre the times in ns and the positions in cm?" << std::endl
+	 << "\tBetter goodness of fits corresponds to a higher/lower value?" << std::endl
+	 << "\tDo we want to save other LEAF quantities?" << std::endl
+	 << "\t- n50: maximum number of hit of an event within a 50 ns window" << std::endl
+	 << "\t- dirKS: a KS test to check if the PMT hit of an event are clustered or not (in order to discriminate wall BG)" << std::endl
 	 << "For now, just enjoy the time/vertex positions...";
     StreamToLog(DEBUG1);
 
