@@ -8,7 +8,6 @@ if [ "$TrigGERAppinDOCKer" = "indubitably" ]; then
     echo "You're running in docker. Setting up ROOT/WCSim/Geant4"
     echo "(If you're not, why have you set \$TrigGERAppinDOCKer to \"indubitably\"?!)"
     source $WCSIMDIR/../env-WCSim.sh
-
 fi
 
 echo "" > $ToolDAQapp/Build.h
@@ -32,14 +31,14 @@ fi
 if [ -z "$EBONSAIDIR" ]; then
     echo "Running without energetic BONSAI";
 else
-    echo "#define EBONSAIEXISTS" >> Build.h
+    echo "#define EBONSAIEXISTS" >> $ToolDAQapp/Build.h
     export LD_LIBRARY_PATH=$EBONSAIDIR:$LD_LIBRARY_PATH
 fi
 
 if [ -z "$LEAFDIR" ]; then
     echo "Running without LEAF";
 else
-    echo "#define LEAFEXISTS" >> Build.h
+    echo "#define LEAFEXISTS" >> $ToolDAQapp/Build.h
     export LD_LIBRARY_PATH=$LEAFDIR:$LD_LIBRARY_PATH
 fi
 
