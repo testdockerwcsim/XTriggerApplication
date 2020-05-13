@@ -39,7 +39,7 @@ if [ -z "$LEAFDIR" ]; then
     echo "Running without LEAF";
 else
     echo "#define LEAFEXISTS" >> $ToolDAQapp/Build.h
-    export LD_LIBRARY_PATH=$LEAFDIR:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$LEAFDIR/lib:$LD_LIBRARY_PATH
 fi
 
 
