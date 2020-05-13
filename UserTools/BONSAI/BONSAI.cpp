@@ -101,7 +101,7 @@ bool BONSAI::Execute(){
     
     m_ss << "DEBUG: BONSAI running over " << m_in_nhits << " hits";
     StreamToLog(DEBUG1);
-    m_ss << "DEBUG: First hit time relative to trigger: " << m_in_Ts->at(0);
+    m_ss << "DEBUG: First hit time relative to sample: " << m_in_Ts->at(0);
     StreamToLog(DEBUG1);
 
     //call BONSAI
