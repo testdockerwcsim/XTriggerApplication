@@ -105,27 +105,35 @@ bool BONSAI::Execute(){
     StreamToLog(DEBUG1);
 
     //call BONSAI
-    m_bonsai->BonsaiFit( out_vertex, out_direction, out_maxlike, out_nsel, &m_in_nhits, m_in_PMTIDs->data(), m_in_Ts->data(), m_in_Qs->data());
-
-    m_ss << "DEBUG: Vertex reconstructed at x, y, z, t:";
-    for(int i = 0; i < 4; i++) {
-      m_ss << " " << out_vertex[i] << ",";
+    bool success = true;
+    try {
+      m_bonsai->BonsaiFit( out_vertex, out_direction, out_maxlike, out_nsel, &m_in_nhits, m_in_PMTIDs->data(), m_in_Ts->data(), m_in_Qs->data());
+    } catch (int e) {
+      Log("BONSAI threw an exception!", WARN, m_verbose);
+      success = false;
     }
-    StreamToLog(DEBUG1);
 
-    //fill the data model with the result
-    // need to convert to double...
-    for(int i = 0; i < 3; i++) {
-      dout_vertex[i]    = out_vertex[i];
-      dout_direction[i] = out_direction[i];
+    if (success) {
+      m_ss << "DEBUG: Vertex reconstructed at x, y, z, t:";
+      for(int i = 0; i < 4; i++) {
+        m_ss << " " << out_vertex[i] << ",";
+      }
+      StreamToLog(DEBUG1);
+
+      //fill the data model with the result
+      // need to convert to double...
+      for(int i = 0; i < 3; i++) {
+        dout_vertex[i]    = out_vertex[i];
+        dout_direction[i] = out_direction[i];
+      }
+      for(int i = 0; i < 2; i++)
+        dout_cone[i] = out_direction[i+3];
+
+      TimeDelta vertex_time = m_data->IDTriggers.m_trigger_time.at(itrigger) + TimeDelta(out_vertex[3] * TimeDelta::ns);
+      m_data->RecoInfo.AddRecon(kReconBONSAI, itrigger, m_in_nhits,
+                                vertex_time, &(dout_vertex[0]), out_maxlike[2], out_maxlike[1],
+                                &(dout_direction[0]), &(dout_cone[0]), out_direction[5]);
     }
-    for(int i = 0; i < 2; i++)
-      dout_cone[i] = out_direction[i+3];
-
-    TimeDelta vertex_time = m_data->IDTriggers.m_trigger_time.at(itrigger) + TimeDelta(out_vertex[3] * TimeDelta::ns);
-    m_data->RecoInfo.AddRecon(kReconBONSAI, itrigger, m_in_nhits,
-			      vertex_time, &(dout_vertex[0]), out_maxlike[2], out_maxlike[1],
-			      &(dout_direction[0]), &(dout_cone[0]), out_direction[5]);
   }//itrigger
 
   if(m_stopwatch) m_stopwatch->Stop();
