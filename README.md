@@ -80,6 +80,8 @@ Once the container has started to run the software
   * This runs an example toolchain with two versions of the `dummy` tool. It's essentially a Hello World tool
 
 You're then free to install any applications in your container you wish for development
+* If you are using optional packages (e.g. [hk-BONSAI](https://github.com/hyperk/hk-BONSAI), [LEAF](https://github.com/bquilain/LEAF/), or [FLOWER](https://github.com/HKDAQ/FLOWER)) install them in `$HYPERKDIR` and they will automatically be found whenever you start your container (and `Build.h` and `$LD_LIBRARY_PATH` will be set appropriately).
+  * If you do install such packages, remember to `source Setup.sh` (or exit the container and come back in if you've installed them in `$HYPERKDIR`), and `make clean; make` again, in order to build the tools that depend on the optional packages (e.g. the BONSAI tool for the hk-BONSAI package)
 
 Notes: 
 * To exit a container use `exit` 
@@ -96,12 +98,10 @@ Notes:
   * Note that this will work with the current WCSim develop branch.
     * Versions of WCSim older than v1.8.0 will almost certainly not work. (`kTriggerNoTrig` added in v1.8.0; `WCSimRootOptions` added in v1.7.0)
   * Note that you also need ROOT setup (a WCSim prerequisite)
-* (Optional) If you want to run the BONSAI tool, make sure you have sourced hk-BONSAI i.e. that you have `$BONSAIDIR` set
-* (Optional) If you want to run the LEAF tool, make sure you have sourced LEAF i.e. that you have `$LEAFDIR` set
-  * Note: you need to use the LEAFClass branch at https://github.com/tdealtry/LEAF/tree/LEAFClass
-  * Note: if you have a hybrid 20" + mPMT version of WCSim, you need to use the branch at https://github.com/bquilain/LEAF/tree/LEAFClass or comment out `#define NORMALWCSIMHACK` in `$LEAFDIR/leaf/BQFitter.cc` in the above branch
-* (Optional) If you want to run the EnergeticBONSAI tool, make sure you have sourced energetic-bonsai i.e. that you have `$EBONSAIDIR` set
-  * Note: you need to use the library branch at https://github.com/tdealtry/energetic-bonsai/tree/library (PR pending)
+* (Optional) If you want to run the BONSAI tool, make sure you have sourced [hk-BONSAI](https://github.com/hyperk/hk-BONSAI) i.e. that you have `$BONSAIDIR` set
+* (Optional) If you want to run the LEAF tool, make sure you have sourced [LEAF](https://github.com/bquilain/LEAF/) i.e. that you have `$LEAFDIR` set
+  * Note: you need to use the LEAFClass branch at https://github.com/bquilain/LEAF/tree/LEAFClass and ensure `#define WCSIM_wo_mPMT` is uncommented in `$LEAFDIR/leaf/BQFitter.hh`
+* (Optional) If you want to run the FLOWER tool, make sure you have sourced [FLOWER](https://github.com/HKDAQ/FLOWER) i.e. that you have `$FLOWERDIR` set
 * (Optional) for compiling over GPU, set the CUDADIR variable, for example export CUDADIR="/usr/local/cuda"
 * Run `./GetToolDAQ.sh`
   * This gets and compiles the prerequisites: ToolDAQ, boost, and zmq
@@ -112,6 +112,11 @@ To check it has built successfully:
 * `source Setup.sh`
 * Check it runs with `./main`
   * This runs an example toolchain with two versions of the `dummy` tool. It's essentially a Hello World tool
+
+#### Installing an optional package later
+If you do install optional packages after the initial compliation of TriggerApplication, once they are setup correctly (see above) it is a two-step process to build the tools that depend on the optional packages
+* `source Setup.sh`
+* `make clean; make`
 
 #### GPU code
 

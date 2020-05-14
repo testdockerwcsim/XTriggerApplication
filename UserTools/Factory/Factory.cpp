@@ -20,16 +20,15 @@ if (tool=="dimfit") ret=new dimfit;
 if (tool=="ReconRandomiser") ret=new ReconRandomiser;
 if (tool=="ReconDataIn") ret=new ReconDataIn;
 if (tool=="pass_all") ret=new pass_all;
-
 if (tool=="ReconFilter") ret=new ReconFilter;
 if (tool=="ReconReset") ret=new ReconReset;
 if (tool=="PrepareSubSamples") ret=new PrepareSubSamples;
-#ifdef EBONSAIEXISTS
-if (tool=="EnergeticBONSAI") ret=new EnergeticBONSAI;
-#endif //EBONSAIEXISTS
 #ifdef LEAFEXISTS
 if (tool=="LEAFRecon") ret=new LEAFRecon;
 #endif //LEAFEXISTS
+#ifdef FLOWEREXISTS
+if (tool=="FLOWERRecon") ret=new FLOWERRecon;
+#endif //FLOWEREXISTS
 
 return ret;
 }

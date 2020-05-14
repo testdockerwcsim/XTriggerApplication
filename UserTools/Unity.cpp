@@ -14,13 +14,13 @@
 #include "ReconRandomiser/ReconRandomiser.cpp"
 #include "ReconDataIn/ReconDataIn.cpp"
 #include "pass_all/pass_all.cpp"
-
 #include "ReconFilter/ReconFilter.cpp"
 #include "ReconReset/ReconReset.cpp"
 #include "PrepareSubSamples/PrepareSubSamples.cpp"
-#ifdef EBONSAIEXISTS
-#include "EnergeticBONSAI/EnergeticBONSAI.cpp"
-#endif //EBONSAIEXISTS
 #ifdef LEAFEXISTS
 #include "LEAFRecon/LEAFRecon.cpp"
 #endif //LEAFEXISTS
+#ifdef FLOWEREXISTS
+#include "FLOWERRecon/FLOWERRecon.cpp"
+#endif //FLOWEREXISTS
+
