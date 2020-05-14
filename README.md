@@ -100,7 +100,7 @@ Notes:
   * Note that you also need ROOT setup (a WCSim prerequisite)
 * (Optional) If you want to run the BONSAI tool, make sure you have sourced [hk-BONSAI](https://github.com/hyperk/hk-BONSAI) i.e. that you have `$BONSAIDIR` set
 * (Optional) If you want to run the FLOWER tool, make sure you have sourced [FLOWER](https://github.com/HKDAQ/FLOWER) i.e. that you have `$FLOWERDIR` set
-
+* (Optional) for compiling over GPU, set the CUDADIR variable, for example export CUDADIR="/usr/local/cuda"
 * Run `./GetToolDAQ.sh`
   * This gets and compiles the prerequisites: ToolDAQ, boost, and zmq
   * You can optionally install Root
@@ -184,6 +184,7 @@ If you want to use these (and you have a compatible system)
       * `pass_all` is a very simple example
       * `nhits` is a relatively simple example. It has CPU and GPU versions
 4. Use `make` and/or `makeGPU` to build it
+   (you will need to create an environment variable CUDADIR pointing to your system CUDA installation, for example export CUDADIR="/usr/local/cuda" or export CUDADIR="/usr/local/cuda-8.0")
 5. Add your tool to a toolchain to test it with `./main TOOLCHAINNAME`
   * Or `./mainGPU TOOLCHAINNAME` for GPU code
 6. Write the README: `$ToolDAQapp/UserTools/TOOLNAME/README.md`
