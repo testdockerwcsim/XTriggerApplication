@@ -45,6 +45,7 @@ if [ -z "$BONSAIDIR" ]; then
 else
     echo "#define BONSAIEXISTS" >> $ToolDAQapp/Build.h
     export LD_LIBRARY_PATH=$BONSAIDIR:$LD_LIBRARY_PATH
+    export ROOT_INCLUDE_PATH=$BONSAIDIR/bonsai:$ROOT_INCLUDE_PATH
 fi
 
 #Check if we've got FLOWER
