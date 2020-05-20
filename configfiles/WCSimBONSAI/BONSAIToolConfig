@@ -3,4 +3,3 @@ use_stopwatch 1
 verbose 3
 nhitsmin 1
 nhitsmax 1000
-use_stopwatch 1
