@@ -1,0 +1,5 @@
+use_stopwatch 1
+#stopwatch_file leaf_stopwatch.pdf
+verbose 3
+nhitsmin 1
+nhitsmax 2000
