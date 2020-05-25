@@ -1,114 +1,113 @@
 #include "BONSAI.h"
 
-BONSAI::BONSAI():Tool(){}
+#include "Utilities.h"
 
-bool BONSAI::FileExists(std::string pathname, std::string filename) {
-  string filepath = pathname + "/" + filename;
-  bool exists = access(filepath.c_str(), F_OK) != -1;
-  if(!exists) {
-    ss << "FATAL: " << filepath << " not found or inaccessible";
-    StreamToLog(FATAL);
-    return false;
-  }
-  return true;
-}
+BONSAI::BONSAI():Tool(){}
 
 bool BONSAI::Initialise(std::string configfile, DataModel &data){
   
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
 
-  verbose = 0;
-  m_variables.Get("verbose", verbose);
+  m_verbose = 0;
+  m_variables.Get("verbose", m_verbose);
+
+  //Setup and start the stopwatch
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("BONSAI") : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch) m_stopwatch->Start();
 
   m_data= &data;
 
-  if(!FileExists(std::getenv("BONSAIDIR"), "libWCSimBonsai.so")) {
-    Log("FATAL: BONSAI library not found. Ensure the BONSAI library exists at $BONSAIDIR/libWCSimBonsai.so. For more information about BONSAI, see https://github.com/hyperk/hk-BONSAI", FATAL, verbose);
+  if(!util::FileExists(std::getenv("BONSAIDIR"), "libWCSimBonsai.so")) {
+    Log("FATAL: BONSAI library not found. Ensure the BONSAI library exists at $BONSAIDIR/libWCSimBonsai.so. For more information about BONSAI, see https://github.com/hyperk/hk-BONSAI", FATAL, m_verbose);
     return false;
   }
 
-  m_variables.Get("nhitsmin", fNHitsMin);
-  m_variables.Get("nhitsmax", fNHitsMax);
+  m_variables.Get("nhitsmin", m_nhits_min);
+  m_variables.Get("nhitsmax", m_nhits_max);
 
   //setup BONSAI with the geometry
-  _bonsai = new WCSimBonsai();
+  m_bonsai = new WCSimBonsai();
   WCSimRootGeom * geo = 0;
   m_data->WCSimGeomTree->SetBranchAddress("wcsimrootgeom", &geo);
   m_data->WCSimGeomTree->GetEntry(0);
-  _bonsai->Init(geo);
+  m_bonsai->Init(geo);
   m_data->WCSimGeomTree->ResetBranchAddresses();
 
-  //allocate memory for the digit vectors
-  _in_PMTIDs = new std::vector<int>  (fNHitsMax);
-  _in_Ts     = new std::vector<float>(fNHitsMax);
-  _in_Qs     = new std::vector<float>(fNHitsMax);
+  //allocate memory for the hit vectors
+  m_in_PMTIDs = new std::vector<int>  (m_nhits_max);
+  m_in_Ts     = new std::vector<float>(m_nhits_max);
+  m_in_Qs     = new std::vector<float>(m_nhits_max);
+
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
   return true;
 }
 
 
 bool BONSAI::Execute(){
-  Log("DEBUG: BONSAI::Execute() Starting", DEBUG1, verbose);
+  if(m_stopwatch) m_stopwatch->Start();
 
-  float out_vertex[4], out_direction[6], out_maxlike[500];
+  float out_vertex[4], out_direction[6], out_maxlike[3];
   int   out_nsel[2];
   double dout_vertex[3], dout_direction[3], dout_cone[2];
+
+  //loop over ID triggers
+  for (int itrigger = 0; itrigger < m_data->IDTriggers.m_num_triggers; itrigger++) {
+    //clear the previous triggers' hit information
+    m_in_PMTIDs->clear();
+    m_in_Ts->clear();
+    m_in_Qs->clear();
+
+    //Loop over ID SubSamples
+    for(std::vector<SubSample>::iterator is = m_data->IDSamples.begin(); is != m_data->IDSamples.end(); ++is){
+
+      //fill the inputs to BONSAI with the current triggers' hit information
+      //loop over all hits
+      const size_t nhits_in_subsample = is->m_time.size();
+      //starting at m_first_unique, rather than 0, to avoid double-counting hits
+      // that are in multiple SubSamples
+      for(size_t ihit = is->m_first_unique; ihit < nhits_in_subsample; ihit++) {
+	//see if the hit belongs to this trigger
+	if(std::find(is->m_trigger_readout_windows[ihit].begin(),
+		     is->m_trigger_readout_windows[ihit].end(),
+		     itrigger) == is->m_trigger_readout_windows[ihit].end())
+	  continue;
+
+	//it belongs. Add it to the BONSAI input arrays
+	m_ss << "DEBUG: Hit " << ihit << " at time " << is->m_time[ihit];
+	StreamToLog(DEBUG2);
+	m_in_PMTIDs->push_back(is->m_PMTid[ihit]);
+	m_in_Ts    ->push_back(is->m_time[ihit]);
+	m_in_Qs    ->push_back(is->m_charge[ihit]);
+      }//ihit
+    }//ID SubSamples
   
-  for (int itrigger = 0 ; itrigger < m_data->IDWCSimEvent_Triggered->GetNumberOfEvents(); itrigger++) {
-    _trigger = m_data->IDWCSimEvent_Triggered->GetTrigger(itrigger);
-
-    //clear the previous triggers' digit information
-    _in_PMTIDs->clear();
-    _in_Ts->clear();
-    _in_Qs->clear();
-
-    //get the number of digits
-    _in_nhits = _trigger->GetNcherenkovdigihits();
-    int nhits_slots = _trigger->GetNcherenkovdigihits_slots();
+    //get the number of hits
+    m_in_nhits = m_in_PMTIDs->size();
 
     //don't run bonsai on large or small events
-    if(_in_nhits < fNHitsMin || _in_nhits > fNHitsMax) {
-      ss << "INFO: " << _in_nhits << " digits in current trigger. Not running BONSAI";
+    if(m_in_nhits < m_nhits_min || m_in_nhits > m_nhits_max) {
+      m_ss << "INFO: " << m_in_nhits << " hits in current trigger. Not running BONSAI";
       StreamToLog(INFO);
-      return true;
-    }
-
-    //fill the inputs to BONSAI with the current triggers' digit information
-    long n_not_found = 0;
-    for (long idigi=0; idigi < nhits_slots; idigi++) {
-      TObject *element = (_trigger->GetCherenkovDigiHits())->At(idigi);
-      WCSimRootCherenkovDigiHit *digi = 
-	dynamic_cast<WCSimRootCherenkovDigiHit*>(element);
-      if(!digi) {
-	n_not_found++;
-	//this happens regularly because removing digits doesn't shrink the TClonesArray
-	ss << "DEBUG: Digit " << idigi << " of " << _in_nhits << " not found in WCSimRootTrigger";
-	StreamToLog(DEBUG2);
-	continue;
-      }
-      ss << "DEBUG: Digit " << idigi << " at time " << digi->GetT();
-      StreamToLog(DEBUG2);
-      _in_PMTIDs->push_back(digi->GetTubeId());
-      _in_Ts    ->push_back(digi->GetT());
-      _in_Qs    ->push_back(digi->GetQ());
-    }//idigi
-    int digits_found = nhits_slots - n_not_found;
-    if(_in_nhits != digits_found) {
-      ss << "WARN: BONSAI expected " << _in_nhits << " digits. Found " << digits_found;
-      StreamToLog(WARN);
-      _in_nhits = digits_found;
+      continue;
     }
     
-    ss << "DEBUG: BONSAI running over " << _in_nhits << " digits";
+    m_ss << "DEBUG: BONSAI running over " << m_in_nhits << " hits";
     StreamToLog(DEBUG1);
 
     //call BONSAI
-    _bonsai->BonsaiFit( out_vertex, out_direction, out_maxlike, out_nsel, &_in_nhits, _in_PMTIDs->data(), _in_Ts->data(), _in_Qs->data());
+    m_bonsai->BonsaiFit( out_vertex, out_direction, out_maxlike, out_nsel, &m_in_nhits, m_in_PMTIDs->data(), m_in_Ts->data(), m_in_Qs->data());
 
-    ss << "DEBUG: Vertex reconstructed at x, y, z, t:";
+    m_ss << "DEBUG: Vertex reconstructed at x, y, z, t:";
     for(int i = 0; i < 4; i++) {
-      ss << " " << out_vertex[i] << ",";
+      m_ss << " " << out_vertex[i] << ",";
     }
     StreamToLog(DEBUG1);
 
@@ -120,13 +119,14 @@ bool BONSAI::Execute(){
     }
     for(int i = 0; i < 2; i++)
       dout_cone[i] = out_direction[i+3];
-    
-    m_data->RecoInfo.AddRecon(kReconBONSAI, itrigger, _in_nhits, out_vertex[3], &(dout_vertex[0]), out_maxlike[2], out_maxlike[1],
-			      &(dout_direction[0]), &(dout_cone[0]), out_direction[5]);
 
+    TimeDelta vertex_time = m_data->IDTriggers.m_trigger_time.at(itrigger) + TimeDelta(out_vertex[3] * TimeDelta::ns);
+    m_data->RecoInfo.AddRecon(kReconBONSAI, itrigger, m_in_nhits,
+			      vertex_time, &(dout_vertex[0]), out_maxlike[2], out_maxlike[1],
+			      &(dout_direction[0]), &(dout_cone[0]), out_direction[5]);
   }//itrigger
 
-  Log("DEBUG: BONSAI::Execute() Done", WARN, verbose);
+  if(m_stopwatch) m_stopwatch->Stop();
 
   return true;
 }
@@ -134,10 +134,20 @@ bool BONSAI::Execute(){
 
 bool BONSAI::Finalise(){
 
-  delete _bonsai;
-  delete _in_PMTIDs;
-  delete _in_Ts;
-  delete _in_Qs;
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    m_stopwatch->Start();
+  }
+
+  delete m_bonsai;
+  delete m_in_PMTIDs;
+  delete m_in_Ts;
+  delete m_in_Qs;
+
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    delete m_stopwatch;
+  }
   
   return true;
 }

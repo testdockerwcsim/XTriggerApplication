@@ -65,6 +65,12 @@ Table of Contents
 
 * BONSAI
   * Reconstruct low-energy events with hk-BONSAI
+  * Requires a trigger
+  * Returns reconstructed vertex position and direction
+* FLOWERRecon
+  * Reconstruct energy of low-energy events with FLOWER
+  * Requires a reconstructed vertex
+  * Returns reconstructed energy
 * (test_vertices)
   * TODO: add option (or similar tool) to test_vertices
 
@@ -78,6 +84,8 @@ Table of Contents
 * dimfit
   * Find the number of dimensions that a positional vertex distribution corresponds to
   * Algorithm inherited from SK
+  * Compare nclusters to thresholds for golden, normal and silent warnings
+  * Passes dimensionality, nclusters, and highest nclusters_warning level passed to data model
 
 ## Miscellaneous
 

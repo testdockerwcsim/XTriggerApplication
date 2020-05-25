@@ -1,17 +1,17 @@
 #include "ReconInfo.h"
 
-ReconInfo::ReconInfo()
- : fNRecons(0),
-   fFirstTime(+9E20),
-   fLastTime(-9E20)
-{
+#include <limits>
+#include <cstdint>
 
+ReconInfo::ReconInfo()
+{
+  Reset();
 }
 
 void ReconInfo::AddRecon(Reconstructer_t reconstructer, int trigger_num,
-			 int nhits, double time, double * vertex,
+			 int nhits, TimeDelta time, double * vertex,
 			 double goodness_of_fit, double goodness_of_time_fit,
-			 bool fill_has_direction)
+			 bool fill_has_direction, double energy)
 {
   if(fill_has_direction) {
     if(ReconInfo::ShouldProvideDirection(reconstructer)) {
@@ -22,6 +22,7 @@ void ReconInfo::AddRecon(Reconstructer_t reconstructer, int trigger_num,
   fReconstructer.push_back(reconstructer);
   fTriggerNum.push_back(trigger_num);
   fNHits.push_back(nhits);
+  fEnergy.push_back(energy);
   fTime.push_back(time);
   Pos3D pos;
   pos.x = vertex[0];
@@ -35,12 +36,12 @@ void ReconInfo::AddRecon(Reconstructer_t reconstructer, int trigger_num,
 }
 
 void ReconInfo::AddRecon(Reconstructer_t reconstructer, int trigger_num,
-			 int nhits, double time, double * vertex,
+			 int nhits, TimeDelta time, double * vertex,
 			 double goodness_of_fit, double goodness_of_time_fit,
 			 double * direction_euler, double * cherenkov_cone,
-			 double direction_likelihood)
+			 double direction_likelihood, double energy)
 {
-  AddRecon(reconstructer, trigger_num, nhits, time, vertex, goodness_of_fit, goodness_of_time_fit, false);
+  AddRecon(reconstructer, trigger_num, nhits, time, vertex, goodness_of_fit, goodness_of_time_fit, false, energy);
   fHasDirection.push_back(true);
   DirectionEuler direct;
   direct.theta = direction_euler[0];
@@ -59,6 +60,7 @@ void ReconInfo::AddReconFrom(ReconInfo * in, const int irecon)
   fReconstructer.push_back(in->GetReconstructer(irecon));
   fTriggerNum.push_back(in->GetTriggerNum(irecon));
   fNHits.push_back(in->GetNHits(irecon));
+  fEnergy.push_back(in->GetEnergy(irecon));
   fTime.push_back(in->GetTime(irecon));
   fVertex.push_back(in->GetVertex(irecon));
   fGoodnessOfFit.push_back(in->GetGoodnessOfFit(irecon));
@@ -108,6 +110,70 @@ Reconstructer_t ReconInfo::ReconstructerFromString(std::string s)
   return kReconUndefined;
 }
 
+std::string ReconInfo::EnumAsString(NClustersWarning_t w)
+{
+  switch(w) {
+  case (kNClustersStandard):
+    return "NoNClustersWarning";
+    break;
+  case (kNClustersSilent):
+    return "NClustersSilentWarning";
+    break;
+  case (kNClustersNormal):
+    return "NClustersNormalWarning";
+    break;
+  case (kNClustersGolden):
+    return "NClustersGoldenWarning";
+    break;
+  default:
+    return "";
+  }
+  return "";
+}
+
+NClustersWarning_t ReconInfo::NClustersWarningFromString(std::string s)
+{
+  for(int i = int(kNClustersUndefined)+1; i <= kNClustersGolden; i++) {
+    if(s.compare(ReconInfo::EnumAsString((NClustersWarning_t)i)) == 0) {
+      return (NClustersWarning_t)i;
+    }
+  }
+  std::cerr << "ReconInfo::NClustersWarningFromString() Unknown string value " << s << std::endl;
+  return kNClustersUndefined;
+}
+
+std::string ReconInfo::EnumAsString(SNWarning_t w)
+{
+  switch(w) {
+  case (kSNWarningStandard):
+    return "NoSupernovaWarning";
+    break;
+  case (kSNWarningSilent):
+    return "SupernovaSilentWarning";
+    break;
+  case (kSNWarningNormal):
+    return "SupernovaNormalWarning";
+    break;
+  case (kSNWarningGolden):
+    return "SupernovaGoldenWarning";
+    break;
+  default:
+    return "";
+  }
+  return "";
+}
+
+SNWarning_t ReconInfo::SNWarningFromString(std::string s)
+{
+  for(int i = int(kSNWarningUndefined)+1; i <= kSNWarningGolden; i++) {
+    if(s.compare(ReconInfo::EnumAsString((SNWarning_t)i)) == 0) {
+      return (SNWarning_t)i;
+    }
+  }
+  std::cerr << "ReconInfo::SNWarningFromString() Unknown string value " << s << std::endl;
+  return kSNWarningUndefined;
+}
+
 bool ReconInfo::ShouldProvideDirection(Reconstructer_t r)
 {
   switch(r) {
@@ -125,12 +191,13 @@ bool ReconInfo::ShouldProvideDirection(Reconstructer_t r)
 void ReconInfo::Reset()
 {
   fNRecons = 0;
-  fFirstTime = +9E20;
-  fLastTime = -9E20;
+  fFirstTime = std::numeric_limits<TimeDelta::long_time_t>::max() * TimeDelta::s_long_time_unit;
+  fLastTime = std::numeric_limits<TimeDelta::long_time_t>::min() * TimeDelta::s_long_time_unit;
   //event
   fReconstructer.clear();
   fTriggerNum.clear();
   fNHits.clear();
+  fEnergy.clear();
   //vertex
   fTime.clear();
   fVertex.clear();
@@ -143,7 +210,7 @@ void ReconInfo::Reset()
   fDirectionLikelihood.clear();
 }
 
-void ReconInfo::UpdateTimeBoundaries(double time)
+void ReconInfo::UpdateTimeBoundaries(TimeDelta time)
 {
   if(time < fFirstTime)
     fFirstTime = time;

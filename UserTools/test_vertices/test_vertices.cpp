@@ -9,6 +9,18 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
 
+  m_verbose = 0;
+  m_variables.Get("verbose", m_verbose);
+  //Setup and start the stopwatch
+  bool use_stopwatch = false;
+  m_variables.Get("use_stopwatch", use_stopwatch);
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("test_vertices") : 0;
+
+  m_stopwatch_file = "";
+  m_variables.Get("stopwatch_file", m_stopwatch_file);
+
+  if(m_stopwatch) m_stopwatch->Start();
+
   m_data= &data;
 
   m_data->triggeroutput=false;
@@ -23,47 +35,47 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("DetectorFile",DetectorFile);
   m_variables.Get("ParameterFile",ParameterFile);
   
-  m_variables.Get("distance_between_vertices",        f_distance_between_vertices);
-  m_variables.Get("wall_like_distance",   f_wall_like_distance);
-  m_variables.Get("water_like_threshold_number_of_pmts",   f_water_like_threshold_number_of_pmts);
-  m_variables.Get("wall_like_threshold_number_of_pmts",   f_wall_like_threshold_number_of_pmts);
-  m_variables.Get("coalesce_time",   f_coalesce_time);
-  m_variables.Get("trigger_gate_up",   f_trigger_gate_up);
-  m_variables.Get("trigger_gate_down",   f_trigger_gate_down);
-  m_variables.Get("output_txt",   f_output_txt);
-  m_variables.Get("correct_mode",   f_correct_mode);
-  m_variables.Get("n_direction_bins_theta",   f_n_direction_bins_theta);
-  m_variables.Get("cylindrical_grid",   f_cylindrical_grid);
-  m_variables.Get("costheta_cone_cut",   f_costheta_cone_cut);
-  m_variables.Get("select_based_on_cone",   f_select_based_on_cone);
-  m_variables.Get("write_output_mode",   f_write_output_mode);
-  m_variables.Get("trigger_threshold_adjust_for_noise",                   f_trigger_threshold_adjust_for_noise);
-  m_variables.Get("max_n_hits_per_job",   f_max_n_hits_per_job);
-  m_variables.Get("num_blocks_y",   f_num_blocks_y);
-  m_variables.Get("num_threads_per_block_y",   f_num_threads_per_block_y);
-  m_variables.Get("num_threads_per_block_x",   f_num_threads_per_block_x);
+  m_variables.Get("distance_between_vertices",        m_distance_between_vertices);
+  m_variables.Get("wall_like_distance",   m_wall_like_distance);
+  m_variables.Get("water_like_threshold_number_of_pmts",   m_water_like_threshold_number_of_pmts);
+  m_variables.Get("wall_like_threshold_number_of_pmts",   m_wall_like_threshold_number_of_pmts);
+  m_variables.Get("coalesce_time",   m_coalesce_time);
+  m_variables.Get("trigger_gate_up",   m_trigger_gate_up);
+  m_variables.Get("trigger_gate_down",   m_trigger_gate_down);
+  m_variables.Get("output_txt",   m_output_txt);
+  m_variables.Get("correct_mode",   m_correct_mode);
+  m_variables.Get("n_direction_bins_theta",   m_n_direction_bins_theta);
+  m_variables.Get("cylindrical_grid",   m_cylindrical_grid);
+  m_variables.Get("costheta_cone_cut",   m_costheta_cone_cut);
+  m_variables.Get("select_based_on_cone",   m_select_based_on_cone);
+  m_variables.Get("write_output_mode",   m_write_output_mode);
+  m_variables.Get("trigger_threshold_adjust_for_noise",                   m_trigger_threshold_adjust_for_noise);
+  m_variables.Get("max_n_hits_per_job",   m_max_n_hits_per_job);
+  m_variables.Get("num_blocks_y",   m_num_blocks_y);
+  m_variables.Get("num_threads_per_block_y",   m_num_threads_per_block_y);
+  m_variables.Get("num_threads_per_block_x",   m_num_threads_per_block_x);
 
-  printf(" DetectorFile %s \n ", DetectorFile.c_str());
-  printf(" ParameterFile %s \n ",ParameterFile.c_str() );
-  printf(" f_distance_between_vertices %f \n ", f_distance_between_vertices);
-  printf(" f_wall_like_distance %f \n ", f_wall_like_distance);
-  printf(" f_water_like_threshold_number_of_pmts %f \n ", f_water_like_threshold_number_of_pmts);
-  printf(" f_wall_like_threshold_number_of_pmts %f \n ", f_wall_like_threshold_number_of_pmts);
-  printf(" f_coalesce_time %f \n ", f_coalesce_time);
-  printf(" f_trigger_gate_up %f \n ", f_trigger_gate_up);
-  printf(" f_trigger_gate_down %f \n ", f_trigger_gate_down);
-  printf(" f_output_txt %d \n ", f_output_txt);
-  printf(" f_correct_mode %d \n ", f_correct_mode);
-  printf(" f_n_direction_bins_theta %d \n ",   f_n_direction_bins_theta);
-  printf(" f_cylindrical_grid %d \n ",   f_cylindrical_grid);
-  printf(" f_costheta_cone_cut %f \n ",   f_costheta_cone_cut);
-  printf(" f_select_based_on_cone %d \n ",   f_select_based_on_cone);
-  printf(" f_write_output_mode %d \n ", f_write_output_mode);
-  printf(" f_max_n_hits_per_job %d \n ", f_max_n_hits_per_job);
-  printf(" f_trigger_threshold_adjust_for_noise %d \n ", f_trigger_threshold_adjust_for_noise);
-  printf(" f_num_blocks_y %d \n ",   f_num_blocks_y);
-  printf(" f_num_threads_per_block_y %d \n ",   f_num_threads_per_block_y);
-  printf(" f_num_threads_per_block_x %d \n ",   f_num_threads_per_block_x);
+  m_ss << " DetectorFile " << DetectorFile.c_str(); StreamToLog(INFO);
+  m_ss << " ParameterFile " << ParameterFile.c_str() ; StreamToLog(INFO);
+  m_ss << " m_distance_between_vertices " << m_distance_between_vertices; StreamToLog(INFO);
+  m_ss << " m_wall_like_distance " << m_wall_like_distance; StreamToLog(INFO);
+  m_ss << " m_water_like_threshold_number_of_pmts " << m_water_like_threshold_number_of_pmts; StreamToLog(INFO);
+  m_ss << " m_wall_like_threshold_number_of_pmts " << m_wall_like_threshold_number_of_pmts; StreamToLog(INFO);
+  m_ss << " m_coalesce_time " << m_coalesce_time; StreamToLog(INFO);
+  m_ss << " m_trigger_gate_up " << m_trigger_gate_up; StreamToLog(INFO);
+  m_ss << " m_trigger_gate_down " << m_trigger_gate_down; StreamToLog(INFO);
+  m_ss << " m_output_txt " << m_output_txt; StreamToLog(INFO);
+  m_ss << " m_correct_mode " << m_correct_mode; StreamToLog(INFO);
+  m_ss << " m_n_direction_bins_theta " <<   m_n_direction_bins_theta; StreamToLog(INFO);
+  m_ss << " m_cylindrical_grid " <<   m_cylindrical_grid; StreamToLog(INFO);
+  m_ss << " m_costheta_cone_cut " <<   m_costheta_cone_cut; StreamToLog(INFO);
+  m_ss << " m_select_based_on_cone " <<   m_select_based_on_cone; StreamToLog(INFO);
+  m_ss << " m_write_output_mode " << m_write_output_mode; StreamToLog(INFO);
+  m_ss << " m_max_n_hits_per_job " << m_max_n_hits_per_job; StreamToLog(INFO);
+  m_ss << " m_trigger_threshold_adjust_for_noise " << m_trigger_threshold_adjust_for_noise; StreamToLog(INFO);
+  m_ss << " m_num_blocks_y " <<   m_num_blocks_y; StreamToLog(INFO);
+  m_ss << " m_num_threads_per_block_y " <<   m_num_threads_per_block_y; StreamToLog(INFO);
+  m_ss << " m_num_threads_per_block_x " <<   m_num_threads_per_block_x; StreamToLog(INFO);
 
 
   //  gpu_daq_initialize(PMTFile,DetectorFile,ParameterFile);
@@ -83,28 +95,36 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
     tube_z.push_back(ip->m_z);
   }
 
+  
 
   GPU_daq::test_vertices_initialize_ToolDAQ(m_data->detector_length, m_data->detector_radius, m_data->pmt_radius, ParameterFile, tube_no, tube_x, tube_y, tube_z, m_data->IDPMTDarkRate*1000,
- f_distance_between_vertices,
- f_wall_like_distance,
- f_water_like_threshold_number_of_pmts,
- f_wall_like_threshold_number_of_pmts,
- f_coalesce_time,
- f_trigger_gate_up,
- f_trigger_gate_down,
- f_output_txt,
- f_correct_mode,
- f_n_direction_bins_theta,
- f_cylindrical_grid,
- f_costheta_cone_cut,
- f_select_based_on_cone,
- f_trigger_threshold_adjust_for_noise,
- f_max_n_hits_per_job,
- f_num_blocks_y,
- f_num_threads_per_block_y,
- f_num_threads_per_block_x,
- f_write_output_mode
+ m_distance_between_vertices,
+ m_wall_like_distance,
+ m_water_like_threshold_number_of_pmts,
+ m_wall_like_threshold_number_of_pmts,
+ m_coalesce_time,
+ m_trigger_gate_up,
+ m_trigger_gate_down,
+ m_output_txt,
+ m_correct_mode,
+ m_n_direction_bins_theta,
+ m_cylindrical_grid,
+ m_costheta_cone_cut,
+ m_select_based_on_cone,
+ m_trigger_threshold_adjust_for_noise,
+ m_max_n_hits_per_job,
+ m_num_blocks_y,
+ m_num_threads_per_block_y,
+ m_num_threads_per_block_x,
+ m_write_output_mode
 );
+
+  int npmts = m_data->IDNPMTs;
+  double dark_rate_kHZ = m_data->IDPMTDarkRate;
+  double dark_rate_Hz = dark_rate_kHZ * 1000;
+  double average_occupancy = dark_rate_Hz * m_coalesce_time * npmts;
+  m_time_int.reserve(2*(int)average_occupancy);
+
 #endif
 
   // can acess variables directly like this and would be good if you could impliment in your code
@@ -122,13 +142,14 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
 
   //and pull them out with the get function in the same way 
 
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
   return true;
 }
 
 
 bool test_vertices::Execute(){
-
+  if(m_stopwatch) m_stopwatch->Start();
 
   std::vector<SubSample> & samples = m_data->IDSamples;
 
@@ -137,15 +158,21 @@ bool test_vertices::Execute(){
 
     std::vector<int> trigger_ns;
     std::vector<int> trigger_ts;
-    GPU_daq::test_vertices_execute(is->m_PMTid, is->m_time_int, &trigger_ns, &trigger_ts);
+    m_time_int.clear();
+    for(unsigned int i = 0; i < is->m_time.size(); i++) {
+      m_time_int.push_back(is->m_time[i]);
+    }
+    GPU_daq::test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
     for(int i=0; i<trigger_ns.size(); i++){
       m_data->IDTriggers.AddTrigger(kTriggerUndefined,
-				    trigger_ts[i] + f_trigger_gate_down, 
-				    trigger_ts[i] + f_trigger_gate_up,
-				    trigger_ts[i],
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
+				    TimeDelta(trigger_ts[i]) + is->m_timestamp,
 				    std::vector<float>(1, trigger_ns[i]));
 
-      printf(" trigger! time  %d nhits %d \n", trigger_ts[i], trigger_ns[i]);
+      m_ss << " trigger! time "<< trigger_ts[i] << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
     }
 #else
     ;
@@ -153,16 +180,27 @@ bool test_vertices::Execute(){
   }
 
 
+  if(m_stopwatch) m_stopwatch->Stop();
+
   return true;
 
 }
 
 
 bool test_vertices::Finalise(){
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    m_stopwatch->Start();
+  }
 
 #ifdef GPU
   GPU_daq::test_vertices_finalize();
 #endif
+
+  if(m_stopwatch) {
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    delete m_stopwatch;
+  }
 
   return true;
 }

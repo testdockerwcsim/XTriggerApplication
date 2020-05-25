@@ -1,6 +1,5 @@
 # Dummy config file
 
-#infile $WCSIMDIR/wcsim.root
 infile FILES/wcsim.root
 #filelist wcsimfilelist
 nevents -1

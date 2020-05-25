@@ -76,12 +76,12 @@ Docker is a platform independent container system which eases the headache of lo
 3) Run an instance of the container which will have the trigger application and all dependencies installed `docker run --name=TriggerApplication -it hkdaq/triggerapplication:latest` Note: only run once or you will make multiple contianers
 
 Once the container has started to run the software
-1) `cd TriggerApplication`
-2) `source Setup.sh`
-3) `./main`
+1) `./main`
   * This runs an example toolchain with two versions of the `dummy` tool. It's essentially a Hello World tool
 
 You're then free to install any applications in your container you wish for development
+* If you are using optional packages (e.g. [hk-BONSAI](https://github.com/hyperk/hk-BONSAI) or [FLOWER](https://github.com/HKDAQ/FLOWER)) install them in `$HYPERKDIR` and they will automatically be found whenever you start your container (and `Build.h` and `$LD_LIBRARY_PATH` will be set appropriately).
+  * If you do install such packages, remember to `source Setup.sh` (or exit the container and come back in if you've installed them in `$HYPERKDIR`), and `make clean; make` again, in order to build the tools that depend on the optional packages (e.g. the BONSAI tool for the hk-BONSAI package)
 
 Notes: 
 * To exit a container use `exit` 
@@ -98,7 +98,9 @@ Notes:
   * Note that this will work with the current WCSim develop branch.
     * Versions of WCSim older than v1.8.0 will almost certainly not work. (`kTriggerNoTrig` added in v1.8.0; `WCSimRootOptions` added in v1.7.0)
   * Note that you also need ROOT setup (a WCSim prerequisite)
-* (Optional) If you want to run the BONSAI tool, make sure you have sourced hk-BONSAI i.e. that you have `$BONSAIDIR` set
+* (Optional) If you want to run the BONSAI tool, make sure you have sourced [hk-BONSAI](https://github.com/hyperk/hk-BONSAI) i.e. that you have `$BONSAIDIR` set
+* (Optional) If you want to run the FLOWER tool, make sure you have sourced [FLOWER](https://github.com/HKDAQ/FLOWER) i.e. that you have `$FLOWERDIR` set
+* (Optional) for compiling over GPU, set the CUDADIR variable, for example export CUDADIR="/usr/local/cuda"
 * Run `./GetToolDAQ.sh`
   * This gets and compiles the prerequisites: ToolDAQ, boost, and zmq
   * You can optionally install Root
@@ -109,12 +111,17 @@ To check it has built successfully:
 * Check it runs with `./main`
   * This runs an example toolchain with two versions of the `dummy` tool. It's essentially a Hello World tool
 
+#### Installing an optional package later
+If you do install optional packages after the initial compliation of TriggerApplication, once they are setup correctly (see above) it is a two-step process to build the tools that depend on the optional packages
+* `source Setup.sh`
+* `make clean; make`
+
 #### GPU code
 
 Some triggers have been developed to be run on CUDA-compatible GPUs.
 If you want to use these (and you have a compatible system)
 * `source Setup.sh`
-* `makeGPU`
+* `make GPU`
 * `./mainGPU`
 
 ## Running
