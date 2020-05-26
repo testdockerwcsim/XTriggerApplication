@@ -1186,7 +1186,7 @@ int GPU_daq::test_vertices_execute(std::vector<int> PMTid, std::vector<int> time
     //////////////////////////////////
     if( use_timing )
       start_cuda_clock();
-    separate_triggers_into_gates();
+    separate_triggers_into_gates(trigger_ns, trigger_ts);
     if( use_timing )
       elapsed_gates += stop_cuda_clock();
 

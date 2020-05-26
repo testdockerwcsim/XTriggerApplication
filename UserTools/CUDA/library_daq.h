@@ -215,6 +215,7 @@ void fill_directions_memory_on_device();
 void fill_tofs_memory_on_device_nhits();
 void coalesce_triggers();
 void separate_triggers_into_gates();
+void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts);
 float timedifference_msec(struct timeval t0, struct timeval t1);
 void start_c_clock();
 double stop_c_clock();
@@ -1403,6 +1404,59 @@ void separate_triggers_into_gates(){
       output_trigger_information.push_back(vertex_z[itrigger->first]);
       output_trigger_information.push_back(trigger_npmts_in_time_bin.at(trigger_index));
       output_trigger_information.push_back(triggertime);
+
+      printf(" [2] triggertime: %d, npmts: %d, x: %f, y: %f, z: %f \n", triggertime, trigger_npmts_in_time_bin.at(trigger_index), vertex_x[itrigger->first], vertex_y[itrigger->first], vertex_z[itrigger->first]);
+
+      /* if( output_txt ){ */
+      /* 	FILE *of=fopen(output_file.c_str(), "w"); */
+
+      /* 	unsigned int distance_index; */
+      /* 	double tof; */
+      /* 	double corrected_time; */
+
+      /* 	for(unsigned int i=0; i<n_hits; i++){ */
+
+      /* 	  distance_index = get_distance_index(host_ids[i], n_PMTs*(itrigger->first)); */
+      /* 	  tof = host_times_of_flight[distance_index]; */
+
+      /* 	  corrected_time = host_times[i]-tof; */
+
+      /* 	  //fprintf(of, " %d %d %f \n", host_ids[i], host_times[i], corrected_time); */
+      /* 	  fprintf(of, " %d %f \n", host_ids[i], corrected_time); */
+      /* 	} */
+
+      /* 	fclose(of); */
+      /* } */
+
+    }
+  }
+
+
+  return;
+}
+
+void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts){
+
+  final_trigger_pair_vertex_time.clear();
+  unsigned int trigger_index;
+
+  unsigned int time_start=0;
+  for(std::vector<std::pair<unsigned int,unsigned int> >::const_iterator itrigger=trigger_pair_vertex_time.begin(); itrigger != trigger_pair_vertex_time.end(); ++itrigger){
+    //once a trigger is found, we must jump in the future before searching for the next
+    if(itrigger->second > time_start) {
+      unsigned int triggertime = itrigger->second*time_step_size - time_offset;
+      final_trigger_pair_vertex_time.push_back(std::make_pair(itrigger->first,triggertime));
+      time_start = triggertime + trigger_gate_up;
+      trigger_index = itrigger - trigger_pair_vertex_time.begin();
+      output_trigger_information.clear();
+      output_trigger_information.push_back(vertex_x[itrigger->first]);
+      output_trigger_information.push_back(vertex_y[itrigger->first]);
+      output_trigger_information.push_back(vertex_z[itrigger->first]);
+      output_trigger_information.push_back(trigger_npmts_in_time_bin.at(trigger_index));
+      output_trigger_information.push_back(triggertime);
+
+      trigger_ns->push_back(trigger_npmts_in_time_bin.at(trigger_index));
+      trigger_ts->push_back(triggertime);
 
       printf(" [2] triggertime: %d, npmts: %d, x: %f, y: %f, z: %f \n", triggertime, trigger_npmts_in_time_bin.at(trigger_index), vertex_x[itrigger->first], vertex_y[itrigger->first], vertex_z[itrigger->first]);
 
