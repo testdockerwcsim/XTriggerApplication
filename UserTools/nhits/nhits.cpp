@@ -76,11 +76,6 @@ bool NHits::Initialise(std::string configfile, DataModel &data){
 
   if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
-#ifdef GPU
-  //  GPU_daq::nhits_initialize();
-
-  GPU_daq::nhits_initialize_ToolDAQ(ParameterFile,m_data->IDGeom.size(),temp_trigger_search_window, temp_trigger_search_window_step, m_trigger_threshold, temp_trigger_save_window_pre, temp_trigger_save_window_post);
-#endif
 
 
 
