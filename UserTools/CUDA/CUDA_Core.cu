@@ -27,6 +27,9 @@ __global__ void kernel_correct_times_and_get_n_pmts_per_time_bin(histogram_t *ct
 
 #if defined __HISTOGRAM_UINT__
   atomicAdd(&ct[time_bin],1);
+#else
+  printf("This function needs checking before using it without _HISTOGRAM_UINT_ defined"); 
+  return;
 #endif
 
   //  printf( " hit %d (nh %d) id %d t %d; vertex %d (nv %d) tof %f  %d \n", hit_index, constant_n_hits, ids[hit_index], t[hit_index], vertex_index, constant_n_test_vertices, tof, ct[time_index]);
@@ -270,6 +273,9 @@ __global__ void kernel_histo_one_thread_one_vertex( unsigned int *ct, histogram_
     if( bin < max)
 #if defined __HISTOGRAM_UINT__
       atomicAdd(&histo[ct[bin]],1);
+#else
+  printf("This function needs checking before using it without _HISTOGRAM_UINT_ defined"); 
+  return;
 #endif
       ;
   }
@@ -284,6 +290,9 @@ __global__ void kernel_histo_stride( unsigned int *ct, histogram_t *histo){
   while( i < constant_n_hits*constant_n_test_vertices ){
 #if defined __HISTOGRAM_UINT__
     atomicAdd( &histo[ct[i]], 1);
+#else
+  printf("This function needs checking before using it without _HISTOGRAM_UINT_ defined"); 
+  return;
 #endif
     i += stride;
   }
@@ -310,6 +319,9 @@ __global__ void kernel_histo_iterated( unsigned int *ct, histogram_t *histo, uns
   __syncthreads();
 #if defined __HISTOGRAM_UINT__
     atomicAdd( &(histo[index]), temp[index] );
+#else
+  printf("This function needs checking before using it without _HISTOGRAM_UINT_ defined"); 
+  return;
 #endif
 
 
@@ -348,6 +360,9 @@ __global__ void kernel_histo_stride_2d( unsigned int *ct, histogram_t *histo){
   while( tid < max ){
 #if defined __HISTOGRAM_UINT__
     atomicAdd( &histo[ct[tid]], 1);
+#else
+  printf("This function needs checking before using it without _HISTOGRAM_UINT_ defined"); 
+  return;
 #endif
     tid += stride;
   }
@@ -375,6 +390,9 @@ __global__ void kernel_histo_per_vertex( unsigned int *ct, histogram_t *histo){
     //histo[bin]++;
 #if defined __HISTOGRAM_UINT__
     atomicAdd( &histo[bin], 1);
+#else
+  printf("This function needs checking before using it without _HISTOGRAM_UINT_ defined"); 
+  return;
 #endif
     ihit += stride;
 
@@ -419,6 +437,9 @@ __global__ void kernel_histo_per_vertex_shared( unsigned int *ct, histogram_t *h
   while( local_ihit<constant_n_time_bins ){
 #if defined __HISTOGRAM_UINT__
     atomicAdd( &histo[local_ihit+time_offset], temp[local_ihit]);
+#else
+  printf("This function needs checking before using it without _HISTOGRAM_UINT_ defined"); 
+  return;
 #endif
     local_ihit += stride_block;
   }
