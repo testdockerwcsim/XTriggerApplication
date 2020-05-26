@@ -1,3 +1,4 @@
+#include "../Build.h"
 #include "DummyTool/DummyTool.cpp"
 #include "TriggerOutput/TriggerOutput.cpp"
 #include "WCSimASCIReader/WCSimASCIReader.cpp"
