@@ -29,6 +29,14 @@ typedef unsigned short histogram_t;
 typedef unsigned int histogram_t;
 #endif
 
+#if defined __TIME_OF_FLIGHT_UCHAR__
+typedef unsigned char time_of_flight_t;
+#elif defined __TIME_OF_FLIGHT_USHORT__
+typedef unsigned short time_of_flight_t;
+#elif defined __TIME_OF_FLIGHT_UINT__
+typedef unsigned int time_of_flight_t;
+#endif
+
 /////////////////////////////
 // define global variables //
 /////////////////////////////
@@ -108,8 +116,8 @@ float cerenkov_costheta;
 __constant__ float constant_cerenkov_costheta;
 double twopi;
 bool cylindrical_grid;
-unsigned short *device_times_of_flight; // time of flight between a vertex and a pmt
-unsigned short *host_times_of_flight;
+time_of_flight_t *device_times_of_flight; // time of flight between a vertex and a pmt
+time_of_flight_t *host_times_of_flight;
 float *device_light_dx; // x distance between a vertex and a pmt
 float *host_light_dx;
 float *device_light_dy; // y distance between a vertex and a pmt
@@ -120,7 +128,7 @@ float *device_light_dr; // distance between a vertex and a pmt
 float *host_light_dr;
 bool *device_directions_for_vertex_and_pmt; // test directions for vertex and pmt
 bool *host_directions_for_vertex_and_pmt;
-texture<unsigned short, 1, cudaReadModeElementType> tex_times_of_flight;
+texture<time_of_flight_t, 1, cudaReadModeElementType> tex_times_of_flight;
 texture<float, 1, cudaReadModeElementType> tex_light_dx;
 texture<float, 1, cudaReadModeElementType> tex_light_dy;
 texture<float, 1, cudaReadModeElementType> tex_light_dz;
@@ -874,8 +882,14 @@ bool read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<int> times, int
 void allocate_tofs_memory_on_device(){
 
   printf(" [2] --- allocate memory tofs \n");
+#if defined __TIME_OF_FLIGHT_UCHAR__
+  check_cudamalloc_unsigned_char(n_test_vertices*n_PMTs);
+#elif defined __TIME_OF_FLIGHT_USHORT__
   check_cudamalloc_unsigned_short(n_test_vertices*n_PMTs);
-  checkCudaErrors(cudaMalloc((void **)&device_times_of_flight, n_test_vertices*n_PMTs*sizeof(unsigned short)));
+#elif defined __TIME_OF_FLIGHT_UINT__
+  check_cudamalloc_unsigned_int(n_test_vertices*n_PMTs);
+#endif
+  checkCudaErrors(cudaMalloc((void **)&device_times_of_flight, n_test_vertices*n_PMTs*sizeof(time_of_flight_t)));
 
   if( correct_mode == 10 ){
 
@@ -1095,7 +1109,7 @@ void allocate_candidates_memory_on_device(){
 void make_table_of_tofs(){
 
   printf(" [2] --- fill times_of_flight \n");
-  host_times_of_flight = (unsigned short*)malloc(n_test_vertices*n_PMTs * sizeof(unsigned short));
+  host_times_of_flight = (time_of_flight_t*)malloc(n_test_vertices*n_PMTs * sizeof(time_of_flight_t));
   printf(" [2] speed_light_water %f \n", speed_light_water);
   if( correct_mode == 10 ){
     host_light_dx = (float*)malloc(n_test_vertices*n_PMTs * sizeof(double));
@@ -1179,7 +1193,7 @@ void fill_tofs_memory_on_device(){
   printf(" [2] --- copy tofs from host to device \n");
   checkCudaErrors(cudaMemcpy(device_times_of_flight,
 			     host_times_of_flight,
-			     n_test_vertices*n_PMTs*sizeof(unsigned short),
+			     n_test_vertices*n_PMTs*sizeof(time_of_flight_t),
 			     cudaMemcpyHostToDevice));
   if( correct_mode == 10 ){
     checkCudaErrors(cudaMemcpy(device_light_dx,host_light_dx,n_test_vertices*n_PMTs*sizeof(float),cudaMemcpyHostToDevice));
@@ -1193,7 +1207,7 @@ void fill_tofs_memory_on_device(){
   checkCudaErrors( cudaMemcpyToSymbol(constant_n_PMTs, &n_PMTs, sizeof(n_PMTs)) );
 
   // Bind the array to the texture
-  checkCudaErrors(cudaBindTexture(0,tex_times_of_flight, device_times_of_flight, n_test_vertices*n_PMTs*sizeof(unsigned short)));
+  checkCudaErrors(cudaBindTexture(0,tex_times_of_flight, device_times_of_flight, n_test_vertices*n_PMTs*sizeof(time_of_flight_t)));
   if( correct_mode == 10 ){
     checkCudaErrors(cudaBindTexture(0,tex_light_dx, device_light_dx, n_test_vertices*n_PMTs*sizeof(float)));
     checkCudaErrors(cudaBindTexture(0,tex_light_dy, device_light_dy, n_test_vertices*n_PMTs*sizeof(float)));

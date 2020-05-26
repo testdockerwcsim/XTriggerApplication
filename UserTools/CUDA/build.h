@@ -5,5 +5,9 @@
 #define __HISTOGRAM_USHORT__
 //#define __HISTOGRAM_UINT__
 
+//#define __TIME_OF_FLIGHT_UCHAR__
+#define __TIME_OF_FLIGHT_USHORT__
+//#define __TIME_OF_FLIGHT_UINT__
+
 
 #endif //__BUILD_H__
