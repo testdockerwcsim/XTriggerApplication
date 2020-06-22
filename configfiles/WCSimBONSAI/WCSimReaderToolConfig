@@ -1,8 +1,9 @@
 # WCSimReader config file
 
-infile FILES/wcsim.root
+#infile FILES/wcsim.root
+infile FILES/wcsim_SN.root
 #filelist wcsimfilelist
-nevents -1
+nevents 100
 first_event 0
 use_stopwatch 1
 #stopwatch_file wcsimreader_stopwatch.pdf
