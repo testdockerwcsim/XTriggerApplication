@@ -63,6 +63,8 @@ class WCSimReader: public Tool {
 
   /// The current WCSim event number
   long int m_current_event_num;
+  /// The first WCSim event number to read
+  long int m_first_event_num;
   /// The total number of events in m_chain_event
   long int m_n_events;
 
@@ -70,6 +72,11 @@ class WCSimReader: public Tool {
   std::string m_input_filename;
   /// The input WCSim filelist filename from config file
   std::string m_input_filelist;
+
+  /// The stopwatch, if we're using one
+  util::Stopwatch * m_stopwatch;
+  /// Image filename to save the histogram to, if required
+  std::string m_stopwatch_file;
 
   /// Verbosity level
   int m_verbose;

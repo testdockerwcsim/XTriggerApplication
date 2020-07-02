@@ -77,6 +77,12 @@ class DataModel {
   int IDNPMTs;
   /// Number of outer detector PMTs
   int ODNPMTs;
+  /// height of water tank
+  double detector_length;
+  /// radius of water tank
+  double detector_radius;
+  /// radius of each PMT
+  double pmt_radius;
 
   /// The `WCSimRootGeom` tree from input WCSim file(s)
   TChain * WCSimGeomTree;
@@ -84,18 +90,14 @@ class DataModel {
   TChain * WCSimOptionsTree;
   /// The `WCSimRootEvent` tree from input WCSim file(s)
   TChain * WCSimEventTree;
-  /// The original WCSim files' event number(s) for the current event
-  std::vector<int> CurrentWCSimEventNums;
-  /// The original WCSim files' filename(s) for the current event
-  TObjArray * CurrentWCSimFiles;
+  /// The original WCSim files' event number for the current event
+  int CurrentWCSimEventNum;
+  /// The original WCSim files' filename for the current event
+  TObjString CurrentWCSimFile;
   /// The original, unmodified `WCSimRootEvent` for the ID
   WCSimRootEvent * IDWCSimEvent_Raw;
   /// The original, unmodified `WCSimRootEvent` for the OD
   WCSimRootEvent * ODWCSimEvent_Raw;
-  /// The triggered `WCSimRootEvent` for the ID (digits are sorted into trigger windows)
-  WCSimRootEvent * IDWCSimEvent_Triggered;
-  /// The triggered `WCSimRootEvent` for the OD (digits are sorted into trigger windows)
-  WCSimRootEvent * ODWCSimEvent_Triggered;
 
   /// Store the dimensionality, number of reconstructed vertices and the highest nclusters warning threshold passed
   std::vector<SNWarningParams> SupernovaWarningParameters;
