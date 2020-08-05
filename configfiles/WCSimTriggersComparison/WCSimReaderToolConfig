@@ -1,7 +1,7 @@
 # WCSimReader config file
 
 #infile FILES/wcsim.root
-infile FILES/triggered.root
+infile FILES/fake_input.root
 #infile FILES/vertical_neutrino.root
 #filelist wcsimfilelist
 nevents 100

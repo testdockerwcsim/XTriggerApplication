@@ -1,10 +1,11 @@
 #include "TriggersComparison.h"
 
+#include "Utilities.h"
+
 TriggersComparison::TriggersComparison():Tool(){}
 
-
 bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
-
+  
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
 
@@ -23,9 +24,18 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
 
   m_data= &data;
 
+  m_variables.Get("nhitsmin", m_nhits_min);
+  m_variables.Get("nhitsmax", m_nhits_max);
 
-  /// YOUR CODE HERE
+  WCSimRootGeom * geo = 0;
+  m_data->WCSimGeomTree->SetBranchAddress("wcsimrootgeom", &geo);
+  m_data->WCSimGeomTree->GetEntry(0);
+  m_data->WCSimGeomTree->ResetBranchAddresses();
 
+  //allocate memory for the hit vectors
+  m_in_PMTIDs = new std::vector<int>  (m_nhits_max);
+  m_in_Ts     = new std::vector<float>(m_nhits_max);
+  m_in_Qs     = new std::vector<float>(m_nhits_max);
 
   if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
@@ -34,10 +44,59 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
 
 
 bool TriggersComparison::Execute(){
-
   if(m_stopwatch) m_stopwatch->Start();
 
-  //// YOUR CODE HERE
+  float out_vertex[4], out_direction[6], out_maxlike[3];
+  int   out_nsel[2];
+  double dout_vertex[3], dout_direction[3], dout_cone[2];
+
+  //loop over ID triggers
+  for (int itrigger = 0; itrigger < m_data->IDTriggers.m_num_triggers; itrigger++) {
+    //clear the previous triggers' hit information
+    m_in_PMTIDs->clear();
+    m_in_Ts->clear();
+    m_in_Qs->clear();
+
+    //Loop over ID SubSamples
+    for(std::vector<SubSample>::iterator is = m_data->IDSamples.begin(); is != m_data->IDSamples.end(); ++is){
+
+      //fill the inputs to TriggersComparison with the current triggers' hit information
+      //loop over all hits
+      const size_t nhits_in_subsample = is->m_time.size();
+      //starting at m_first_unique, rather than 0, to avoid double-counting hits
+      // that are in multiple SubSamples
+      for(size_t ihit = is->m_first_unique; ihit < nhits_in_subsample; ihit++) {
+	//see if the hit belongs to this trigger
+	if(std::find(is->m_trigger_readout_windows[ihit].begin(),
+		     is->m_trigger_readout_windows[ihit].end(),
+		     itrigger) == is->m_trigger_readout_windows[ihit].end())
+	  continue;
+
+	//it belongs. Add it to the TriggersComparison input arrays
+	m_ss << "DEBUG: Hit " << ihit << " at time " << is->m_time[ihit];
+	StreamToLog(DEBUG2);
+	m_in_PMTIDs->push_back(is->m_PMTid[ihit]);
+	m_in_Ts    ->push_back(is->m_time[ihit]);
+	m_in_Qs    ->push_back(is->m_charge[ihit]);
+      }//ihit
+    }//ID SubSamples
+  
+    //get the number of hits
+    m_in_nhits = m_in_PMTIDs->size();
+
+    //don't run on large or small events
+    if(m_in_nhits < m_nhits_min || m_in_nhits > m_nhits_max) {
+      m_ss << "INFO: " << m_in_nhits << " hits in current trigger. Not running TriggersComparison";
+      StreamToLog(INFO);
+      continue;
+    }
+    
+    m_ss << "DEBUG: TriggersComparison running over " << m_in_nhits << " hits";
+    StreamToLog(DEBUG1);
+    m_ss << "DEBUG: First hit time relative to sample: " << m_in_Ts->at(0);
+    StreamToLog(DEBUG1);
+
+  }//itrigger
 
   if(m_stopwatch) m_stopwatch->Stop();
 
@@ -52,12 +111,14 @@ bool TriggersComparison::Finalise(){
     m_stopwatch->Start();
   }
 
-  //// YOUR CODE HERE
+  delete m_in_PMTIDs;
+  delete m_in_Ts;
+  delete m_in_Qs;
 
   if(m_stopwatch) {
     Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
     delete m_stopwatch;
   }
-
+  
   return true;
 }
