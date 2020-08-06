@@ -10,6 +10,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1F.h"
+#include "TH1I.h"
 
 
 class TriggersComparison: public Tool {
@@ -86,9 +87,26 @@ class TriggersComparison: public Tool {
   TH1F * h_triggertime_1;
   TH1F * h_triggertime_2;
 
+  TH1I * h_readouttime_1;
+  TH1I * h_readouttime_2;
+
+  TH1F * h_selections_intersection;
+
   /// trigger time
   float the_trigger_time1;
   float the_trigger_time2;
+  float the_readout_start_time1;
+  float the_readout_start_time2;
+  float the_readout_end_time1;
+  float the_readout_end_time2;
+
+  float min_readout_time_1;
+  float max_readout_time_1;
+  float min_readout_time_2;
+  float max_readout_time_2;
+
+  float timebinsize;
+
 
 };
 

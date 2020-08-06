@@ -40,6 +40,8 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
   m_header_tree1->GetEntry(0);
   m_triggers_tree1 = (TTree*)m_input_file1->Get("triggers");
   m_triggers_tree1->SetBranchAddress("trigger_time",&the_trigger_time1);
+  m_triggers_tree1->SetBranchAddress("readout_start_time",&the_readout_start_time1);
+  m_triggers_tree1->SetBranchAddress("readout_end_time",&the_readout_end_time1);
 
   //  Log("DEBUG: TriggersComparison::Initialise opening input file 2...", DEBUG2, m_verbose);
   if(! m_variables.Get("inputfilename2", m_input_filename2)) {
@@ -52,6 +54,8 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
   m_header_tree2->GetEntry(0);
   m_triggers_tree2 = (TTree*)m_input_file2->Get("triggers");
   m_triggers_tree2->SetBranchAddress("trigger_time",&the_trigger_time2);
+  m_triggers_tree2->SetBranchAddress("readout_start_time",&the_readout_start_time2);
+  m_triggers_tree2->SetBranchAddress("readout_end_time",&the_readout_end_time2);
 
   std::clog << " m_interpose_interval1 " << m_interpose_interval1 << " m_interpose_interval2 " << m_interpose_interval2 << std::endl;
 
@@ -91,7 +95,6 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
   }
   m_current_event_num2 = m_first_event_num2;
 
-  float timebinsize;
   m_variables.Get("timebinsize", timebinsize);
 
 
@@ -101,12 +104,29 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
   float min_trigger_time_2 = m_triggers_tree2->GetMinimum("trigger_time");
   float max_trigger_time_2 = m_triggers_tree2->GetMaximum("trigger_time");
 
+  min_readout_time_1 = m_triggers_tree1->GetMinimum("readout_start_time");
+  max_readout_time_1 = m_triggers_tree1->GetMaximum("readout_end_time");
+
+  min_readout_time_2 = m_triggers_tree2->GetMinimum("readout_start_time");
+  max_readout_time_2 = m_triggers_tree2->GetMaximum("readout_end_time");
+
   h_triggertime_1 = new TH1F("h_triggertime_1","h_triggertime_1; time [ns];",(int)((max_trigger_time_1 - min_trigger_time_1 + 1)/timebinsize), min_trigger_time_1-timebinsize/2.,max_trigger_time_1+timebinsize/2.);
   h_triggertime_1->SetLineColor(kBlack);
   h_triggertime_1->SetLineWidth(2);
   h_triggertime_2 = new TH1F("h_triggertime_2","h_triggertime_2; time [ns];",(int)((max_trigger_time_2 - min_trigger_time_2 + 1)/timebinsize), min_trigger_time_2-timebinsize/2.,max_trigger_time_2+timebinsize/2.);
   h_triggertime_2->SetLineColor(kRed);
   h_triggertime_2->SetLineWidth(2);
+
+  h_readouttime_1 = new TH1I("h_readouttime_1","h_readouttime_1; time [ns];",(int)((max_readout_time_1 - min_readout_time_1 + 1)/timebinsize), min_readout_time_1-timebinsize/2.,max_readout_time_1+timebinsize/2.);
+  h_readouttime_1->SetLineColor(kBlack);
+  h_readouttime_1->SetLineWidth(2);
+  h_readouttime_2 = new TH1I("h_readouttime_2","h_readouttime_2; time [ns];",(int)((max_readout_time_2 - min_readout_time_2 + 1)/timebinsize), min_readout_time_2-timebinsize/2.,max_readout_time_2+timebinsize/2.);
+  h_readouttime_2->SetLineColor(kRed);
+  h_readouttime_2->SetLineWidth(2);
+
+  h_selections_intersection = new TH1F("h_selections_intersection","h_selections_intersection",3,-1.5,1.5);
+  h_selections_intersection->SetLineColor(kBlack);
+  h_selections_intersection->SetLineWidth(2);
 
   //  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
@@ -124,11 +144,18 @@ bool TriggersComparison::Execute(){
   //get the digits
   if(m_triggers_tree1->GetEntry(m_current_event_num1)) {
     h_triggertime_1->Fill(the_trigger_time1);
+    for(int ibin = h_readouttime_1->GetXaxis()->FindBin(the_readout_start_time1); ibin <= h_readouttime_1->GetXaxis()->FindBin(the_readout_end_time1); ibin ++){
+      h_readouttime_1->SetBinContent(ibin,1);
+    }
   }
 
   if(m_triggers_tree2->GetEntry(m_current_event_num2)) {
     h_triggertime_2->Fill(the_trigger_time2);
+    for(int ibin = h_readouttime_2->GetXaxis()->FindBin(the_readout_start_time2); ibin <= h_readouttime_2->GetXaxis()->FindBin(the_readout_end_time2); ibin ++){
+      h_readouttime_2->SetBinContent(ibin,1);
+    }
   }
+
 
   std::clog << " m_current_event_num1 " << m_current_event_num1 << std::endl;
   std::clog << " m_current_event_num2 " << m_current_event_num2 << std::endl;
@@ -157,9 +184,30 @@ bool TriggersComparison::Finalise(){
     m_stopwatch->Start();
   }
 
+  float time_min = std::min(min_readout_time_1, min_readout_time_2);
+  float time_max = std::max(max_readout_time_1, max_readout_time_2);
+  float local_time;
+
+  for(int itime = 0; itime <= (int)(time_max - time_min + 1)/timebinsize; itime ++){
+    local_time = time_min + itime*timebinsize;
+    bool trigger1 = (bool)h_readouttime_1->GetBinContent(h_readouttime_1->FindBin(local_time));
+    bool trigger2 = (bool)h_readouttime_2->GetBinContent(h_readouttime_2->FindBin(local_time));
+
+    if( trigger1 && trigger2 )
+      h_selections_intersection->Fill(0.,timebinsize);
+    else if( trigger1 )
+      h_selections_intersection->Fill(-1.,timebinsize);
+    else if( trigger2 )
+      h_selections_intersection->Fill(1.,timebinsize);
+  }
+
   m_output_file->cd();
+
   h_triggertime_1->Write();
   h_triggertime_2->Write();
+  h_readouttime_1->Write();
+  h_readouttime_2->Write();
+  h_selections_intersection->Write();
 
   m_output_file->Close();
 
