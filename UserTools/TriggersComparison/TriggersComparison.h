@@ -54,6 +54,13 @@ class TriggersComparison: public Tool {
   /// input trees containing triggers
   TTree * m_triggers_tree1;
   TTree * m_triggers_tree2;
+  /// input headers trees
+  TTree * m_header_tree1;
+  TTree * m_header_tree2;
+
+
+  float m_interpose_interval1;
+  float m_interpose_interval2;
 
   /// The current event number from file1
   long int m_current_event_num1;

@@ -33,8 +33,12 @@ class TriggerOutput: public Tool {
   std::string m_output_filename;
   /// Output ROOT file
   TFile * m_output_file;
+  /// header
+  TTree * m_header_tree;
   /// Tree containing triggers
   TTree * m_triggers_tree;
+
+  float m_interpose_interval;
 
   /// The type of Trigger
   TriggerType_t the_type;

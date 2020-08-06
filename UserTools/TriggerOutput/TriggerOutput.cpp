@@ -33,9 +33,8 @@ bool TriggerOutput::Initialise(std::string configfile, DataModel &data){
   m_output_file = new TFile(m_output_filename.c_str(), "RECREATE");
 
 
-  //setup the out event tree
-  Log("DEBUG: TriggerOutput::Initialise setting up output event tree...", DEBUG2, m_verbose);
-  // Nevents unique event objects
+  //setup the out triggers tree
+  Log("DEBUG: TriggerOutput::Initialise setting up output trigger tree...", DEBUG2, m_verbose);
   m_triggers_tree = new TTree("triggers","triggers Tree");
   m_triggers_tree->Branch("type", &the_type, "type/I");
   m_triggers_tree->Branch("readout_start_time", &the_readout_start_time, "readout_start_time/F");
@@ -43,6 +42,14 @@ bool TriggerOutput::Initialise(std::string configfile, DataModel &data){
   m_triggers_tree->Branch("mask_start_time", &the_mask_start_time, "mask_start_time/F");
   m_triggers_tree->Branch("mask_end_time", &the_mask_end_time, "mask_end_time/F");
   m_triggers_tree->Branch("trigger_time", &the_trigger_time, "trigger_time/F");
+
+  //setup the out header tree
+  Log("DEBUG: TriggerOutput::Initialise setting up output header tree...", DEBUG2, m_verbose);
+  m_header_tree = new TTree("header","header Tree");
+  m_header_tree->Branch("interpose_interval", &m_interpose_interval, "interpose_interval/F");
+  m_interpose_interval = m_data->get_interpose_interval();
+  m_header_tree->Fill();
+  
 
   //fill the output event-independent trees
   Log("DEBUG: TriggerOutput::Initialise filling event-independent trees...", DEBUG2, m_verbose);
@@ -109,11 +116,14 @@ bool TriggerOutput::Finalise(){
 
   //multiple TFiles may be open. Ensure we save to the correct one
   m_output_file->cd(TString::Format("%s:/", m_output_filename.c_str()));
+  m_header_tree->Write();
   m_triggers_tree->Write();
 
+  delete m_header_tree;
   delete m_triggers_tree;
 
   m_output_file->Close();
+
   delete m_output_file;
 
   if(m_stopwatch) {

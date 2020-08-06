@@ -35,6 +35,9 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
     return false;
   }
   m_input_file1 = new TFile(m_input_filename1.c_str(), "READ");
+  m_header_tree1 = (TTree*)m_input_file1->Get("header");
+  m_header_tree1->SetBranchAddress("interpose_interval",&m_interpose_interval1);
+  m_header_tree1->GetEntry(0);
   m_triggers_tree1 = (TTree*)m_input_file1->Get("triggers");
   m_triggers_tree1->SetBranchAddress("trigger_time",&the_trigger_time1);
 
@@ -44,8 +47,13 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
     return false;
   }
   m_input_file2 = new TFile(m_input_filename2.c_str(), "READ");
+  m_header_tree2 = (TTree*)m_input_file2->Get("header");
+  m_header_tree2->SetBranchAddress("interpose_interval",&m_interpose_interval2);
+  m_header_tree2->GetEntry(0);
   m_triggers_tree2 = (TTree*)m_input_file2->Get("triggers");
   m_triggers_tree2->SetBranchAddress("trigger_time",&the_trigger_time2);
+
+  std::clog << " m_interpose_interval1 " << m_interpose_interval1 << " m_interpose_interval2 " << m_interpose_interval2 << std::endl;
 
   //set number of events
   if(! m_variables.Get("nevents1",  m_n_events1) ) {
