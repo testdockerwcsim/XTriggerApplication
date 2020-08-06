@@ -1,0 +1,18 @@
+trigger_search_window 200
+trigger_threshold 25
+trigger_threshold_adjust_for_noise 1
+pretrigger_save_window 400
+posttrigger_save_window 950
+pretrigger_mask_window 350
+posttrigger_mask_window 900
+trigger_od 0
+verbose 3
+use_stopwatch 1
+#stopwatch_file nhits_stopwatch.pdf
+# parameters used over GPU
+trigger_search_window_step 5
+DetectorFile inputfiles/detector.txt
+ParameterFile inputfiles/parameters.txt
+## degrade float to int to make CPU running match GPU running
+degrade_CPU 1
+
