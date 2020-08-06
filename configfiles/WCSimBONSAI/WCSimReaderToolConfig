@@ -4,7 +4,7 @@
 infile FILES/horizontal_neutrino.root
 #infile FILES/vertical_neutrino.root
 #filelist wcsimfilelist
-nevents 100
+nevents -1
 first_event 0
 use_stopwatch 1
 #stopwatch_file wcsimreader_stopwatch.pdf
