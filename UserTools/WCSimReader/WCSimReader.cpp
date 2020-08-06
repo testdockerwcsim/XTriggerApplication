@@ -24,6 +24,7 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
 
   if(m_stopwatch) m_stopwatch->Start();
 
+  m_interpose_interval = 0.;
   m_variables.Get("interpose_interval", m_interpose_interval);
 
   m_data= &data;

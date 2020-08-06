@@ -1,3 +1,1 @@
-wcsim1 WCSimReader configfiles/WCSimTriggersComparison/WCSimReaderToolConfig
 triggerscomparison1 TriggersComparison configfiles/WCSimTriggersComparison/TriggersComparisonToolConfig
-out1 DataOut configfiles/WCSimTriggersComparison/DataOutToolConfig

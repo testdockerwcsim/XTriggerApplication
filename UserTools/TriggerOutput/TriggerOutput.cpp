@@ -15,7 +15,7 @@ bool TriggerOutput::Initialise(std::string configfile, DataModel &data){
   //Setup and start the stopwatch
   bool use_stopwatch = false;
   m_variables.Get("use_stopwatch", use_stopwatch);
-  m_stopwatch = use_stopwatch ? new util::Stopwatch("nhits") : 0;
+  m_stopwatch = use_stopwatch ? new util::Stopwatch("TriggerOutput") : 0;
 
   m_stopwatch_file = "";
   m_variables.Get("stopwatch_file", m_stopwatch_file);
@@ -25,7 +25,7 @@ bool TriggerOutput::Initialise(std::string configfile, DataModel &data){
   m_data= &data;
 
   //open the output file
-  Log("DEBUG: DataOut::Initialise opening output file...", DEBUG2, m_verbose);
+  Log("DEBUG: TriggerOutput::Initialise opening output file...", DEBUG2, m_verbose);
   if(! m_variables.Get("outfilename", m_output_filename)) {
     Log("ERROR: outfilename configuration not found. Cancelling initialisation", ERROR, m_verbose);
     return false;
@@ -34,18 +34,18 @@ bool TriggerOutput::Initialise(std::string configfile, DataModel &data){
 
 
   //setup the out event tree
-  Log("DEBUG: DataOut::Initialise setting up output event tree...", DEBUG2, m_verbose);
+  Log("DEBUG: TriggerOutput::Initialise setting up output event tree...", DEBUG2, m_verbose);
   // Nevents unique event objects
-  m_event_tree = new TTree("triggers","triggers Tree");
-  m_event_tree->Branch("type", &the_type, "type/I");
-  m_event_tree->Branch("readout_start_time", &the_readout_start_time, "readout_start_time/F");
-  m_event_tree->Branch("readout_end_time", &the_readout_end_time, "readout_end_time/F");
-  m_event_tree->Branch("mask_start_time", &the_mask_start_time, "mask_start_time/F");
-  m_event_tree->Branch("mask_end_time", &the_mask_end_time, "mask_end_time/F");
-  m_event_tree->Branch("trigger_time", &the_trigger_time, "trigger_time/F");
+  m_triggers_tree = new TTree("triggers","triggers Tree");
+  m_triggers_tree->Branch("type", &the_type, "type/I");
+  m_triggers_tree->Branch("readout_start_time", &the_readout_start_time, "readout_start_time/F");
+  m_triggers_tree->Branch("readout_end_time", &the_readout_end_time, "readout_end_time/F");
+  m_triggers_tree->Branch("mask_start_time", &the_mask_start_time, "mask_start_time/F");
+  m_triggers_tree->Branch("mask_end_time", &the_mask_end_time, "mask_end_time/F");
+  m_triggers_tree->Branch("trigger_time", &the_trigger_time, "trigger_time/F");
 
   //fill the output event-independent trees
-  Log("DEBUG: DataOut::Initialise filling event-independent trees...", DEBUG2, m_verbose);
+  Log("DEBUG: TriggerOutput::Initialise filling event-independent trees...", DEBUG2, m_verbose);
 
   if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
@@ -91,7 +91,7 @@ bool TriggerOutput::Execute(){
 
     StreamToLog(INFO);
 
-    m_event_tree->Fill();
+    m_triggers_tree->Fill();
   }
 
   if(m_stopwatch) m_stopwatch->Stop();
@@ -109,9 +109,9 @@ bool TriggerOutput::Finalise(){
 
   //multiple TFiles may be open. Ensure we save to the correct one
   m_output_file->cd(TString::Format("%s:/", m_output_filename.c_str()));
-  m_event_tree->Write();
+  m_triggers_tree->Write();
 
-  delete m_event_tree;
+  delete m_triggers_tree;
 
   m_output_file->Close();
   delete m_output_file;

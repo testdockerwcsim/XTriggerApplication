@@ -3,12 +3,14 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 
 #include "Tool.h"
 
-#include <vector>
+#include "TFile.h"
+#include "TTree.h"
+#include "TH1F.h"
 
-#include "WCSimRootEvent.hh"
 
 class TriggersComparison: public Tool {
 
@@ -21,20 +23,6 @@ class TriggersComparison: public Tool {
 
 
  private:
-
-  /// Number of hits in a trigger
-  int m_in_nhits;
-  /// PMT IDs of hits in a trigger
-  std::vector<int>   * m_in_PMTIDs;
-  /// Times of hits in a trigger
-  std::vector<float> * m_in_Ts;
-  /// Charges of hits in a trigger
-  std::vector<float> * m_in_Qs;
-
-  /// Below this number of hits in a trigger, don't run TriggersComparison. Equality is run. Set in config file
-  unsigned int m_nhits_min;
-  /// Above this number of hits in a trigger, don't run TriggersComparison. Equality is run. Set in config file
-  unsigned int m_nhits_max;
 
   /// The stopwatch, if we're using one
   util::Stopwatch * m_stopwatch;
@@ -56,6 +44,44 @@ class TriggersComparison: public Tool {
 
   /// Log level enumerations
   enum LogLevel {FATAL=-1, ERROR=0, WARN=1, INFO=2, DEBUG1=3, DEBUG2=4, DEBUG3=5};
+
+  /// names of input ROOT trees
+  std::string m_input_filename1;
+  std::string m_input_filename2;
+  /// input ROOT files
+  TFile * m_input_file1;
+  TFile * m_input_file2;
+  /// input trees containing triggers
+  TTree * m_triggers_tree1;
+  TTree * m_triggers_tree2;
+
+  /// The current event number from file1
+  long int m_current_event_num1;
+  /// The first event number from file1 to read
+  long int m_first_event_num1;
+  /// The total number of events from file1
+  long int m_n_events1;
+
+  /// The current event number from file2
+  long int m_current_event_num2;
+  /// The first event number from file2 to read
+  long int m_first_event_num2;
+  /// The total number of events from file2
+  long int m_n_events2;
+
+
+  /// Output ROOT filename that this tool RECREATE's
+  std::string m_output_filename;
+  /// Output ROOT file
+  TFile * m_output_file;
+
+  /// output histograms
+  TH1F * h_triggertime_1;
+  TH1F * h_triggertime_2;
+
+  /// trigger time
+  float the_trigger_time1;
+  float the_trigger_time2;
 
 };
 

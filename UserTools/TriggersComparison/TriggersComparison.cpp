@@ -1,7 +1,5 @@
 #include "TriggersComparison.h"
 
-#include "Utilities.h"
-
 TriggersComparison::TriggersComparison():Tool(){}
 
 bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
@@ -22,22 +20,87 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
 
   if(m_stopwatch) m_stopwatch->Start();
 
-  m_data= &data;
+  //open the output file
+  // Log("DEBUG: TriggersComparison::Initialise opening output file...", DEBUG2, m_verbose);
+  if(! m_variables.Get("outfilename", m_output_filename)) {
+  //   Log("ERROR: outfilename configuration not found. Cancelling initialisation", ERROR, m_verbose);
+    return false;
+  }
+  m_output_file = new TFile(m_output_filename.c_str(), "RECREATE");
 
-  m_variables.Get("nhitsmin", m_nhits_min);
-  m_variables.Get("nhitsmax", m_nhits_max);
+  //open the input files
+  //  Log("DEBUG: TriggersComparison::Initialise opening input file 1...", DEBUG2, m_verbose);
+  if(! m_variables.Get("inputfilename1", m_input_filename1)) {
+    //    Log("ERROR: inputfilename1 configuration not found. Cancelling initialisation", ERROR, m_verbose);
+    return false;
+  }
+  m_input_file1 = new TFile(m_input_filename1.c_str(), "READ");
+  m_triggers_tree1 = (TTree*)m_input_file1->Get("triggers");
+  m_triggers_tree1->SetBranchAddress("trigger_time",&the_trigger_time1);
 
-  WCSimRootGeom * geo = 0;
-  m_data->WCSimGeomTree->SetBranchAddress("wcsimrootgeom", &geo);
-  m_data->WCSimGeomTree->GetEntry(0);
-  m_data->WCSimGeomTree->ResetBranchAddresses();
+  //  Log("DEBUG: TriggersComparison::Initialise opening input file 2...", DEBUG2, m_verbose);
+  if(! m_variables.Get("inputfilename2", m_input_filename2)) {
+    //    Log("ERROR: inputfilename2 configuration not found. Cancelling initialisation", ERROR, m_verbose);
+    return false;
+  }
+  m_input_file2 = new TFile(m_input_filename2.c_str(), "READ");
+  m_triggers_tree2 = (TTree*)m_input_file2->Get("triggers");
+  m_triggers_tree2->SetBranchAddress("trigger_time",&the_trigger_time2);
 
-  //allocate memory for the hit vectors
-  m_in_PMTIDs = new std::vector<int>  (m_nhits_max);
-  m_in_Ts     = new std::vector<float>(m_nhits_max);
-  m_in_Qs     = new std::vector<float>(m_nhits_max);
+  //set number of events
+  if(! m_variables.Get("nevents1",  m_n_events1) ) {
+    m_n_events1 = -1;
+  }
+  if(! m_variables.Get("first_event1",  m_first_event_num1) ) {
+    m_first_event_num1 = 0;
+  }
+  if(m_n_events1 <= 0)
+    m_n_events1 = m_triggers_tree1->GetEntries();
+  else if (m_n_events1 > m_triggers_tree1->GetEntries())
+    m_n_events1 = m_triggers_tree1->GetEntries();
+  if(m_first_event_num1 >= m_n_events1) {
+    m_first_event_num1 = m_n_events1 - 1;
+  }
+  else if(m_first_event_num1 < 0) {
+    m_first_event_num1 = 0;
+  }
+  m_current_event_num1 = m_first_event_num1;
+  if(! m_variables.Get("nevents2",  m_n_events2) ) {
+    m_n_events2 = -1;
+  }
+  if(! m_variables.Get("first_event2",  m_first_event_num2) ) {
+    m_first_event_num2 = 0;
+  }
+  if(m_n_events2 <= 0)
+    m_n_events2 = m_triggers_tree2->GetEntries();
+  else if (m_n_events2 > m_triggers_tree2->GetEntries())
+    m_n_events2 = m_triggers_tree2->GetEntries();
+  if(m_first_event_num2 >= m_n_events2) {
+    m_first_event_num2 = m_n_events2 - 1;
+  }
+  else if(m_first_event_num2 < 0) {
+    m_first_event_num2 = 0;
+  }
+  m_current_event_num2 = m_first_event_num2;
 
-  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
+  float timebinsize;
+  m_variables.Get("timebinsize", timebinsize);
+
+
+  float min_trigger_time_1 = m_triggers_tree1->GetMinimum("trigger_time");
+  float max_trigger_time_1 = m_triggers_tree1->GetMaximum("trigger_time");
+
+  float min_trigger_time_2 = m_triggers_tree2->GetMinimum("trigger_time");
+  float max_trigger_time_2 = m_triggers_tree2->GetMaximum("trigger_time");
+
+  h_triggertime_1 = new TH1F("h_triggertime_1","h_triggertime_1; time [ns];",(int)((max_trigger_time_1 - min_trigger_time_1 + 1)/timebinsize), min_trigger_time_1-timebinsize/2.,max_trigger_time_1+timebinsize/2.);
+  h_triggertime_1->SetLineColor(kBlack);
+  h_triggertime_1->SetLineWidth(2);
+  h_triggertime_2 = new TH1F("h_triggertime_2","h_triggertime_2; time [ns];",(int)((max_trigger_time_2 - min_trigger_time_2 + 1)/timebinsize), min_trigger_time_2-timebinsize/2.,max_trigger_time_2+timebinsize/2.);
+  h_triggertime_2->SetLineColor(kRed);
+  h_triggertime_2->SetLineWidth(2);
+
+  //  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
   return true;
 }
@@ -46,57 +109,32 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
 bool TriggersComparison::Execute(){
   if(m_stopwatch) m_stopwatch->Start();
 
-  float out_vertex[4], out_direction[6], out_maxlike[3];
-  int   out_nsel[2];
-  double dout_vertex[3], dout_direction[3], dout_cone[2];
+  if(m_n_events1 <= 0) {
+    return true;
+  }
 
-  //loop over ID triggers
-  for (int itrigger = 0; itrigger < m_data->IDTriggers.m_num_triggers; itrigger++) {
-    //clear the previous triggers' hit information
-    m_in_PMTIDs->clear();
-    m_in_Ts->clear();
-    m_in_Qs->clear();
+  //get the digits
+  if(m_triggers_tree1->GetEntry(m_current_event_num1)) {
+    h_triggertime_1->Fill(the_trigger_time1);
+  }
 
-    //Loop over ID SubSamples
-    for(std::vector<SubSample>::iterator is = m_data->IDSamples.begin(); is != m_data->IDSamples.end(); ++is){
+  if(m_triggers_tree2->GetEntry(m_current_event_num2)) {
+    h_triggertime_2->Fill(the_trigger_time2);
+  }
 
-      //fill the inputs to TriggersComparison with the current triggers' hit information
-      //loop over all hits
-      const size_t nhits_in_subsample = is->m_time.size();
-      //starting at m_first_unique, rather than 0, to avoid double-counting hits
-      // that are in multiple SubSamples
-      for(size_t ihit = is->m_first_unique; ihit < nhits_in_subsample; ihit++) {
-	//see if the hit belongs to this trigger
-	if(std::find(is->m_trigger_readout_windows[ihit].begin(),
-		     is->m_trigger_readout_windows[ihit].end(),
-		     itrigger) == is->m_trigger_readout_windows[ihit].end())
-	  continue;
+  std::clog << " m_current_event_num1 " << m_current_event_num1 << std::endl;
+  std::clog << " m_current_event_num2 " << m_current_event_num2 << std::endl;
 
-	//it belongs. Add it to the TriggersComparison input arrays
-	m_ss << "DEBUG: Hit " << ihit << " at time " << is->m_time[ihit];
-	StreamToLog(DEBUG2);
-	m_in_PMTIDs->push_back(is->m_PMTid[ihit]);
-	m_in_Ts    ->push_back(is->m_time[ihit]);
-	m_in_Qs    ->push_back(is->m_charge[ihit]);
-      }//ihit
-    }//ID SubSamples
-  
-    //get the number of hits
-    m_in_nhits = m_in_PMTIDs->size();
+  //and finally, increment event counter
+  m_current_event_num1++;
+  m_current_event_num2++;
 
-    //don't run on large or small events
-    if(m_in_nhits < m_nhits_min || m_in_nhits > m_nhits_max) {
-      m_ss << "INFO: " << m_in_nhits << " hits in current trigger. Not running TriggersComparison";
-      StreamToLog(INFO);
-      continue;
-    }
-    
-    m_ss << "DEBUG: TriggersComparison running over " << m_in_nhits << " hits";
-    StreamToLog(DEBUG1);
-    m_ss << "DEBUG: First hit time relative to sample: " << m_in_Ts->at(0);
-    StreamToLog(DEBUG1);
-
-  }//itrigger
+  //and flag to exit the Execute() loop, if appropriate
+  if(m_current_event_num1 >= m_n_events1
+     && m_current_event_num2 >= m_n_events2){
+    if(m_stopwatch) m_stopwatch->Stop();
+    return false;
+  }
 
   if(m_stopwatch) m_stopwatch->Stop();
 
@@ -107,16 +145,25 @@ bool TriggersComparison::Execute(){
 bool TriggersComparison::Finalise(){
 
   if(m_stopwatch) {
-    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    //    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
     m_stopwatch->Start();
   }
 
-  delete m_in_PMTIDs;
-  delete m_in_Ts;
-  delete m_in_Qs;
+  m_output_file->cd();
+  h_triggertime_1->Write();
+  h_triggertime_2->Write();
+
+  m_output_file->Close();
+
+  m_input_file1->Close();
+  m_input_file2->Close();
+
+  delete m_input_file1;
+  delete m_input_file2;
+  delete m_output_file;
 
   if(m_stopwatch) {
-    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    //    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
     delete m_stopwatch;
   }
   

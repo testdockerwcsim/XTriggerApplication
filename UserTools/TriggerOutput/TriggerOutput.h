@@ -1,5 +1,5 @@
-#ifndef TriggerOutput_H
-#define TriggerOutput_H
+#ifndef TRIGGEROUTPUT_H
+#define TRIGGEROUTPUT_H
 
 #include <string>
 #include <iostream>
@@ -33,8 +33,8 @@ class TriggerOutput: public Tool {
   std::string m_output_filename;
   /// Output ROOT file
   TFile * m_output_file;
-  /// Tree contain WCSimRootEvent(s), and the original WCSim filename / event number
-  TTree * m_event_tree;
+  /// Tree containing triggers
+  TTree * m_triggers_tree;
 
   /// The type of Trigger
   TriggerType_t the_type;
