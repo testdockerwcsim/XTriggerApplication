@@ -1410,7 +1410,7 @@ void separate_triggers_into_gates(){
     if(itrigger->second > time_start) {
       unsigned int triggertime = itrigger->second*time_step_size - time_offset;
       final_trigger_pair_vertex_time.push_back(std::make_pair(itrigger->first,triggertime));
-      time_start = triggertime + trigger_gate_up/time_step_size;
+      time_start = itrigger->second + trigger_gate_up/time_step_size;
       trigger_index = itrigger - trigger_pair_vertex_time.begin();
       output_trigger_information.clear();
       output_trigger_information.push_back(vertex_x[itrigger->first]);
@@ -1460,7 +1460,7 @@ void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int
     if(itrigger->second > time_start) {
       unsigned int triggertime = itrigger->second*time_step_size - time_offset;
       final_trigger_pair_vertex_time.push_back(std::make_pair(itrigger->first,triggertime));
-      time_start = triggertime + trigger_gate_up/time_step_size;
+      time_start = itrigger->second + trigger_gate_up/time_step_size;
       trigger_index = itrigger - trigger_pair_vertex_time.begin();
       output_trigger_information.clear();
       output_trigger_information.push_back(vertex_x[itrigger->first]);
