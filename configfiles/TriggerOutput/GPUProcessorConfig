@@ -5,7 +5,7 @@
 
  distance_between_vertices 500.
  wall_like_distance 0
-water_like_threshold_number_of_pmts 35 
+ water_like_threshold_number_of_pmts 35
  wall_like_threshold_number_of_pmts 0
  coalesce_time 500.
  trigger_gate_up 950.0
