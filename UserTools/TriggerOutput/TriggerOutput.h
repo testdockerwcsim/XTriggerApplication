@@ -35,18 +35,19 @@ class TriggerOutput: public Tool {
   TFile * m_output_file;
   /// Tree contain WCSimRootEvent(s), and the original WCSim filename / event number
   TTree * m_event_tree;
+
   /// The type of Trigger
   TriggerType_t the_type;
   /// The starting time of the trigger window
-  TimeDelta the_readout_start_time;
+  float the_readout_start_time;
   /// The ending time of the trigger window
-  TimeDelta the_readout_end_time;
+  float the_readout_end_time;
   /// The starting time of the hit mask
-  TimeDelta the_mask_start_time;
+  float the_mask_start_time;
   /// The ending time of the hit mask
-  TimeDelta the_mask_end_time;
+  float the_mask_end_time;
   /// The actual time of the trigger
-  TimeDelta the_trigger_time;
+  float the_trigger_time;
 
   /// The stopwatch, if we're using one
   util::Stopwatch * m_stopwatch;
@@ -63,6 +64,8 @@ class TriggerOutput: public Tool {
   }
 
   enum LogLevel {FATAL=-1, ERROR=0, WARN=1, INFO=2, DEBUG1=3, DEBUG2=4, DEBUG3=5};
+
+  float absolute_time(TimeDelta d);
 
 };
 

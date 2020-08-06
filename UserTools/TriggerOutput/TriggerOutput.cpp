@@ -80,11 +80,11 @@ bool TriggerOutput::Execute(){
   StreamToLog(INFO);
   for(int i=0; i<num_triggers; i++){
     the_type = type[i];
-    the_readout_start_time = readout_start_time[i];
-    the_readout_end_time = readout_end_time[i];
-    the_mask_start_time = mask_start_time[i];
-    the_mask_end_time = mask_end_time[i];
-    the_trigger_time = trigger_time[i];
+    the_readout_start_time = absolute_time(readout_start_time[i]);
+    the_readout_end_time = absolute_time(readout_end_time[i]);
+    the_mask_start_time = absolute_time(mask_start_time[i]);
+    the_mask_end_time = absolute_time(mask_end_time[i]);
+    the_trigger_time = absolute_time(trigger_time[i]);
     m_ss << " TriggerOutput: trigger " << i << " type " << WCSimEnumerations::EnumAsString(the_type) << " readout_start_time " << the_readout_start_time << " readout_end_time " << the_readout_end_time << " mask_start_time " << the_mask_start_time << " mask_end_time " << the_mask_end_time << " trigger_time " << the_trigger_time ;
     for(unsigned int ii = 0; ii < info[i].size(); ii++)
       m_ss << " info " << ii << " = " << info[i][ii];
@@ -122,4 +122,13 @@ bool TriggerOutput::Finalise(){
   }
 
   return true;
+}
+
+
+float TriggerOutput::absolute_time(TimeDelta d){
+
+  float local_time = d.m_short_time + d.m_long_time*TimeDelta::s_long_time_unit;;
+
+  return local_time;
+
 }
