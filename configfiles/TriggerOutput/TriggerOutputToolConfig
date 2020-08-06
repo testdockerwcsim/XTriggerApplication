@@ -1,6 +1,7 @@
 
 #outfilename FILES/trigger_output.root
-outfilename FILES/trigger_output_nhits_GPU_nondegraded.root
+outfilename FILES/trigger_output_nhits_CPU.root
+#outfilename FILES/trigger_output_nhits_GPU_nondegraded.root
 #outfilename FILES/trigger_output_test_vertices_GPU.root
 trigger_od 0
 use_stopwatch 1

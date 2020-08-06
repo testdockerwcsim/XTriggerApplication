@@ -1,7 +1,7 @@
 wcsim1 WCSimReader configfiles/TriggerOutput/WCSimReaderToolConfig
 prepare1 PrepareSubSamples configfiles/TriggerOutput/PrepareSubSamplesConfig
-nhits1 NHits configfiles/TriggerOutput/NHitsToolConfig
-#test_vertices1 test_vertices configfiles/TriggerOutput/GPUProcessorConfig
+#nhits1 NHits configfiles/TriggerOutput/NHitsToolConfig
+test_vertices1 test_vertices configfiles/TriggerOutput/GPUProcessorConfig
 #pass_all1 pass_all configfiles/TriggerOutput/pass_allToolConfig
 triggerout1 TriggerOutput configfiles/TriggerOutput/TriggerOutputToolConfig
 out1 DataOut configfiles/TriggerOutput/DataOutToolConfig
