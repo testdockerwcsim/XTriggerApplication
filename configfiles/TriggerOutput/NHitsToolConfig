@@ -1,5 +1,5 @@
 trigger_search_window 400
-trigger_threshold 15
+trigger_threshold 30
 trigger_threshold_adjust_for_noise 1
 pretrigger_save_window 400
 posttrigger_save_window 950
