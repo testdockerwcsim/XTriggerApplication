@@ -1392,7 +1392,7 @@ void coalesce_triggers(){
   }
 
   for(std::vector<std::pair<unsigned int,unsigned int> >::const_iterator itrigger=trigger_pair_vertex_time.begin(); itrigger != trigger_pair_vertex_time.end(); ++itrigger)
-    printf(" [2] coalesced trigger timebin %d vertex index %d \n", itrigger->first, itrigger->second);
+    printf(" [2] coalesced vertex index %d trigger timebin %d \n", itrigger->first, itrigger->second);
 
   return;
 
@@ -1410,7 +1410,7 @@ void separate_triggers_into_gates(){
     if(itrigger->second > time_start) {
       unsigned int triggertime = itrigger->second*time_step_size - time_offset;
       final_trigger_pair_vertex_time.push_back(std::make_pair(itrigger->first,triggertime));
-      time_start = triggertime + trigger_gate_up;
+      time_start = itrigger->second + trigger_gate_up/time_step_size;
       trigger_index = itrigger - trigger_pair_vertex_time.begin();
       output_trigger_information.clear();
       output_trigger_information.push_back(vertex_x[itrigger->first]);
@@ -1419,7 +1419,7 @@ void separate_triggers_into_gates(){
       output_trigger_information.push_back(trigger_npmts_in_time_bin.at(trigger_index));
       output_trigger_information.push_back(triggertime);
 
-      printf(" [2] triggertime: %d, npmts: %d, x: %f, y: %f, z: %f \n", triggertime, trigger_npmts_in_time_bin.at(trigger_index), vertex_x[itrigger->first], vertex_y[itrigger->first], vertex_z[itrigger->first]);
+      printf(" [2] triggertime: %d, vertex index: %d, npmts: %d, x: %f, y: %f, z: %f \n", triggertime, itrigger->first, trigger_npmts_in_time_bin.at(trigger_index), vertex_x[itrigger->first], vertex_y[itrigger->first], vertex_z[itrigger->first]);
 
       /* if( output_txt ){ */
       /* 	FILE *of=fopen(output_file.c_str(), "w"); */
@@ -1460,7 +1460,7 @@ void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int
     if(itrigger->second > time_start) {
       unsigned int triggertime = itrigger->second*time_step_size - time_offset;
       final_trigger_pair_vertex_time.push_back(std::make_pair(itrigger->first,triggertime));
-      time_start = triggertime + trigger_gate_up;
+      time_start = itrigger->second + trigger_gate_up/time_step_size;
       trigger_index = itrigger - trigger_pair_vertex_time.begin();
       output_trigger_information.clear();
       output_trigger_information.push_back(vertex_x[itrigger->first]);
@@ -1472,7 +1472,7 @@ void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int
       trigger_ns->push_back(trigger_npmts_in_time_bin.at(trigger_index));
       trigger_ts->push_back(triggertime);
 
-      printf(" [2] triggertime: %d, npmts: %d, x: %f, y: %f, z: %f \n", triggertime, trigger_npmts_in_time_bin.at(trigger_index), vertex_x[itrigger->first], vertex_y[itrigger->first], vertex_z[itrigger->first]);
+      printf(" [2] triggertime: %d, vertex index: %d, npmts: %d, x: %f, y: %f, z: %f \n", triggertime, itrigger->first, trigger_npmts_in_time_bin.at(trigger_index), vertex_x[itrigger->first], vertex_y[itrigger->first], vertex_z[itrigger->first]);
 
       /* if( output_txt ){ */
       /* 	FILE *of=fopen(output_file.c_str(), "w"); */
