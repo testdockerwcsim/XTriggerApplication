@@ -22,7 +22,7 @@
  select_based_on_cone 1
  write_output_mode 1
  trigger_threshold_adjust_for_noise 1
- return_vertex 1
+ return_vertex 0
 
 DetectorFile inputfiles/detector.txt
 ParameterFile inputfiles/parameters.txt

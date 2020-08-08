@@ -52,6 +52,8 @@ class TriggerOutput: public Tool {
   float the_mask_end_time;
   /// The actual time of the trigger
   float the_trigger_time;
+  /// extra info from the trigger
+  std::vector<float> the_trigger_info;
 
   /// The stopwatch, if we're using one
   util::Stopwatch * m_stopwatch;

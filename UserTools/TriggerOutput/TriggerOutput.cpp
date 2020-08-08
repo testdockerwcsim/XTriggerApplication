@@ -42,6 +42,8 @@ bool TriggerOutput::Initialise(std::string configfile, DataModel &data){
   m_triggers_tree->Branch("mask_start_time", &the_mask_start_time, "mask_start_time/F");
   m_triggers_tree->Branch("mask_end_time", &the_mask_end_time, "mask_end_time/F");
   m_triggers_tree->Branch("trigger_time", &the_trigger_time, "trigger_time/F");
+  m_triggers_tree->Branch("trigger_info", &the_trigger_info);
+
 
   //setup the out header tree
   Log("DEBUG: TriggerOutput::Initialise setting up output header tree...", DEBUG2, m_verbose);
@@ -92,6 +94,7 @@ bool TriggerOutput::Execute(){
     the_mask_start_time = absolute_time(mask_start_time[i]);
     the_mask_end_time = absolute_time(mask_end_time[i]);
     the_trigger_time = absolute_time(trigger_time[i]);
+    the_trigger_info = info[i];
     m_ss << " TriggerOutput: trigger " << i << " type " << WCSimEnumerations::EnumAsString(the_type) << " readout_start_time " << the_readout_start_time << " readout_end_time " << the_readout_end_time << " mask_start_time " << the_mask_start_time << " mask_end_time " << the_mask_end_time << " trigger_time " << the_trigger_time ;
     for(unsigned int ii = 0; ii < info[i].size(); ii++)
       m_ss << " info " << ii << " = " << info[i][ii];
