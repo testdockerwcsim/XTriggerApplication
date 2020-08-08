@@ -1077,10 +1077,17 @@ int GPU_daq::test_vertices_execute(std::vector<int> PMTid, std::vector<int> time
       getLastCudaError("kernel_histo_one_thread_one_vertex execution failed\n");
       }else if( correct_mode == 8 ){
       setup_threads_for_histo_per(n_test_vertices);
-      printf(" [2] --- execute kernel to correct times and get n pmts per time bin \n");
-      kernel_correct_times_and_get_histo_per_vertex_shared<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*sizeof(unsigned int)>>>(device_n_pmts_per_time_bin);
-      cudaThreadSynchronize();
-      getLastCudaError("kernel_correct_times_and_get_histo_per_vertex_shared execution failed\n");
+      if( return_direction ){
+	printf(" [2] --- execute kernel to correct times and get n pmts and mean hits position per time bin \n");
+	kernel_correct_times_and_get_histo_and_mean_position_per_vertex_shared<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*sizeof(unsigned int)>>>(device_n_pmts_per_time_bin, device_meanx_per_time_bin, device_meany_per_time_bin, device_meanz_per_time_bin);
+	cudaThreadSynchronize();
+	getLastCudaError("kernel_correct_times_and_get_histo_and_mean_position_per_vertex_shared execution failed\n");
+      }else{
+	printf(" [2] --- execute kernel to correct times and get n pmts per time bin \n");
+	kernel_correct_times_and_get_histo_per_vertex_shared<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d,n_time_bins*sizeof(unsigned int)>>>(device_n_pmts_per_time_bin);
+	cudaThreadSynchronize();
+	getLastCudaError("kernel_correct_times_and_get_histo_per_vertex_shared execution failed\n");
+      }
     }else if( correct_mode == 9 ){
       printf(" [2] --- execute kernel to correct times and get n pmts per time bin \n");
       kernel_correct_times_and_get_n_pmts_per_time_bin_and_direction_bin<<<number_of_kernel_blocks_3d,number_of_threads_per_block_3d>>>(device_n_pmts_per_time_bin_and_direction_bin, device_directions_for_vertex_and_pmt);
@@ -1139,7 +1146,11 @@ int GPU_daq::test_vertices_execute(std::vector<int> PMTid, std::vector<int> time
       kernel_find_vertex_with_max_npmts_and_center_of_mass_in_timebin<<<number_of_kernel_blocks,number_of_threads_per_block>>>(device_n_pmts_per_time_bin, device_max_number_of_pmts_in_time_bin, device_vertex_with_max_n_pmts,device_number_of_pmts_in_cone_in_time_bin,device_max_number_of_pmts_in_cone_in_time_bin);
 
     }else{
-      kernel_find_vertex_with_max_npmts_in_timebin<<<number_of_kernel_blocks,number_of_threads_per_block>>>(device_n_pmts_per_time_bin, device_max_number_of_pmts_in_time_bin, device_vertex_with_max_n_pmts);
+      if( correct_mode == 8 && return_direction ){
+	kernel_find_vertex_with_max_npmts_in_timebin<<<number_of_kernel_blocks,number_of_threads_per_block>>>(device_n_pmts_per_time_bin, device_max_number_of_pmts_in_time_bin, device_vertex_with_max_n_pmts, device_meanx_per_time_bin, device_meany_per_time_bin, device_meanz_per_time_bin, device_meanx_for_vertex_with_max_n_pmts_per_time_bin, device_meany_for_vertex_with_max_n_pmts_per_time_bin, device_meanz_for_vertex_with_max_n_pmts_per_time_bin);
+      }else{
+	kernel_find_vertex_with_max_npmts_in_timebin<<<number_of_kernel_blocks,number_of_threads_per_block>>>(device_n_pmts_per_time_bin, device_max_number_of_pmts_in_time_bin, device_vertex_with_max_n_pmts);
+      }
     }
     getLastCudaError("candidates_kernel execution failed\n");
     if( use_timing )

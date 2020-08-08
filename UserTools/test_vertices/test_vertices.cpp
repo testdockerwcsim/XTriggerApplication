@@ -186,7 +186,7 @@ bool test_vertices::Execute(){
 	info.push_back(trigger_vtx_ys[i]);
 	info.push_back(trigger_vtx_zs[i]);
       }
-      if( m_return_vertex ){
+      if( m_return_direction ){
 	info.push_back(trigger_dir_xs[i]);
 	info.push_back(trigger_dir_ys[i]);
 	info.push_back(trigger_dir_zs[i]);
