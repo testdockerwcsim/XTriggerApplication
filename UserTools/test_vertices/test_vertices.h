@@ -41,6 +41,7 @@ class test_vertices: public Tool {
   int m_num_threads_per_block_x;
   int m_write_output_mode;
   bool m_return_vertex;
+  bool m_return_direction;
 
 #ifdef GPU   
   /// integer times to run over GPU card

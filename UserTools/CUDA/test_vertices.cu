@@ -243,7 +243,8 @@ int GPU_daq::test_vertices_initialize_ToolDAQ(double f_detector_length, double f
   int f_num_threads_per_block_y,
   int f_num_threads_per_block_x,
   int f_write_output_mode,
-  bool f_return_vertex
+  bool f_return_vertex,
+  bool f_return_direction
 ){
 
   int argc = 0;
@@ -336,6 +337,7 @@ int GPU_daq::test_vertices_initialize_ToolDAQ(double f_detector_length, double f
     costheta_cone_cut = f_costheta_cone_cut;
     select_based_on_cone = f_select_based_on_cone;
     return_vertex = f_return_vertex;
+    return_direction = f_return_direction;
 
     dark_rate = f_dark_rate; // Hz
     cylindrical_grid = f_cylindrical_grid;
@@ -384,6 +386,7 @@ int GPU_daq::test_vertices_initialize_ToolDAQ(double f_detector_length, double f
   printf(" [2] time step size = %d ns \n", time_step_size);
   printf(" [2] write_output_mode %d \n", write_output_mode);
   printf(" [2] return_vertex %d \n", return_vertex);
+  printf(" [2] return_direction %d \n", return_direction);
   if( correct_mode == 9 ){
     printf(" [2] n_direction_bins_theta %d, n_direction_bins_phi %d, n_direction_bins %d \n",
 	   n_direction_bins_theta, n_direction_bins_phi, n_direction_bins);
@@ -880,7 +883,7 @@ int GPU_daq::test_vertices_execute(){
   return 1;
 }
 
-int GPU_daq::test_vertices_execute(std::vector<int> PMTid, std::vector<int> time, std::vector<int> * trigger_ns, std::vector<int> * trigger_ts, std::vector<double> * trigger_vtx_xs, std::vector<double> * trigger_vtx_ys, std::vector<double> * trigger_vtx_zs){
+int GPU_daq::test_vertices_execute(std::vector<int> PMTid, std::vector<int> time, std::vector<int> * trigger_ns, std::vector<int> * trigger_ts, std::vector<double> * trigger_vtx_xs, std::vector<double> * trigger_vtx_ys, std::vector<double> * trigger_vtx_zs, std::vector<double> * trigger_dir_xs, std::vector<double> * trigger_dir_ys, std::vector<double> * trigger_dir_zs){
 
   start_total_cuda_clock();
 
@@ -1189,7 +1192,7 @@ int GPU_daq::test_vertices_execute(std::vector<int> PMTid, std::vector<int> time
     //////////////////////////////////
     if( use_timing )
       start_cuda_clock();
-    separate_triggers_into_gates(trigger_ns, trigger_ts, trigger_vtx_xs, trigger_vtx_ys, trigger_vtx_zs);
+    separate_triggers_into_gates(trigger_ns, trigger_ts, trigger_vtx_xs, trigger_vtx_ys, trigger_vtx_zs, trigger_dir_xs, trigger_dir_ys, trigger_dir_zs);
     if( use_timing )
       elapsed_gates += stop_cuda_clock();
 
