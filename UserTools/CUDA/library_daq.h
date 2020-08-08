@@ -58,6 +58,8 @@ __constant__ float constant_costheta_cone_cut;
 bool select_based_on_cone; // for mode == 10, set to 0 to select based on vertices, to 1 to select based on cone
 __constant__ bool constant_select_based_on_cone;
 bool return_vertex; // return vertex position
+bool return_direction; // return cone direction
+__constant__ bool constant_return_direction;
 /// detector
 double detector_height; // detector height
 double detector_radius; // detector radius
@@ -108,6 +110,9 @@ unsigned int * device_n_pmts_per_time_bin_and_direction_bin; // number of active
 float * device_dx_per_time_bin; // dx from vertex to hit in a time bin
 float * device_dy_per_time_bin; // dy from vertex to hit in a time bin
 float * device_dz_per_time_bin; // dz from vertex to hit in a time bin
+float * device_meanx_per_time_bin; // sum of x positions of chosen PMTs
+float * device_meany_per_time_bin; // sum of y positions of chosen PMTs
+float * device_meanz_per_time_bin; // sum of z positions of chosen PMTs
 //unsigned int * device_time_nhits; // trigger time
 //unsigned int * host_time_nhits;
 // tof
@@ -127,6 +132,12 @@ float *device_light_dz; // z distance between a vertex and a pmt
 float *host_light_dz;
 float *device_light_dr; // distance between a vertex and a pmt
 float *host_light_dr;
+float *device_PMTx; // PMT x
+float *host_PMTx;
+float *device_PMTy; // PMT y
+float *host_PMTy;
+float *device_PMTz; // PMT z
+float *host_PMTz;
 bool *device_directions_for_vertex_and_pmt; // test directions for vertex and pmt
 bool *host_directions_for_vertex_and_pmt;
 texture<time_of_flight_t, 1, cudaReadModeElementType> tex_times_of_flight;
@@ -134,6 +145,9 @@ texture<float, 1, cudaReadModeElementType> tex_light_dx;
 texture<float, 1, cudaReadModeElementType> tex_light_dy;
 texture<float, 1, cudaReadModeElementType> tex_light_dz;
 texture<float, 1, cudaReadModeElementType> tex_light_dr;
+texture<float, 1, cudaReadModeElementType> tex_PMTx;
+texture<float, 1, cudaReadModeElementType> tex_PMTy;
+texture<float, 1, cudaReadModeElementType> tex_PMTz;
 //texture<bool, 1, cudaReadModeElementType> tex_directions_for_vertex_and_pmt;
 // triggers
 std::vector<std::pair<unsigned int,unsigned int> > candidate_trigger_pair_vertex_time;  // pair = (v, t) = (a vertex, a time at the end of the 2nd of two coalesced bins)
@@ -144,6 +158,12 @@ std::vector<unsigned int> trigger_npmts_in_time_bin;
 std::vector<unsigned int> trigger_npmts_in_cone_in_time_bin;
 std::vector<std::pair<unsigned int,unsigned int> > final_trigger_pair_vertex_time;
 std::vector<double> output_trigger_information;
+std::vector<float> candidate_trigger_meanx_per_time_bin; // sum of pmts x in time bin
+std::vector<float> candidate_trigger_meany_per_time_bin; // sum of pmts y in time bin
+std::vector<float> candidate_trigger_meanz_per_time_bin; // sum of pmts z in time bin
+std::vector<float> trigger_meanx_per_time_bin;
+std::vector<float> trigger_meany_per_time_bin;
+std::vector<float> trigger_meanz_per_time_bin;
 // C timing
 struct timeval t0;
 struct timeval t1;
@@ -161,6 +181,12 @@ unsigned int *  device_vertex_with_max_n_pmts;
 unsigned int * device_number_of_pmts_in_cone_in_time_bin;
 unsigned int * host_max_number_of_pmts_in_cone_in_time_bin;
 unsigned int * device_max_number_of_pmts_in_cone_in_time_bin;
+float * device_meanx_for_vertex_with_max_n_pmts_per_time_bin;
+float * device_meany_for_vertex_with_max_n_pmts_per_time_bin;
+float * device_meanz_for_vertex_with_max_n_pmts_per_time_bin;
+float * host_meanx_for_vertex_with_max_n_pmts_per_time_bin;
+float * host_meany_for_vertex_with_max_n_pmts_per_time_bin;
+float * host_meanz_for_vertex_with_max_n_pmts_per_time_bin;
 // gpu properties
 int max_n_threads_per_block;
 int max_n_blocks;
@@ -188,6 +214,7 @@ int n_events;
 
 
 __global__ void kernel_find_vertex_with_max_npmts_in_timebin(histogram_t * np, histogram_t * mnp, unsigned int * vmnp);
+__global__ void kernel_find_vertex_with_max_npmts_in_timebin(histogram_t * np, histogram_t * mnp, unsigned int * vmnp, float * meanxin, float * meanyin, float * meanzin, float * meanxout, float * meanyout, float * meanzout);
 __global__ void kernel_find_vertex_with_max_npmts_and_center_of_mass_in_timebin(histogram_t * np, histogram_t * mnp, unsigned int * vmnp, unsigned int *nc, unsigned int *mnc);
 __global__ void kernel_find_vertex_with_max_npmts_in_timebin_and_directionbin(unsigned int * np, histogram_t * mnp, unsigned int * vmnp);
 
@@ -224,7 +251,7 @@ void fill_directions_memory_on_device();
 void fill_tofs_memory_on_device_nhits();
 void coalesce_triggers();
 void separate_triggers_into_gates();
-void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts, std::vector<double> * trigger_vtx_xs, std::vector<double> * trigger_vtx_ys, std::vector<double> * trigger_vtx_zs);
+void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts, std::vector<double> * trigger_vtx_xs, std::vector<double> * trigger_vtx_ys, std::vector<double> * trigger_vtx_zs, std::vector<double> * trigger_dir_xs, std::vector<double> * trigger_dir_ys, std::vector<double> * trigger_dir_zs);
 float timedifference_msec(struct timeval t0, struct timeval t1);
 void start_c_clock();
 double stop_c_clock();
@@ -892,6 +919,12 @@ void allocate_tofs_memory_on_device(){
 #endif
   checkCudaErrors(cudaMalloc((void **)&device_times_of_flight, n_test_vertices*n_PMTs*sizeof(time_of_flight_t)));
 
+  if( correct_mode == 8 && return_direction ){
+    check_cudamalloc_float(3*n_PMTs);
+    checkCudaErrors(cudaMalloc((void **)&device_PMTx, n_PMTs*sizeof(float)));
+    checkCudaErrors(cudaMalloc((void **)&device_PMTy, n_PMTs*sizeof(float)));
+    checkCudaErrors(cudaMalloc((void **)&device_PMTz, n_PMTs*sizeof(float)));
+  }
   if( correct_mode == 10 ){
 
     check_cudamalloc_float(3*n_test_vertices*n_PMTs);
@@ -961,6 +994,11 @@ void allocate_correct_memory_on_device(){
   if( correct_mode != 9 ){
     check_cudamalloc_unsigned_int(n_time_bins*n_test_vertices);
     checkCudaErrors(cudaMalloc((void **)&device_n_pmts_per_time_bin, n_time_bins*n_test_vertices*sizeof(unsigned int)));
+    if( correct_mode == 8 && return_direction ){
+      checkCudaErrors(cudaMalloc((void **)&device_meanx_per_time_bin, n_time_bins*n_test_vertices*sizeof(float)));
+      checkCudaErrors(cudaMalloc((void **)&device_meany_per_time_bin, n_time_bins*n_test_vertices*sizeof(float)));
+      checkCudaErrors(cudaMalloc((void **)&device_meanz_per_time_bin, n_time_bins*n_test_vertices*sizeof(float)));
+    }
     if( correct_mode == 10 ){
       check_cudamalloc_float(3*n_time_bins*n_test_vertices);
       checkCudaErrors(cudaMalloc((void **)&device_dx_per_time_bin, n_time_bins*n_test_vertices*sizeof(float)));
@@ -1017,6 +1055,11 @@ void allocate_correct_memory_on_device(){
     checkCudaErrors(cudaMalloc((void **)&device_time_bin_of_hit, n_hits*n_test_vertices*sizeof(unsigned int)));
   } else if( correct_mode == 8 ){
     checkCudaErrors(cudaMemset(device_n_pmts_per_time_bin, 0, n_time_bins*n_test_vertices*sizeof(unsigned int)));
+    if( return_direction ){
+      checkCudaErrors(cudaMemset(device_meanx_per_time_bin, 0, n_time_bins*n_test_vertices*sizeof(float)));
+      checkCudaErrors(cudaMemset(device_meany_per_time_bin, 0, n_time_bins*n_test_vertices*sizeof(float)));
+      checkCudaErrors(cudaMemset(device_meanz_per_time_bin, 0, n_time_bins*n_test_vertices*sizeof(float)));
+    }
   } else if( correct_mode == 9 ){
 
     check_cudamalloc_unsigned_int(n_time_bins*n_direction_bins*n_test_vertices);
@@ -1074,6 +1117,12 @@ void allocate_candidates_memory_on_host(){
   host_max_number_of_pmts_in_time_bin = (histogram_t *)malloc(n_time_bins*sizeof(histogram_t));
   host_vertex_with_max_n_pmts = (unsigned int *)malloc(n_time_bins*sizeof(unsigned int));
 
+  if( correct_mode == 8 && return_direction ){
+    host_meanx_for_vertex_with_max_n_pmts_per_time_bin = (float *)malloc(n_time_bins*sizeof(float));
+    host_meany_for_vertex_with_max_n_pmts_per_time_bin = (float *)malloc(n_time_bins*sizeof(float));
+    host_meanz_for_vertex_with_max_n_pmts_per_time_bin = (float *)malloc(n_time_bins*sizeof(float));
+  }
+
   if( correct_mode == 10 ){
     host_max_number_of_pmts_in_cone_in_time_bin = (unsigned int *)malloc(n_time_bins*sizeof(unsigned int));
   }
@@ -1095,6 +1144,12 @@ void allocate_candidates_memory_on_device(){
 #endif
   checkCudaErrors(cudaMalloc((void **)&device_max_number_of_pmts_in_time_bin, n_time_bins*sizeof(histogram_t)));
 
+  if( correct_mode == 8 && return_direction ){
+    checkCudaErrors(cudaMalloc((void **)&device_meanx_for_vertex_with_max_n_pmts_per_time_bin, n_time_bins*sizeof(float)));
+    checkCudaErrors(cudaMalloc((void **)&device_meany_for_vertex_with_max_n_pmts_per_time_bin, n_time_bins*sizeof(float)));
+    checkCudaErrors(cudaMalloc((void **)&device_meanz_for_vertex_with_max_n_pmts_per_time_bin, n_time_bins*sizeof(float)));
+  }
+
   check_cudamalloc_unsigned_int(n_time_bins);
   checkCudaErrors(cudaMalloc((void **)&device_vertex_with_max_n_pmts, n_time_bins*sizeof(unsigned int)));
 
@@ -1112,6 +1167,11 @@ void make_table_of_tofs(){
   printf(" [2] --- fill times_of_flight \n");
   host_times_of_flight = (time_of_flight_t*)malloc(n_test_vertices*n_PMTs * sizeof(time_of_flight_t));
   printf(" [2] speed_light_water %f \n", speed_light_water);
+  if( correct_mode == 8 && return_direction ){
+    host_PMTx = (float*)malloc(n_PMTs * sizeof(double));
+    host_PMTy = (float*)malloc(n_PMTs * sizeof(double));
+    host_PMTz = (float*)malloc(n_PMTs * sizeof(double));
+  }
   if( correct_mode == 10 ){
     host_light_dx = (float*)malloc(n_test_vertices*n_PMTs * sizeof(double));
     host_light_dy = (float*)malloc(n_test_vertices*n_PMTs * sizeof(double));
@@ -1121,6 +1181,11 @@ void make_table_of_tofs(){
   unsigned int distance_index;
   time_offset = 0.;
   for(unsigned int ip=0; ip<n_PMTs; ip++){
+    if( correct_mode == 8 && return_direction ){
+      host_PMTx[ip] = PMT_x[ip];
+      host_PMTy[ip] = PMT_y[ip];
+      host_PMTz[ip] = PMT_z[ip];
+    }
     for(unsigned int iv=0; iv<n_test_vertices; iv++){
       distance_index = get_distance_index(ip + 1, n_PMTs*iv);
       host_times_of_flight[distance_index] = sqrt(pow(vertex_x[iv] - PMT_x[ip],2) + pow(vertex_y[iv] - PMT_y[ip],2) + pow(vertex_z[iv] - PMT_z[ip],2))/speed_light_water;
@@ -1196,6 +1261,11 @@ void fill_tofs_memory_on_device(){
 			     host_times_of_flight,
 			     n_test_vertices*n_PMTs*sizeof(time_of_flight_t),
 			     cudaMemcpyHostToDevice));
+  if( correct_mode == 8 && return_direction ){
+    checkCudaErrors(cudaMemcpy(device_PMTx,host_PMTx,n_PMTs*sizeof(float),cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(device_PMTy,host_PMTy,n_PMTs*sizeof(float),cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(device_PMTz,host_PMTz,n_PMTs*sizeof(float),cudaMemcpyHostToDevice));
+  }
   if( correct_mode == 10 ){
     checkCudaErrors(cudaMemcpy(device_light_dx,host_light_dx,n_test_vertices*n_PMTs*sizeof(float),cudaMemcpyHostToDevice));
     checkCudaErrors(cudaMemcpy(device_light_dy,host_light_dy,n_test_vertices*n_PMTs*sizeof(float),cudaMemcpyHostToDevice));
@@ -1209,6 +1279,11 @@ void fill_tofs_memory_on_device(){
 
   // Bind the array to the texture
   checkCudaErrors(cudaBindTexture(0,tex_times_of_flight, device_times_of_flight, n_test_vertices*n_PMTs*sizeof(time_of_flight_t)));
+  if( correct_mode == 8 && return_direction ){
+    checkCudaErrors(cudaBindTexture(0,tex_PMTx, device_PMTx, n_PMTs*sizeof(float)));
+    checkCudaErrors(cudaBindTexture(0,tex_PMTy, device_PMTy, n_PMTs*sizeof(float)));
+    checkCudaErrors(cudaBindTexture(0,tex_PMTz, device_PMTz, n_PMTs*sizeof(float)));
+  }  
   if( correct_mode == 10 ){
     checkCudaErrors(cudaBindTexture(0,tex_light_dx, device_light_dx, n_test_vertices*n_PMTs*sizeof(float)));
     checkCudaErrors(cudaBindTexture(0,tex_light_dy, device_light_dy, n_test_vertices*n_PMTs*sizeof(float)));
@@ -1217,6 +1292,7 @@ void fill_tofs_memory_on_device(){
     checkCudaErrors( cudaMemcpyToSymbol(constant_cerenkov_costheta, &cerenkov_costheta, sizeof(float)) );
     checkCudaErrors( cudaMemcpyToSymbol(constant_costheta_cone_cut, &costheta_cone_cut, sizeof(float)) );
     checkCudaErrors( cudaMemcpyToSymbol(constant_select_based_on_cone, &select_based_on_cone, sizeof(bool)) );
+    checkCudaErrors( cudaMemcpyToSymbol(constant_return_direction, &return_direction, sizeof(bool)) );
   }  
 
 
@@ -1328,6 +1404,11 @@ void coalesce_triggers(){
 
   trigger_pair_vertex_time.clear();
   trigger_npmts_in_time_bin.clear();
+  if( correct_mode == 8 && return_direction ){
+    trigger_meanx_per_time_bin.clear();
+    trigger_meany_per_time_bin.clear();
+    trigger_meanz_per_time_bin.clear();
+  }
   if( correct_mode == 10 ){
     trigger_npmts_in_cone_in_time_bin.clear();
   }
@@ -1336,12 +1417,19 @@ void coalesce_triggers(){
   unsigned int max_pmt=0,max_vertex_index=0,max_time=0,max_pmt_in_cone=0;
   bool first_trigger, last_trigger, coalesce_triggers;
   unsigned int trigger_index;
+  float local_trigger_meanx_per_time_bin, local_trigger_meany_per_time_bin, local_trigger_meanz_per_time_bin;
+  float max_trigger_meanx_per_time_bin = 0, max_trigger_meany_per_time_bin = 0, max_trigger_meanz_per_time_bin = 0;
   for(std::vector<std::pair<unsigned int,unsigned int> >::const_iterator itrigger=candidate_trigger_pair_vertex_time.begin(); itrigger != candidate_trigger_pair_vertex_time.end(); ++itrigger){
 
     vertex_index =      itrigger->first;
     time_upper = itrigger->second;
     trigger_index = itrigger - candidate_trigger_pair_vertex_time.begin();
     number_of_pmts_in_time_bin = candidate_trigger_npmts_in_time_bin.at(trigger_index);
+    if( correct_mode == 8 && return_direction ){
+      local_trigger_meanx_per_time_bin = candidate_trigger_meanx_per_time_bin.at(trigger_index);
+      local_trigger_meany_per_time_bin = candidate_trigger_meany_per_time_bin.at(trigger_index);
+      local_trigger_meanz_per_time_bin = candidate_trigger_meanz_per_time_bin.at(trigger_index);
+    }
     if( correct_mode == 10 ){
       number_of_pmts_in_cone_in_time_bin = candidate_trigger_npmts_in_cone_in_time_bin.at(trigger_index);
     }
@@ -1353,6 +1441,11 @@ void coalesce_triggers(){
       max_pmt = number_of_pmts_in_time_bin;
       max_vertex_index = vertex_index;
       max_time = time_upper;
+      if( correct_mode == 8 && return_direction ){
+	max_trigger_meanx_per_time_bin = local_trigger_meanx_per_time_bin;
+	max_trigger_meany_per_time_bin = local_trigger_meany_per_time_bin;
+	max_trigger_meanz_per_time_bin = local_trigger_meanz_per_time_bin;
+      }    
       if( correct_mode == 10 ){
 	max_pmt_in_cone = number_of_pmts_in_cone_in_time_bin;
       }
@@ -1365,6 +1458,11 @@ void coalesce_triggers(){
 	  max_pmt = number_of_pmts_in_time_bin;
 	  max_vertex_index = vertex_index;
 	  max_time = time_upper;
+	  if( correct_mode == 8 && return_direction ){
+	    max_trigger_meanx_per_time_bin = local_trigger_meanx_per_time_bin;
+	    max_trigger_meany_per_time_bin = local_trigger_meany_per_time_bin;
+	    max_trigger_meanz_per_time_bin = local_trigger_meanz_per_time_bin;
+	  }
 	  if( correct_mode == 10 ){
 	    max_pmt_in_cone = number_of_pmts_in_cone_in_time_bin;
 	  }
@@ -1375,6 +1473,14 @@ void coalesce_triggers(){
 	max_pmt = number_of_pmts_in_time_bin;
 	max_vertex_index = vertex_index;
 	max_time = time_upper;     
+	if( correct_mode == 8 && return_direction ){
+	  trigger_meanx_per_time_bin.push_back(max_trigger_meanx_per_time_bin);
+	  trigger_meany_per_time_bin.push_back(max_trigger_meany_per_time_bin);
+	  trigger_meanz_per_time_bin.push_back(max_trigger_meanz_per_time_bin);
+	  max_trigger_meanx_per_time_bin = local_trigger_meanx_per_time_bin;
+	  max_trigger_meany_per_time_bin = local_trigger_meany_per_time_bin;
+	  max_trigger_meanz_per_time_bin = local_trigger_meanz_per_time_bin;
+	}
 	if( correct_mode == 10 ){
 	  trigger_npmts_in_cone_in_time_bin.push_back(max_pmt_in_cone);
 	  max_pmt_in_cone = number_of_pmts_in_cone_in_time_bin;
@@ -1385,6 +1491,11 @@ void coalesce_triggers(){
     if(last_trigger){
       trigger_pair_vertex_time.push_back(std::make_pair(max_vertex_index,max_time));
       trigger_npmts_in_time_bin.push_back(max_pmt);
+      if( correct_mode == 8 && return_direction ){
+	trigger_meanx_per_time_bin.push_back(max_trigger_meanx_per_time_bin);
+	trigger_meany_per_time_bin.push_back(max_trigger_meany_per_time_bin);
+	trigger_meanz_per_time_bin.push_back(max_trigger_meanz_per_time_bin);
+      }
       if( correct_mode == 10 ){
 	trigger_npmts_in_cone_in_time_bin.push_back(max_pmt_in_cone);
       }
@@ -1450,12 +1561,15 @@ void separate_triggers_into_gates(){
   return;
 }
 
-void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts, std::vector<double> * trigger_vtx_xs, std::vector<double> * trigger_vtx_ys, std::vector<double> * trigger_vtx_zs){
+void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts, std::vector<double> * trigger_vtx_xs, std::vector<double> * trigger_vtx_ys, std::vector<double> * trigger_vtx_zs, std::vector<double> * trigger_dir_xs, std::vector<double> * trigger_dir_ys, std::vector<double> * trigger_dir_zs){
 
   final_trigger_pair_vertex_time.clear();
   unsigned int trigger_index;
 
   unsigned int time_start=0;
+  float sum_x, mean_x, sum_y, mean_y, sum_z, mean_z;
+  float dir_x, dir_y, dir_z;
+  float dir;
   for(std::vector<std::pair<unsigned int,unsigned int> >::const_iterator itrigger=trigger_pair_vertex_time.begin(); itrigger != trigger_pair_vertex_time.end(); ++itrigger){
     //once a trigger is found, we must jump in the future before searching for the next
     if(itrigger->second > time_start) {
@@ -1476,6 +1590,21 @@ void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int
 	trigger_vtx_xs->push_back(vertex_x[itrigger->first]);
 	trigger_vtx_ys->push_back(vertex_y[itrigger->first]);
 	trigger_vtx_zs->push_back(vertex_z[itrigger->first]);
+      }
+      if( correct_mode == 8 && return_direction ){
+	sum_x = trigger_meanx_per_time_bin.at(trigger_index);
+	mean_x = sum_x/trigger_npmts_in_time_bin.at(trigger_index);
+	dir_x = mean_x - vertex_x[itrigger->first];
+	sum_y = trigger_meany_per_time_bin.at(trigger_index);
+	mean_y = sum_y/trigger_npmts_in_time_bin.at(trigger_index);
+	dir_y = mean_y - vertex_y[itrigger->first];
+	sum_z = trigger_meanz_per_time_bin.at(trigger_index);
+	mean_z = sum_z/trigger_npmts_in_time_bin.at(trigger_index);
+	dir_z = mean_z - vertex_z[itrigger->first];
+	dir = sqrt(pow(dir_x,2) + pow(dir_y,2) + pow(dir_z,2));
+	trigger_dir_xs->push_back(dir_x/dir);
+	trigger_dir_ys->push_back(dir_y/dir);
+	trigger_dir_zs->push_back(dir_z/dir);
       }
 
       printf(" [2] triggertime: %d, vertex index: %d, npmts: %d, x: %f, y: %f, z: %f \n", triggertime, itrigger->first, trigger_npmts_in_time_bin.at(trigger_index), vertex_x[itrigger->first], vertex_y[itrigger->first], vertex_z[itrigger->first]);
@@ -1720,6 +1849,49 @@ __global__ void kernel_find_vertex_with_max_npmts_in_timebin(histogram_t * np, h
 
 }
 
+
+__global__ void kernel_find_vertex_with_max_npmts_in_timebin(histogram_t * np, histogram_t * mnp, unsigned int * vmnp, float * meanxin, float * meanyin, float * meanzin, float * meanxout, float * meanyout, float * meanzout){
+
+
+  // get unique id for each thread in each block == time bin
+  unsigned int time_bin_index = threadIdx.x + blockDim.x*blockIdx.x;
+
+  // skip if thread is assigned to nonexistent time bin
+  if( time_bin_index >= constant_n_time_bins ) return;
+
+
+  unsigned int number_of_pmts_in_time_bin = 0;
+  unsigned int time_index;
+  histogram_t max_number_of_pmts_in_time_bin=0;
+  unsigned int vertex_with_max_n_pmts = 0;
+  float meanx_for_vertex_with_max_n_pmts = 0., meany_for_vertex_with_max_n_pmts = 0., meanz_for_vertex_with_max_n_pmts = 0.;
+
+  for(unsigned int iv=0;iv<constant_n_test_vertices;iv++) { // loop over test vertices
+    // sum the number of hit PMTs in this time window and the next
+    
+    time_index = time_bin_index + constant_n_time_bins*iv;
+    if( time_index >= constant_n_time_bins*constant_n_test_vertices - 1 ) continue;
+    number_of_pmts_in_time_bin = np[time_index] + np[time_index+1];
+    if( number_of_pmts_in_time_bin >= max_number_of_pmts_in_time_bin ){
+      max_number_of_pmts_in_time_bin = number_of_pmts_in_time_bin;
+      meanx_for_vertex_with_max_n_pmts = meanxin[time_index];
+      meany_for_vertex_with_max_n_pmts = meanyin[time_index];
+      meanz_for_vertex_with_max_n_pmts = meanzin[time_index];
+      vertex_with_max_n_pmts = iv;
+    }
+  }
+
+  mnp[time_bin_index] = max_number_of_pmts_in_time_bin;
+  vmnp[time_bin_index] = vertex_with_max_n_pmts;
+  meanxout[time_bin_index] = meanx_for_vertex_with_max_n_pmts;
+  meanyout[time_bin_index] = meany_for_vertex_with_max_n_pmts;
+  meanzout[time_bin_index] = meanz_for_vertex_with_max_n_pmts;
+
+  return;
+
+}
+
+
 __global__ void kernel_find_vertex_with_max_npmts_and_center_of_mass_in_timebin(histogram_t * np, histogram_t * mnp, unsigned int * vmnp, unsigned int *nc, unsigned int *mnc){
 
 
@@ -1835,6 +2007,11 @@ void free_event_memories(){
   }
   if( correct_mode != 9 ){
     checkCudaErrors(cudaFree(device_n_pmts_per_time_bin));
+    if( correct_mode == 8 && return_direction ){
+      checkCudaErrors(cudaFree(device_meanx_per_time_bin));
+      checkCudaErrors(cudaFree(device_meany_per_time_bin));
+      checkCudaErrors(cudaFree(device_meanz_per_time_bin));
+    }
     if( correct_mode == 10 ){
       checkCudaErrors(cudaFree(device_dx_per_time_bin));
       checkCudaErrors(cudaFree(device_dy_per_time_bin));
@@ -1847,6 +2024,15 @@ void free_event_memories(){
   free(host_vertex_with_max_n_pmts);
   checkCudaErrors(cudaFree(device_max_number_of_pmts_in_time_bin));
   checkCudaErrors(cudaFree(device_vertex_with_max_n_pmts));
+
+  if( correct_mode == 8 && return_direction ){
+    free(host_meanx_for_vertex_with_max_n_pmts_per_time_bin);
+    free(host_meany_for_vertex_with_max_n_pmts_per_time_bin);
+    free(host_meanz_for_vertex_with_max_n_pmts_per_time_bin);
+    checkCudaErrors(cudaFree(device_meanx_for_vertex_with_max_n_pmts_per_time_bin));
+    checkCudaErrors(cudaFree(device_meany_for_vertex_with_max_n_pmts_per_time_bin));
+    checkCudaErrors(cudaFree(device_meanz_for_vertex_with_max_n_pmts_per_time_bin));
+  }
   if( correct_mode == 10 ){
     free(host_max_number_of_pmts_in_cone_in_time_bin);
     checkCudaErrors(cudaFree(device_max_number_of_pmts_in_cone_in_time_bin));
@@ -1877,6 +2063,11 @@ void free_global_memories(){
 
   //unbind texture reference to free resource 
   checkCudaErrors(cudaUnbindTexture(tex_times_of_flight));
+  if( correct_mode == 8 && return_direction ){
+    checkCudaErrors(cudaUnbindTexture(tex_PMTx));
+    checkCudaErrors(cudaUnbindTexture(tex_PMTy));
+    checkCudaErrors(cudaUnbindTexture(tex_PMTz));
+  }
   if( correct_mode == 10 ){
     checkCudaErrors(cudaUnbindTexture(tex_light_dx));
     checkCudaErrors(cudaUnbindTexture(tex_light_dy));
@@ -1898,6 +2089,14 @@ void free_global_memories(){
   free(vertex_z);
   checkCudaErrors(cudaFree(device_times_of_flight));
   free(host_times_of_flight);
+  if( correct_mode == 8 && return_direction ){
+    checkCudaErrors(cudaFree(device_PMTx));
+    free(host_PMTx);
+    checkCudaErrors(cudaFree(device_PMTy));
+    free(host_PMTy);
+    checkCudaErrors(cudaFree(device_PMTz));
+    free(host_PMTz);
+  }
   if( correct_mode == 10 ){
     checkCudaErrors(cudaFree(device_light_dx));
     free(host_light_dx);
@@ -1922,6 +2121,20 @@ void copy_candidates_from_device_to_host(){
 			     device_vertex_with_max_n_pmts,
 			     n_time_bins*sizeof(unsigned int),
 			     cudaMemcpyDeviceToHost));
+  if( correct_mode == 8 && return_direction ){
+    checkCudaErrors(cudaMemcpy(host_meanx_for_vertex_with_max_n_pmts_per_time_bin,
+			       device_meanx_for_vertex_with_max_n_pmts_per_time_bin,
+			       n_time_bins*sizeof(float),
+			       cudaMemcpyDeviceToHost));
+    checkCudaErrors(cudaMemcpy(host_meany_for_vertex_with_max_n_pmts_per_time_bin,
+			       device_meany_for_vertex_with_max_n_pmts_per_time_bin,
+			       n_time_bins*sizeof(float),
+			       cudaMemcpyDeviceToHost));
+    checkCudaErrors(cudaMemcpy(host_meanz_for_vertex_with_max_n_pmts_per_time_bin,
+			       device_meanz_for_vertex_with_max_n_pmts_per_time_bin,
+			       n_time_bins*sizeof(float),
+			       cudaMemcpyDeviceToHost));
+  }
   if( correct_mode == 10 ){
     checkCudaErrors(cudaMemcpy(host_max_number_of_pmts_in_cone_in_time_bin,
 			       device_max_number_of_pmts_in_cone_in_time_bin,
@@ -1937,6 +2150,11 @@ void choose_candidates_above_threshold(){
 
   candidate_trigger_pair_vertex_time.clear();
   candidate_trigger_npmts_in_time_bin.clear();
+  if( correct_mode == 8 && return_direction ){
+    candidate_trigger_meanx_per_time_bin.clear();
+    candidate_trigger_meany_per_time_bin.clear();
+    candidate_trigger_meanz_per_time_bin.clear();
+  }
   if( correct_mode == 10 ){
     candidate_trigger_npmts_in_cone_in_time_bin.clear();
   }
@@ -1967,6 +2185,11 @@ void choose_candidates_above_threshold(){
 
       candidate_trigger_pair_vertex_time.push_back(std::make_pair(host_vertex_with_max_n_pmts[time_bin],time_bin+1));
       candidate_trigger_npmts_in_time_bin.push_back(host_max_number_of_pmts_in_time_bin[time_bin]);
+      if( correct_mode == 8 && return_direction ){
+	candidate_trigger_meanx_per_time_bin.push_back(host_meanx_for_vertex_with_max_n_pmts_per_time_bin[time_bin]);
+	candidate_trigger_meany_per_time_bin.push_back(host_meany_for_vertex_with_max_n_pmts_per_time_bin[time_bin]);
+	candidate_trigger_meanz_per_time_bin.push_back(host_meanz_for_vertex_with_max_n_pmts_per_time_bin[time_bin]);
+      }
       if( correct_mode == 10 ){
 	candidate_trigger_npmts_in_cone_in_time_bin.push_back(host_max_number_of_pmts_in_cone_in_time_bin[time_bin]);
       }
@@ -2173,6 +2396,7 @@ void read_user_parameters(){
   costheta_cone_cut = read_value_from_file("costheta_cone_cut", parameter_file);
   select_based_on_cone = (bool)read_value_from_file("select_based_on_cone", parameter_file);
   return_vertex = (bool)read_value_from_file("return_vertex", parameter_file);
+  return_direction = (bool)read_value_from_file("return_direction", parameter_file);
 
   dark_rate = read_value_from_file("dark_rate", parameter_file); // Hz
   cylindrical_grid = (bool)read_value_from_file("cylindrical_grid", parameter_file);
