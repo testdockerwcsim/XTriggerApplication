@@ -5,8 +5,8 @@
 
  distance_between_vertices 500.
  wall_like_distance 0
- water_like_threshold_number_of_pmts 18
- wall_like_threshold_number_of_pmts 18
+ water_like_threshold_number_of_pmts 14
+ wall_like_threshold_number_of_pmts 0
  coalesce_time 500.
  trigger_gate_up 950.0
  trigger_gate_down -400.0
@@ -22,6 +22,7 @@
  select_based_on_cone 1
  write_output_mode 1
  trigger_threshold_adjust_for_noise 1
+ return_vertex 0
 
 DetectorFile inputfiles/detector.txt
 ParameterFile inputfiles/parameters.txt

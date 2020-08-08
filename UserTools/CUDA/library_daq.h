@@ -57,6 +57,7 @@ float costheta_cone_cut; // max distance between measured costheta and cerenkov 
 __constant__ float constant_costheta_cone_cut;
 bool select_based_on_cone; // for mode == 10, set to 0 to select based on vertices, to 1 to select based on cone
 __constant__ bool constant_select_based_on_cone;
+bool return_vertex; // return vertex position
 /// detector
 double detector_height; // detector height
 double detector_radius; // detector radius
@@ -223,7 +224,7 @@ void fill_directions_memory_on_device();
 void fill_tofs_memory_on_device_nhits();
 void coalesce_triggers();
 void separate_triggers_into_gates();
-void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts);
+void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts, std::vector<double> * trigger_vtx_xs, std::vector<double> * trigger_vtx_ys, std::vector<double> * trigger_vtx_zs);
 float timedifference_msec(struct timeval t0, struct timeval t1);
 void start_c_clock();
 double stop_c_clock();
@@ -1449,7 +1450,7 @@ void separate_triggers_into_gates(){
   return;
 }
 
-void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts){
+void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts, std::vector<double> * trigger_vtx_xs, std::vector<double> * trigger_vtx_ys, std::vector<double> * trigger_vtx_zs){
 
   final_trigger_pair_vertex_time.clear();
   unsigned int trigger_index;
@@ -1471,6 +1472,11 @@ void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int
 
       trigger_ns->push_back(trigger_npmts_in_time_bin.at(trigger_index));
       trigger_ts->push_back(triggertime);
+      if( return_vertex ){
+	trigger_vtx_xs->push_back(vertex_x[itrigger->first]);
+	trigger_vtx_ys->push_back(vertex_y[itrigger->first]);
+	trigger_vtx_zs->push_back(vertex_z[itrigger->first]);
+      }
 
       printf(" [2] triggertime: %d, vertex index: %d, npmts: %d, x: %f, y: %f, z: %f \n", triggertime, itrigger->first, trigger_npmts_in_time_bin.at(trigger_index), vertex_x[itrigger->first], vertex_y[itrigger->first], vertex_z[itrigger->first]);
 
@@ -2166,6 +2172,7 @@ void read_user_parameters(){
   cerenkov_angle_water = acos(cerenkov_costheta);
   costheta_cone_cut = read_value_from_file("costheta_cone_cut", parameter_file);
   select_based_on_cone = (bool)read_value_from_file("select_based_on_cone", parameter_file);
+  return_vertex = (bool)read_value_from_file("return_vertex", parameter_file);
 
   dark_rate = read_value_from_file("dark_rate", parameter_file); // Hz
   cylindrical_grid = (bool)read_value_from_file("cylindrical_grid", parameter_file);
