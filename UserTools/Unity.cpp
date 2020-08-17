@@ -22,3 +22,4 @@
 #include "FLOWERRecon/FLOWERRecon.cpp"
 #endif //FLOWEREXISTS
 #include "SupernovaDirectionCalculator/SupernovaDirectionCalculator.cpp"
+#include "test_vertices_reconstruction/test_vertices_reconstruction.cpp"

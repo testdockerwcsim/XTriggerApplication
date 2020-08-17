@@ -28,6 +28,7 @@ if (tool=="PrepareSubSamples") ret=new PrepareSubSamples;
 if (tool=="FLOWERRecon") ret=new FLOWERRecon;
 #endif //FLOWEREXISTS
 if (tool=="SupernovaDirectionCalculator") ret=new SupernovaDirectionCalculator;
+  if (tool=="test_vertices_reconstruction") ret=new test_vertices_reconstruction;
 return ret;
 }
 

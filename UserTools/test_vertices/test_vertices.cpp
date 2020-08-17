@@ -83,6 +83,8 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
   m_ss << " m_return_vertex " <<   m_return_vertex; StreamToLog(INFO);
   m_ss << " m_return_direction " <<   m_return_direction; StreamToLog(INFO);
 
+  m_trigger_save_window_pre = TimeDelta(-m_trigger_gate_down);
+  m_trigger_save_window_post = TimeDelta(m_trigger_gate_up);
 
   //  gpu_daq_initialize(PMTFile,DetectorFile,ParameterFile);
 
@@ -161,7 +163,7 @@ bool test_vertices::Execute(){
 
   std::vector<SubSample> & samples = m_data->IDSamples;
 
-  for( std::vector<SubSample>::const_iterator is=samples.begin(); is!=samples.end(); ++is){
+  for( std::vector<SubSample>::iterator is=samples.begin(); is!=samples.end(); ++is){
 #ifdef GPU   
 
     std::vector<int> trigger_ns;
@@ -192,11 +194,11 @@ bool test_vertices::Execute(){
 	info.push_back(trigger_dir_zs[i]);
       }
       m_data->IDTriggers.AddTrigger(kTriggerUndefined,
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
-				    TimeDelta(trigger_ts[i]) + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) - m_trigger_save_window_pre + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) + m_trigger_save_window_post + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) - m_trigger_mask_window_pre + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) + m_trigger_mask_window_post + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) + is->m_timestamp,
 				    info);
 
       m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
@@ -205,6 +207,12 @@ bool test_vertices::Execute(){
     ;
 #endif
   }
+  //Now we have all the triggers, get the SubSample to determine
+  // - which trigger readout windows each hit is associated with
+  // - which hits should be masked from future triggers
+  for( std::vector<SubSample>::iterator is=samples.begin(); is!=samples.end(); ++is) {
+    (*is).TellMeAboutTheTriggers(m_data->IDTriggers, m_verbose);
+  }//loop over SubSamples
 
 
   if(m_stopwatch) m_stopwatch->Stop();

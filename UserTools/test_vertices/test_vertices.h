@@ -43,6 +43,15 @@ class test_vertices: public Tool {
   bool m_return_vertex;
   bool m_return_direction;
 
+  /// Pre-trigger time for saving digits
+  TimeDelta m_trigger_save_window_pre;
+  /// Post-trigger time for saving digits
+  TimeDelta m_trigger_save_window_post;
+  /// Pre-trigger time for masking digits from future tools
+  TimeDelta m_trigger_mask_window_pre;
+  /// Post-trigger time for masking digits from future tools
+  TimeDelta m_trigger_mask_window_post;
+
 #ifdef GPU   
   /// integer times to run over GPU card
   std::vector<int> m_time_int;
