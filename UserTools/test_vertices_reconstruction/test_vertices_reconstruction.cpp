@@ -44,6 +44,7 @@ bool test_vertices_reconstruction::Execute(){
   //// YOUR CODE HERE
   float out_vertex[3]={0,0,0};
   float out_direction[6]={0,0,0,0,0,0};
+  float out_cosine[3]={0,0,0};
   float out_maxlike[3]={0,0,0};
   double dout_vertex[3]={0,0,0}; 
   double dout_direction[3]={0,0,0};
@@ -106,9 +107,18 @@ bool test_vertices_reconstruction::Execute(){
       out_vertex[0] = the_info[1];
       out_vertex[1] = the_info[2];
       out_vertex[2] = the_info[3];
-      out_direction[0] = the_info[4];
-      out_direction[1] = the_info[5];
-      out_direction[2] = the_info[6];
+      out_cosine[0] = the_info[4];
+      out_cosine[1] = the_info[5];
+      out_cosine[2] = the_info[6];
+
+      //    double dir_z = cos(dir.theta);
+      //    double dir_y = sin(dir.theta) * sin(dir.phi);
+      //    double dir_x = sin(dir.theta) * cos(dir.phi);
+      //  double theta, phi, alpha;
+
+      out_direction[0] = atan2(sqrt(pow(out_cosine[0],2) + pow(out_cosine[1],2)),out_cosine[2]);
+      out_direction[1] = atan2(out_cosine[1],out_cosine[0]);
+      out_direction[2] = 0;
     }else{
       m_ss << "INFO: warning: unexpected trigger info structure: " << ninfos << " info entries ";
       StreamToLog(INFO);
@@ -119,7 +129,7 @@ bool test_vertices_reconstruction::Execute(){
       for(int i = 0; i < 3; i++) {
         m_ss << " " << out_vertex[i] << ",";
       }
-      m_ss << "DEBUG: reconstructed direction x, y, z:";
+      m_ss << "DEBUG: reconstructed euler angles:";
       for(int i = 0; i < 3; i++) {
         m_ss << " " << out_direction[i] << ",";
       }
