@@ -922,7 +922,7 @@ bool test_vertices::read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<
   //time_offset = 600.; // set to constant to match trevor running
   n_time_bins = int(floor((the_max_time + time_offset)/time_step_size))+1; // floor returns the integer below
   printf(" [2] input max_time %d, n_time_bins %d \n", the_max_time, n_time_bins);
-  printf(" [2] time_offset = %f ns \n", time_offset);
+  printf(" [2] time_offset = %d ns \n", time_offset);
   //print_input();
 
   return true;
