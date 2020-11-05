@@ -1063,7 +1063,7 @@ void test_vertices::correct_times_and_get_histo_per_vertex_shared(histogram_t *c
       tof = host_times_of_flight[distance_index];
       corrected_time = host_times[i]-tof + time_offset;
     
-      bin = corrected_time/time_step_size;
+      bin = corrected_time/time_step_size + n_time_bins*iv;
 
       ct[bin] ++;
     }
