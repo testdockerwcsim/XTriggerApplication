@@ -137,6 +137,12 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
 
   CPU_test_vertices_initialize();
 
+  int npmts = m_data->IDNPMTs;
+  double dark_rate_kHZ = m_data->IDPMTDarkRate;
+  double dark_rate_Hz = dark_rate_kHZ * 1000;
+  double average_occupancy = dark_rate_Hz * m_coalesce_time * npmts;
+  m_time_int.reserve(2*(int)average_occupancy);
+
 #endif
 
   // can acess variables directly like this and would be good if you could impliment in your code
@@ -206,12 +212,26 @@ bool test_vertices::Execute(){
       m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
     }
 #else
-    // Make sure digit times are ordered in time
-    if (not is->IsSortedByTime()){
-      Log("ERROR: Input sample is not sorted by time!", ERROR, m_verbose);
-      return false;
+
+    std::vector<int> trigger_ns;
+    std::vector<int> trigger_ts;
+    m_time_int.clear();
+    for(unsigned int i = 0; i < is->m_time.size(); i++) {
+      m_time_int.push_back(is->m_time[i]);
     }
-    algorithm(&(*is));
+    CPU_test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
+    for(int i=0; i<trigger_ns.size(); i++){
+      m_data->IDTriggers.AddTrigger(kTriggerUndefined,
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
+				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
+				    TimeDelta(trigger_ts[i]) + is->m_timestamp,
+				    std::vector<float>(1, trigger_ns[i]));
+
+      m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
+    }
+
 #endif
   }
 
@@ -243,74 +263,10 @@ bool test_vertices::Finalise(){
   return true;
 }
 
-void test_vertices::algorithm(const SubSample * sample)
-{
-#if 0
-  //we will try to find triggers
-  //loop over PMTs, and Digits in each PMT.  If ndigits > Threshhold in a time window, then we have a trigger
-
-  const unsigned int ndigits = sample->m_time.size();
-  m_ss << "DEBUG: NHits::AlgNDigits(). Number of entries in input digit collection: " << ndigits;
-  StreamToLog(DEBUG1);
-
-  // Where to store the triggers we find
-  TriggerInfo * triggers = m_trigger_OD ? &(m_data->ODTriggers) : &(m_data->IDTriggers);
-  const int num_triggers_start = triggers->m_num_triggers;
-
-  // Loop over all digits
-  // But we can start with an offset of at least the threhshold to save some time
-  int current_digit = std::min(m_trigger_threshold, ndigits);
-  int first_digit_in_window = 0;
-  for(;current_digit < ndigits; ++current_digit) {
-    // Update first digit in trigger window
-    TimeDelta::short_time_t digit_time = sample->m_time.at(current_digit);
-    while(TimeDelta(sample->m_time[first_digit_in_window]) < TimeDelta(digit_time) - m_trigger_search_window){
-      ++first_digit_in_window;
-    }
-   
-
-    // if # of digits in window over threshold, issue trigger
-    int n_digits_in_window = current_digit - first_digit_in_window + 1; // +1 because difference is 0 when first digit is the only digit in window
-
-    if( n_digits_in_window > m_trigger_threshold) {
-      TimeDelta triggertime = sample->AbsoluteDigitTime(current_digit);
-      
-      m_ss << "DEBUG: Found NHits trigger in SubSample at " << triggertime;
-      StreamToLog(DEBUG2);
-      m_ss << "DEBUG: Advancing search by posttrigger_save_window " << m_trigger_save_window_post;
-      StreamToLog(DEBUG2);
-      while(sample->AbsoluteDigitTime(current_digit) < triggertime + m_trigger_save_window_post){
-	++current_digit;
-	if (current_digit >= ndigits){
-	  // Break if we run out of digits
-	  break;
-	}
-      }
-      --current_digit; // We want the last digit *within* post-trigger-window
-      int n_digits = current_digit - first_digit_in_window + 1;
-      m_ss << "DEBUG: Number of digits between (trigger_time - trigger_search_window) and (trigger_time + posttrigger_save_window):" << n_digits;
-      StreamToLog(DEBUG2);
-      
-      triggers->AddTrigger(kTriggerNDigits,
-			   triggertime - m_trigger_save_window_pre,
-			   triggertime + m_trigger_save_window_post,
-			   triggertime - m_trigger_mask_window_pre,
-			   triggertime + m_trigger_mask_window_post,
-			   triggertime,
-			   std::vector<float>(1, n_digits));
-    }
-  }//loop over Digits
-  
-  m_ss << "INFO: Found " << triggers->m_num_triggers - num_triggers_start
-       << " NDigit trigger(s) from " << (m_trigger_OD ? "OD" : "ID")
-       << " Total triggers found there: " << triggers->m_num_triggers;
-  StreamToLog(INFO);
-
-#endif
-}
-
 
 int test_vertices::CPU_test_vertices_initialize(){
+
+  use_verbose = false;
 
   n_PMTs = m_data->IDNPMTs;
   if( !n_PMTs ) return 0;
@@ -842,6 +798,495 @@ void test_vertices::free_global_memories(){
     free(host_light_dy);
     free(host_light_dz);
     free(host_light_dr);
+  }
+
+  return;
+}
+
+
+
+int test_vertices::CPU_test_vertices_execute(std::vector<int> PMTid, std::vector<int> time, std::vector<int> * trigger_ns, std::vector<int> * trigger_ts){
+
+  n_events = 0;
+
+  while( 1 ){
+
+    printf(" [2] ------ analyzing event %d \n", n_events+1);
+
+    ////////////////
+    // read input //
+    ////////////////
+    // set: n_hits, host_ids, host_times, time_offset, n_time_bins
+    // use: time_offset, n_test_vertices
+    // memcpy: constant_n_time_bins, constant_n_hits
+    int earliest_time = 0;
+    //    if( !read_the_input() ){
+    if( !read_the_input_ToolDAQ(PMTid, time, &earliest_time) ){
+      write_output();
+      n_events ++;
+      continue;
+    }
+  
+
+
+    ////////////////////////////////////////
+    // allocate candidates memory on host //
+    ////////////////////////////////////////
+    // use: n_time_bins
+    // malloc: host_max_number_of_pmts_in_time_bin, host_vertex_with_max_n_pmts
+    allocate_candidates_memory_on_host();
+
+
+
+    ////////////////////
+    // execute kernel //
+    ////////////////////
+    if( correct_mode == 8 ){
+      printf(" [2] --- execute kernel to correct times and get n pmts per time bin \n");
+      correct_times_and_get_histo_per_vertex_shared(host_n_pmts_per_time_bin);
+    }
+
+
+
+
+
+    /////////////////////////////////////
+    // find candidates above threshold //
+    /////////////////////////////////////
+    if( use_verbose )
+      printf(" [2] --- execute candidates kernel \n");
+    find_vertex_with_max_npmts_in_timebin(host_n_pmts_per_time_bin, host_max_number_of_pmts_in_time_bin, host_vertex_with_max_n_pmts);
+
+
+
+    ///////////////////////////////////////
+    // choose candidates above threshold //
+    ///////////////////////////////////////
+    if( use_verbose )
+      printf(" [2] --- choose candidates above threshold \n");
+    choose_candidates_above_threshold();
+
+
+
+    ///////////////////////
+    // coalesce triggers //
+    ///////////////////////
+    coalesce_triggers();
+
+
+
+
+    //////////////////////////////////
+    // separate triggers into gates //
+    //////////////////////////////////
+    separate_triggers_into_gates(trigger_ns, trigger_ts);
+
+
+
+    //////////////////
+    // write output //
+    //////////////////
+    write_output();
+
+    /////////////////////////////
+    // deallocate event memory //
+    /////////////////////////////
+    if( use_verbose )
+      printf(" [2] --- deallocate memory \n");
+    free_event_memories();
+
+    n_events ++;
+
+    break;
+  }
+
+  printf(" [2] ------ analyzed %d events \n", n_events);
+
+
+  return 1;
+}
+
+
+bool test_vertices::read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<int> times, int * earliest_time){
+
+  printf(" [2] --- read input \n");
+  n_hits = PMTids.size();
+  if( !n_hits ) return false;
+  if( n_hits != times.size() ){
+    printf(" [2] n PMT ids %d but n times %d \n", n_hits, times.size());
+    return false;
+  }
+  printf(" [2] input contains %d hits \n", n_hits);
+  host_ids = (unsigned int *)malloc(n_hits*sizeof(unsigned int));
+  host_times = (unsigned int *)malloc(n_hits*sizeof(unsigned int));
+
+  //  if( !read_input() ) return false;
+  // read_input()
+  {
+    int min = INT_MAX;
+    int max = INT_MIN;
+    int time;
+    for(int i=0; i<PMTids.size(); i++){
+      time = int(floor(times[i]));
+      host_times[i] = time;
+      host_ids[i] = PMTids[i];
+      //      printf(" [2] input %d PMT %d time %d \n", i, host_ids[i], host_times[i]);
+      if( time > max ) max = time;
+      if( time < min ) min = time;
+    }
+    if( min < 0 ){
+      for(int i=0; i<PMTids.size(); i++){
+	host_times[i] -= min;
+      }
+      max -= min;
+      min -= min;
+    }
+    the_max_time = max;
+    *earliest_time = min - min % time_step_size;
+  }
+
+
+  //time_offset = 600.; // set to constant to match trevor running
+  n_time_bins = int(floor((the_max_time + time_offset)/time_step_size))+1; // floor returns the integer below
+  printf(" [2] input max_time %d, n_time_bins %d \n", the_max_time, n_time_bins);
+  printf(" [2] time_offset = %f ns \n", time_offset);
+  //print_input();
+
+  return true;
+}
+
+void test_vertices::write_output(){
+
+  if( output_txt ){
+    FILE *of=fopen(output_file.c_str(), "a");
+
+    int trigger;
+    if( write_output_mode == 0 ){
+      // output 1 if there is a trigger, 0 otherwise
+      trigger = (trigger_pair_vertex_time.size() > 0 ? 1 : 0);
+    }
+
+    if( write_output_mode == 1 ){
+      // output the n of triggers
+      trigger = trigger_pair_vertex_time.size();
+    }
+
+    if( write_output_mode == 2 ){
+      // output the n of water-like triggers
+      int trigger = 0;
+      for(std::vector<std::pair<unsigned int,unsigned int> >::const_iterator itrigger=trigger_pair_vertex_time.begin(); itrigger != trigger_pair_vertex_time.end(); ++itrigger){
+        if( itrigger->first  < n_water_like_test_vertices )
+      	trigger ++;
+      }
+    }
+
+    if( write_output_mode == 0 || write_output_mode == 1 || write_output_mode == 2 ){
+      fprintf(of, " %d \n", trigger);
+    }
+
+    if( write_output_mode == 3 ){
+      unsigned int triggertime, trigger_index;
+      // output reconstructed vertices
+      for(std::vector<std::pair<unsigned int,unsigned int> >::const_iterator itrigger=trigger_pair_vertex_time.begin(); itrigger != trigger_pair_vertex_time.end(); ++itrigger){
+	triggertime = itrigger->second*time_step_size - time_offset;
+	if( correct_mode == 10 ){
+	  trigger_index = itrigger - trigger_pair_vertex_time.begin();
+	  fprintf(of, " %d %f %f %f %d %d %d \n", n_events, vertex_x[itrigger->first], vertex_y[itrigger->first], vertex_z[itrigger->first], triggertime, trigger_npmts_in_time_bin.at(trigger_index), trigger_npmts_in_cone_in_time_bin.at(trigger_index));
+	}else{
+	  fprintf(of, " %d %f %f %f %d \n", n_events, vertex_x[itrigger->first], vertex_y[itrigger->first], vertex_z[itrigger->first], triggertime);
+	}
+      }
+    }
+
+    if( write_output_mode == 4 ){
+      // output non-corrected and corrected times for best vertex
+      int max_n_pmts = 0;
+      unsigned int best_vertex;
+      for(std::vector<std::pair<unsigned int,unsigned int> >::const_iterator itrigger=trigger_pair_vertex_time.begin(); itrigger != trigger_pair_vertex_time.end(); ++itrigger){
+	unsigned int vertex_index = itrigger->first;
+	unsigned int time_index = itrigger->second;
+	unsigned int local_n_pmts = host_max_number_of_pmts_in_time_bin[itrigger->second];
+	if( local_n_pmts > max_n_pmts ){
+	  max_n_pmts = local_n_pmts;
+	  best_vertex = vertex_index;
+	}
+      }
+      unsigned int distance_index;
+      double tof;
+      double corrected_time;
+      
+      for(unsigned int i=0; i<n_hits; i++){
+	
+	distance_index = get_distance_index(host_ids[i], n_PMTs*best_vertex);
+	tof = host_times_of_flight[distance_index];
+	corrected_time = host_times[i]-tof;
+	
+	fprintf(of, " %d %d %f \n", host_ids[i], host_times[i], corrected_time);
+	//fprintf(of, " %d %f \n", host_ids[i], corrected_time);
+      }
+    }
+    
+    fclose(of);
+  }
+
+
+}
+
+void test_vertices::allocate_candidates_memory_on_host(){
+
+  printf(" [2] --- allocate candidates memory on host \n");
+
+  host_max_number_of_pmts_in_time_bin = (histogram_t *)malloc(n_time_bins*sizeof(histogram_t));
+  host_vertex_with_max_n_pmts = (unsigned int *)malloc(n_time_bins*sizeof(unsigned int));
+    host_n_pmts_per_time_bin = (unsigned int *)malloc(n_time_bins*n_test_vertices*sizeof(unsigned int));
+
+  if( correct_mode == 10 ){
+    host_max_number_of_pmts_in_cone_in_time_bin = (unsigned int *)malloc(n_time_bins*sizeof(unsigned int));
+  }
+
+  return;
+
+}
+
+
+void test_vertices::correct_times_and_get_histo_per_vertex_shared(histogram_t *ct){
+
+  unsigned int distance_index;
+  double tof;
+  double corrected_time;
+  unsigned int bin;
+  
+  for(unsigned int i=0; i<n_hits; i++){
+    for(unsigned int iv=0; iv<n_test_vertices; iv++){
+    
+      distance_index = get_distance_index(host_ids[i], n_PMTs*iv);
+      tof = host_times_of_flight[distance_index];
+      corrected_time = host_times[i]-tof + time_offset;
+    
+      bin = corrected_time/time_step_size;
+
+      ct[bin] ++;
+    }
+  }
+  
+
+}
+
+
+void test_vertices::find_vertex_with_max_npmts_in_timebin(histogram_t * np, histogram_t * mnp, unsigned int * vmnp){
+
+  for(unsigned int time_bin_index=0; time_bin_index<n_time_bins; time_bin_index++){
+
+    unsigned int number_of_pmts_in_time_bin = 0;
+    unsigned int time_index;
+    histogram_t max_number_of_pmts_in_time_bin=0;
+    unsigned int vertex_with_max_n_pmts = 0;
+    
+    for(unsigned int iv=0;iv<n_test_vertices;iv++) { // loop over test vertices
+      // sum the number of hit PMTs in this time window and the next
+    
+      time_index = time_bin_index + n_time_bins*iv;
+      if( time_index >= n_time_bins*n_test_vertices - 1 ) continue;
+      number_of_pmts_in_time_bin = np[time_index] + np[time_index+1];
+      if( number_of_pmts_in_time_bin >= max_number_of_pmts_in_time_bin ){
+	max_number_of_pmts_in_time_bin = number_of_pmts_in_time_bin;
+	vertex_with_max_n_pmts = iv;
+      }
+    }
+
+    mnp[time_bin_index] = max_number_of_pmts_in_time_bin;
+    vmnp[time_bin_index] = vertex_with_max_n_pmts;
+  }
+
+  return;
+
+}
+
+void test_vertices::choose_candidates_above_threshold(){
+
+  candidate_trigger_pair_vertex_time.clear();
+  candidate_trigger_npmts_in_time_bin.clear();
+  if( correct_mode == 10 ){
+    candidate_trigger_npmts_in_cone_in_time_bin.clear();
+  }
+
+  unsigned int the_threshold;
+  unsigned int number_of_pmts_to_cut_on;
+
+  for(unsigned int time_bin = 0; time_bin<n_time_bins - 1; time_bin++){ // loop over time bins
+    // n_time_bins - 1 as we are checking the i and i+1 at the same time
+    
+    if(host_vertex_with_max_n_pmts[time_bin] < n_water_like_test_vertices )
+      the_threshold = water_like_threshold_number_of_pmts;
+    else
+      the_threshold = wall_like_threshold_number_of_pmts;
+
+    number_of_pmts_to_cut_on = host_max_number_of_pmts_in_time_bin[time_bin];
+    if( correct_mode == 10 ){
+      if( select_based_on_cone ){
+	number_of_pmts_to_cut_on = host_max_number_of_pmts_in_cone_in_time_bin[time_bin];
+      }
+    }
+
+    if(number_of_pmts_to_cut_on > the_threshold) {
+
+      if( use_verbose ){
+	printf(" [2] time %f vertex (%f, %f, %f) npmts %d \n", (time_bin + 2)*time_step_size - time_offset, vertex_x[host_vertex_with_max_n_pmts[time_bin]], vertex_y[host_vertex_with_max_n_pmts[time_bin]], vertex_z[host_vertex_with_max_n_pmts[time_bin]], number_of_pmts_to_cut_on);
+      }
+
+      candidate_trigger_pair_vertex_time.push_back(std::make_pair(host_vertex_with_max_n_pmts[time_bin],time_bin+1));
+      candidate_trigger_npmts_in_time_bin.push_back(host_max_number_of_pmts_in_time_bin[time_bin]);
+      if( correct_mode == 10 ){
+	candidate_trigger_npmts_in_cone_in_time_bin.push_back(host_max_number_of_pmts_in_cone_in_time_bin[time_bin]);
+      }
+    }
+
+  }
+
+  if( use_verbose )
+    printf(" [2] n candidates: %d \n", candidate_trigger_pair_vertex_time.size());
+}
+
+
+
+void test_vertices::coalesce_triggers(){
+
+  trigger_pair_vertex_time.clear();
+  trigger_npmts_in_time_bin.clear();
+  if( correct_mode == 10 ){
+    trigger_npmts_in_cone_in_time_bin.clear();
+  }
+
+  unsigned int vertex_index, time_upper, number_of_pmts_in_time_bin, number_of_pmts_in_cone_in_time_bin;
+  unsigned int max_pmt=0,max_vertex_index=0,max_time=0,max_pmt_in_cone=0;
+  bool first_trigger, last_trigger, coalesce_triggers;
+  unsigned int trigger_index;
+  for(std::vector<std::pair<unsigned int,unsigned int> >::const_iterator itrigger=candidate_trigger_pair_vertex_time.begin(); itrigger != candidate_trigger_pair_vertex_time.end(); ++itrigger){
+
+    vertex_index =      itrigger->first;
+    time_upper = itrigger->second;
+    trigger_index = itrigger - candidate_trigger_pair_vertex_time.begin();
+    number_of_pmts_in_time_bin = candidate_trigger_npmts_in_time_bin.at(trigger_index);
+    if( correct_mode == 10 ){
+      number_of_pmts_in_cone_in_time_bin = candidate_trigger_npmts_in_cone_in_time_bin.at(trigger_index);
+    }
+
+    first_trigger = (trigger_index == 0);
+    last_trigger = (trigger_index == candidate_trigger_pair_vertex_time.size()-1);
+       
+    if( first_trigger ){
+      max_pmt = number_of_pmts_in_time_bin;
+      max_vertex_index = vertex_index;
+      max_time = time_upper;
+      if( correct_mode == 10 ){
+	max_pmt_in_cone = number_of_pmts_in_cone_in_time_bin;
+      }
+    }
+    else{
+      coalesce_triggers = (std::abs((int)(max_time - time_upper)) < coalesce_time/time_step_size);
+
+      if( coalesce_triggers ){
+	if( number_of_pmts_in_time_bin >= max_pmt) {
+	  max_pmt = number_of_pmts_in_time_bin;
+	  max_vertex_index = vertex_index;
+	  max_time = time_upper;
+	  if( correct_mode == 10 ){
+	    max_pmt_in_cone = number_of_pmts_in_cone_in_time_bin;
+	  }
+	}
+      }else{
+	trigger_pair_vertex_time.push_back(std::make_pair(max_vertex_index,max_time));
+	trigger_npmts_in_time_bin.push_back(max_pmt);
+	max_pmt = number_of_pmts_in_time_bin;
+	max_vertex_index = vertex_index;
+	max_time = time_upper;     
+	if( correct_mode == 10 ){
+	  trigger_npmts_in_cone_in_time_bin.push_back(max_pmt_in_cone);
+	  max_pmt_in_cone = number_of_pmts_in_cone_in_time_bin;
+	}
+      }
+    }
+
+    if(last_trigger){
+      trigger_pair_vertex_time.push_back(std::make_pair(max_vertex_index,max_time));
+      trigger_npmts_in_time_bin.push_back(max_pmt);
+      if( correct_mode == 10 ){
+	trigger_npmts_in_cone_in_time_bin.push_back(max_pmt_in_cone);
+      }
+    }
+     
+  }
+
+  for(std::vector<std::pair<unsigned int,unsigned int> >::const_iterator itrigger=trigger_pair_vertex_time.begin(); itrigger != trigger_pair_vertex_time.end(); ++itrigger)
+    printf(" [2] coalesced trigger timebin %d vertex index %d \n", itrigger->first, itrigger->second);
+
+  return;
+
+}
+
+
+void test_vertices::separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts){
+
+  final_trigger_pair_vertex_time.clear();
+  unsigned int trigger_index;
+
+  unsigned int time_start=0;
+  for(std::vector<std::pair<unsigned int,unsigned int> >::const_iterator itrigger=trigger_pair_vertex_time.begin(); itrigger != trigger_pair_vertex_time.end(); ++itrigger){
+    //once a trigger is found, we must jump in the future before searching for the next
+    if(itrigger->second > time_start) {
+      unsigned int triggertime = itrigger->second*time_step_size - time_offset;
+      final_trigger_pair_vertex_time.push_back(std::make_pair(itrigger->first,triggertime));
+      time_start = triggertime + trigger_gate_up;
+      trigger_index = itrigger - trigger_pair_vertex_time.begin();
+      output_trigger_information.clear();
+      output_trigger_information.push_back(vertex_x[itrigger->first]);
+      output_trigger_information.push_back(vertex_y[itrigger->first]);
+      output_trigger_information.push_back(vertex_z[itrigger->first]);
+      output_trigger_information.push_back(trigger_npmts_in_time_bin.at(trigger_index));
+      output_trigger_information.push_back(triggertime);
+
+      trigger_ns->push_back(trigger_npmts_in_time_bin.at(trigger_index));
+      trigger_ts->push_back(triggertime);
+
+      printf(" [2] triggertime: %d, npmts: %d, x: %f, y: %f, z: %f \n", triggertime, trigger_npmts_in_time_bin.at(trigger_index), vertex_x[itrigger->first], vertex_y[itrigger->first], vertex_z[itrigger->first]);
+
+      /* if( output_txt ){ */
+      /* 	FILE *of=fopen(output_file.c_str(), "w"); */
+
+      /* 	unsigned int distance_index; */
+      /* 	double tof; */
+      /* 	double corrected_time; */
+
+      /* 	for(unsigned int i=0; i<n_hits; i++){ */
+
+      /* 	  distance_index = get_distance_index(host_ids[i], n_PMTs*(itrigger->first)); */
+      /* 	  tof = host_times_of_flight[distance_index]; */
+
+      /* 	  corrected_time = host_times[i]-tof; */
+
+      /* 	  //fprintf(of, " %d %d %f \n", host_ids[i], host_times[i], corrected_time); */
+      /* 	  fprintf(of, " %d %f \n", host_ids[i], corrected_time); */
+      /* 	} */
+
+      /* 	fclose(of); */
+      /* } */
+
+    }
+  }
+
+
+  return;
+}
+
+
+void test_vertices::free_event_memories(){
+
+  free(host_ids);
+  free(host_times);
+  free(host_max_number_of_pmts_in_time_bin);
+  free(host_vertex_with_max_n_pmts);
+  if( correct_mode == 10 ){
+    free(host_max_number_of_pmts_in_cone_in_time_bin);
   }
 
   return;

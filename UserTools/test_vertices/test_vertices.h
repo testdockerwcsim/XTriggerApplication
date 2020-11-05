@@ -44,26 +44,33 @@ class test_vertices: public Tool {
   bool m_return_direction;
 
   /// CPU version of the algorithm
+  typedef unsigned short offset_t;
+  typedef unsigned int histogram_t;
+  typedef unsigned int time_of_flight_t;
   int CPU_test_vertices_initialize();
   int CPU_test_vertices_finalize();
-  void algorithm(const SubSample * samples);
+  int CPU_test_vertices_execute(std::vector<int> PMTid, std::vector<int> time, std::vector<int> * trigger_ns, std::vector<int> * trigger_ts);
+
   void make_test_vertices();
   void make_table_of_tofs();
   void make_table_of_directions();
-  void fill_correct_memory_on_device();
-  void fill_tofs_memory_on_device();
   unsigned int get_distance_index(unsigned int pmt_id, unsigned int vertex_block);
   unsigned int get_time_index(unsigned int hit_index, unsigned int vertex_block);
   unsigned int get_direction_index_at_pmt(unsigned int pmt_id, unsigned int vertex_index, unsigned int direction_index);
   unsigned int get_direction_index_at_angles(unsigned int iphi, unsigned int itheta);
   unsigned int get_direction_index_at_time(unsigned int time_bin, unsigned int vertex_index, unsigned int direction_index);
   void free_global_memories();
+  bool read_the_input_ToolDAQ(std::vector<int> PMTid, std::vector<int> time, int * earliest_time);
+  void write_output();
+  void allocate_candidates_memory_on_host();
+  void correct_times_and_get_histo_per_vertex_shared(unsigned int *ct);
+  void find_vertex_with_max_npmts_in_timebin(histogram_t * np, histogram_t * mnp, unsigned int * vmnp);
+  void choose_candidates_above_threshold();
+  void coalesce_triggers();
+  void separate_triggers_into_gates(std::vector<int> * trigger_ns, std::vector<int> * trigger_ts);
+  void free_event_memories();
   
   /// CPU parameters
-  typedef unsigned short offset_t;
-  typedef unsigned int histogram_t;
-  typedef unsigned int time_of_flight_t;
-
   double distance_between_vertices; // linear distance between test vertices
   double wall_like_distance; // distance from wall (in units of distance_between_vertices) to define wall-like events
   unsigned int time_step_size; // time binning for the trigger
@@ -95,22 +102,12 @@ class test_vertices: public Tool {
   unsigned int n_direction_bins; // number of direction bins 
   unsigned int n_hits; // number of input hits from the detector
   unsigned int * host_ids; // pmt id of a hit
-  unsigned int *device_ids;
   unsigned int * host_times;  // time of a hit
-  unsigned int *device_times;
   // corrected tim bin of each hit (for each vertex)
   unsigned int * host_time_bin_of_hit;
-  unsigned int * device_time_bin_of_hit;
   // npmts per time bin
-  histogram_t * device_n_pmts_per_time_bin; // number of active pmts in a time bin
   unsigned int * host_n_pmts_per_time_bin;
-  unsigned int * device_n_pmts_nhits; // number of active pmts
   unsigned int * host_n_pmts_nhits;
-  unsigned int * device_n_pmts_per_time_bin_and_direction_bin; // number of active pmts in a time bin and direction bin
-  float * device_dx_per_time_bin; // dx from vertex to hit in a time bin
-  float * device_dy_per_time_bin; // dy from vertex to hit in a time bin
-  float * device_dz_per_time_bin; // dz from vertex to hit in a time bin
-  //unsigned int * device_time_nhits; // trigger time
   //unsigned int * host_time_nhits;
   // tof
   double speed_light_water;
@@ -118,17 +115,11 @@ class test_vertices: public Tool {
   float cerenkov_costheta;
   double twopi;
   bool cylindrical_grid;
-  time_of_flight_t *device_times_of_flight; // time of flight between a vertex and a pmt
   time_of_flight_t *host_times_of_flight;
-  float *device_light_dx; // x distance between a vertex and a pmt
   float *host_light_dx;
-  float *device_light_dy; // y distance between a vertex and a pmt
   float *host_light_dy;
-  float *device_light_dz; // z distance between a vertex and a pmt
   float *host_light_dz;
-  float *device_light_dr; // distance between a vertex and a pmt
   float *host_light_dr;
-  bool *device_directions_for_vertex_and_pmt; // test directions for vertex and pmt
   bool *host_directions_for_vertex_and_pmt;
   // triggers
   std::vector<std::pair<unsigned int,unsigned int> > candidate_trigger_pair_vertex_time;  // pair = (v, t) = (a vertex, a time at the end of the 2nd of two coalesced bins)
@@ -145,12 +136,8 @@ class test_vertices: public Tool {
   unsigned int write_output_mode;
   // find candidates
   histogram_t * host_max_number_of_pmts_in_time_bin;
-  histogram_t * device_max_number_of_pmts_in_time_bin;
   unsigned int *  host_vertex_with_max_n_pmts;
-  unsigned int *  device_vertex_with_max_n_pmts;
-  unsigned int * device_number_of_pmts_in_cone_in_time_bin;
   unsigned int * host_max_number_of_pmts_in_cone_in_time_bin;
-  unsigned int * device_max_number_of_pmts_in_cone_in_time_bin;
   // gpu properties
   int max_n_threads_per_block;
   int max_n_blocks;
@@ -179,6 +166,8 @@ class test_vertices: public Tool {
 
 #ifdef GPU   
   /// integer times to run over GPU card
+  std::vector<int> m_time_int;
+#else
   std::vector<int> m_time_int;
 #endif
 
