@@ -125,6 +125,10 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
   double average_occupancy = dark_rate_Hz * m_coalesce_time * npmts;
   m_time_int.reserve(2*(int)average_occupancy);
 
+#else
+
+  CPU_test_vertices_initialize();
+
 #endif
 
   // can acess variables directly like this and would be good if you could impliment in your code
@@ -175,7 +179,12 @@ bool test_vertices::Execute(){
       m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
     }
 #else
-    ;
+    // Make sure digit times are ordered in time
+    if (not is->IsSortedByTime()){
+      Log("ERROR: Input sample is not sorted by time!", ERROR, m_verbose);
+      return false;
+    }
+    algorithm(&(*is));
 #endif
   }
 
@@ -195,6 +204,8 @@ bool test_vertices::Finalise(){
 
 #ifdef GPU
   GPU_daq::test_vertices_finalize();
+#else
+  CPU_test_vertices_finalize();
 #endif
 
   if(m_stopwatch) {
@@ -203,4 +214,608 @@ bool test_vertices::Finalise(){
   }
 
   return true;
+}
+
+void test_vertices::algorithm(const SubSample * sample)
+{
+#if 0
+  //we will try to find triggers
+  //loop over PMTs, and Digits in each PMT.  If ndigits > Threshhold in a time window, then we have a trigger
+
+  const unsigned int ndigits = sample->m_time.size();
+  m_ss << "DEBUG: NHits::AlgNDigits(). Number of entries in input digit collection: " << ndigits;
+  StreamToLog(DEBUG1);
+
+  // Where to store the triggers we find
+  TriggerInfo * triggers = m_trigger_OD ? &(m_data->ODTriggers) : &(m_data->IDTriggers);
+  const int num_triggers_start = triggers->m_num_triggers;
+
+  // Loop over all digits
+  // But we can start with an offset of at least the threhshold to save some time
+  int current_digit = std::min(m_trigger_threshold, ndigits);
+  int first_digit_in_window = 0;
+  for(;current_digit < ndigits; ++current_digit) {
+    // Update first digit in trigger window
+    TimeDelta::short_time_t digit_time = sample->m_time.at(current_digit);
+    while(TimeDelta(sample->m_time[first_digit_in_window]) < TimeDelta(digit_time) - m_trigger_search_window){
+      ++first_digit_in_window;
+    }
+   
+
+    // if # of digits in window over threshold, issue trigger
+    int n_digits_in_window = current_digit - first_digit_in_window + 1; // +1 because difference is 0 when first digit is the only digit in window
+
+    if( n_digits_in_window > m_trigger_threshold) {
+      TimeDelta triggertime = sample->AbsoluteDigitTime(current_digit);
+      
+      m_ss << "DEBUG: Found NHits trigger in SubSample at " << triggertime;
+      StreamToLog(DEBUG2);
+      m_ss << "DEBUG: Advancing search by posttrigger_save_window " << m_trigger_save_window_post;
+      StreamToLog(DEBUG2);
+      while(sample->AbsoluteDigitTime(current_digit) < triggertime + m_trigger_save_window_post){
+	++current_digit;
+	if (current_digit >= ndigits){
+	  // Break if we run out of digits
+	  break;
+	}
+      }
+      --current_digit; // We want the last digit *within* post-trigger-window
+      int n_digits = current_digit - first_digit_in_window + 1;
+      m_ss << "DEBUG: Number of digits between (trigger_time - trigger_search_window) and (trigger_time + posttrigger_save_window):" << n_digits;
+      StreamToLog(DEBUG2);
+      
+      triggers->AddTrigger(kTriggerNDigits,
+			   triggertime - m_trigger_save_window_pre,
+			   triggertime + m_trigger_save_window_post,
+			   triggertime - m_trigger_mask_window_pre,
+			   triggertime + m_trigger_mask_window_post,
+			   triggertime,
+			   std::vector<float>(1, n_digits));
+    }
+  }//loop over Digits
+  
+  m_ss << "INFO: Found " << triggers->m_num_triggers - num_triggers_start
+       << " NDigit trigger(s) from " << (m_trigger_OD ? "OD" : "ID")
+       << " Total triggers found there: " << triggers->m_num_triggers;
+  StreamToLog(INFO);
+
+#endif
+}
+
+
+int test_vertices::CPU_test_vertices_initialize(){
+
+  n_PMTs = m_data->IDNPMTs;
+  if( !n_PMTs ) return 0;
+  PMT_x = (double *)malloc(n_PMTs*sizeof(double));
+  PMT_y = (double *)malloc(n_PMTs*sizeof(double));
+  PMT_z = (double *)malloc(n_PMTs*sizeof(double));
+  int n_PMTs_counter = 0;
+  for( std::vector<PMTInfo>::const_iterator ip=m_data->IDGeom.begin(); ip!=m_data->IDGeom.end(); ip++){
+    PMT_x[n_PMTs_counter] = ip->m_x;
+    PMT_y[n_PMTs_counter] = ip->m_y;
+    PMT_z[n_PMTs_counter] = ip->m_z;
+    n_PMTs_counter++;
+  }
+  printf(" [2] detector contains %d PMTs \n", n_PMTs);
+  
+  //read_user_parameters();
+  {
+    twopi = 2.*acos(-1.);
+    speed_light_water = 29.9792/1.3330; // speed of light in water, cm/ns
+  //double speed_light_water = 22.490023;
+
+    cerenkov_costheta =1./1.3330;
+    cerenkov_angle_water = acos(cerenkov_costheta);
+    costheta_cone_cut = m_costheta_cone_cut;
+    select_based_on_cone = m_select_based_on_cone;
+
+    dark_rate = m_data->IDPMTDarkRate*1000; // Hz
+    cylindrical_grid = m_cylindrical_grid;
+    distance_between_vertices = m_distance_between_vertices; // cm
+    wall_like_distance = m_wall_like_distance; // units of distance between vertices
+    time_step_size = (unsigned int)(sqrt(3.)*distance_between_vertices/(4.*speed_light_water)); // ns
+    int extra_threshold = 0;
+    if( m_trigger_threshold_adjust_for_noise ){
+      extra_threshold = (int)(dark_rate*n_PMTs*2.*time_step_size*1.e-9); // to account for dark current occupancy
+    }
+    water_like_threshold_number_of_pmts = m_water_like_threshold_number_of_pmts + extra_threshold;
+    wall_like_threshold_number_of_pmts = m_wall_like_threshold_number_of_pmts + extra_threshold;
+    coalesce_time = m_coalesce_time; // ns
+    trigger_gate_up = m_trigger_gate_up; // ns
+    trigger_gate_down = m_trigger_gate_down; // ns
+    max_n_hits_per_job = m_max_n_hits_per_job;
+    output_txt = m_output_txt;
+    correct_mode = m_correct_mode;
+    write_output_mode = m_write_output_mode;
+    
+    n_direction_bins_theta = m_n_direction_bins_theta;
+    n_direction_bins_phi = 2*(n_direction_bins_theta - 1);
+    n_direction_bins = n_direction_bins_phi*n_direction_bins_theta - 2*(n_direction_bins_phi - 1);
+    
+  }
+
+  printf(" [2] --- user parameters \n");
+  printf(" [2] dark_rate %f \n", dark_rate);
+  printf(" [2] distance between test vertices = %f cm \n", distance_between_vertices);
+  printf(" [2] wall_like_distance %f \n", wall_like_distance);
+  printf(" [2] water_like_threshold_number_of_pmts = %d \n", water_like_threshold_number_of_pmts);
+  printf(" [2] wall_like_threshold_number_of_pmts %d \n", wall_like_threshold_number_of_pmts);
+  printf(" [2] coalesce_time = %f ns \n", coalesce_time);
+  printf(" [2] trigger_gate_up = %f ns \n", trigger_gate_up);
+  printf(" [2] trigger_gate_down = %f ns \n", trigger_gate_down);
+  printf(" [2] max_n_hits_per_job = %d \n", max_n_hits_per_job);
+  printf(" [2] output_txt %d \n", output_txt);
+  printf(" [2] correct_mode %d \n", correct_mode);
+  printf(" [2] cylindrical_grid %d \n", cylindrical_grid);
+  printf(" [2] time step size = %d ns \n", time_step_size);
+  printf(" [2] write_output_mode %d \n", write_output_mode);
+  if( correct_mode == 9 ){
+    printf(" [2] n_direction_bins_theta %d, n_direction_bins_phi %d, n_direction_bins %d \n",
+	   n_direction_bins_theta, n_direction_bins_phi, n_direction_bins);
+  }
+
+
+
+
+  /////////////////////
+  // read detector ////
+  /////////////////////
+  // set: detector_height, detector_radius, pmt_radius
+  detector_height = m_data->detector_length;
+  detector_radius = m_data->detector_radius;
+  printf(" [2] detector height %f cm, radius %f cm \n", detector_height, detector_radius);
+
+
+
+
+  ////////////////////////
+  // make test vertices //
+  ////////////////////////
+  // set: n_test_vertices, n_water_like_test_vertices, vertex_x, vertex_y, vertex_z
+  // use: detector_height, detector_radius
+  make_test_vertices();
+
+
+
+  //////////////////////////////
+  // table of times_of_flight //
+  //////////////////////////////
+  // set: host_times_of_flight, time_offset
+  // use: n_test_vertices, vertex_x, vertex_y, vertex_z, n_PMTs, PMT_x, PMT_y, PMT_z
+  // malloc: host_times_of_flight
+  make_table_of_tofs();
+
+  if( correct_mode == 9 ){
+    //////////////////////////////
+    // table of directions //
+    //////////////////////////////
+    // set: host_directions_phi, host_directions_cos_theta
+    // use: n_test_vertices, vertex_x, vertex_y, vertex_z, n_PMTs, PMT_x, PMT_y, PMT_z
+    // malloc: host_directions_phi, host_directions_cos_theta
+    make_table_of_directions();
+  }
+
+
+  ///////////////////////
+  // initialize output //
+  ///////////////////////
+  //  initialize_output();
+
+
+  return 1;
+
+}
+
+void test_vertices::make_test_vertices(){
+
+  printf(" [2] --- make test vertices \n");
+  float semiheight = detector_height/2.;
+  n_test_vertices = 0;
+
+
+  if( !cylindrical_grid ){
+
+    // 1: count number of test vertices
+    for(int i=-1*semiheight; i <= semiheight; i+=distance_between_vertices) {
+      for(int j=-1*detector_radius; j<=detector_radius; j+=distance_between_vertices) {
+	for(int k=-1*detector_radius; k<=detector_radius; k+=distance_between_vertices) {
+	  if(pow(j,2)+pow(k,2) > pow(detector_radius,2))
+	    continue;
+	  n_test_vertices++;
+	}
+      }
+    }
+    vertex_x = (double *)malloc(n_test_vertices*sizeof(double));
+    vertex_y = (double *)malloc(n_test_vertices*sizeof(double));
+    vertex_z = (double *)malloc(n_test_vertices*sizeof(double));
+
+    // 2: assign coordinates to test vertices
+    // water-like events
+    n_test_vertices = 0;
+    for(int i=-1*semiheight; i <= semiheight; i+=distance_between_vertices) {
+      for(int j=-1*detector_radius; j<=detector_radius; j+=distance_between_vertices) {
+	for(int k=-1*detector_radius; k<=detector_radius; k+=distance_between_vertices) {
+
+	
+	  if( 
+	     // skip endcap region
+	     abs(i) > semiheight - wall_like_distance*distance_between_vertices ||
+	     // skip sidewall region
+	     pow(j,2)+pow(k,2) > pow(detector_radius - wall_like_distance*distance_between_vertices,2)
+	      ) continue;
+	
+	  vertex_x[n_test_vertices] = j*1.;
+	  vertex_y[n_test_vertices] = k*1.;
+	  vertex_z[n_test_vertices] = i*1.;
+	  n_test_vertices++;
+	}
+      }
+    }
+    n_water_like_test_vertices = n_test_vertices;
+
+    // wall-like events
+    for(int i=-1*semiheight; i <= semiheight; i+=distance_between_vertices) {
+      for(int j=-1*detector_radius; j<=detector_radius; j+=distance_between_vertices) {
+	for(int k=-1*detector_radius; k<=detector_radius; k+=distance_between_vertices) {
+
+	  if( 
+	     abs(i) > semiheight - wall_like_distance*distance_between_vertices ||
+	     pow(j,2)+pow(k,2) > pow(detector_radius - wall_like_distance*distance_between_vertices,2)
+	      ){
+
+	    if(pow(j,2)+pow(k,2) > pow(detector_radius,2)) continue;
+	  
+	    vertex_x[n_test_vertices] = j*1.;
+	    vertex_y[n_test_vertices] = k*1.;
+	    vertex_z[n_test_vertices] = i*1.;
+	    n_test_vertices++;
+	  }
+	}
+      }
+    }
+
+  }else{ // cylindrical grid
+  
+    int n_vertical = detector_height/distance_between_vertices;
+    double distance_vertical = detector_height/n_vertical;
+    int n_radial = 2.*detector_radius/distance_between_vertices;
+    double distance_radial = 2.*detector_radius/n_radial;
+    int n_angular;
+    double distance_angular;
+    
+    printf(" [2] distance_between_vertices %f, distance_vertical %f, distance_radial %f \n",
+	   distance_between_vertices, distance_vertical, distance_radial);
+    
+    double the_r, the_z, the_phi;
+    bool first = false; // true: add extra layer near wall
+                       // false: regular spacing
+
+    bool add_extra_layer = first;
+    
+    // 1: count number of test vertices
+    the_r = detector_radius;
+    while( the_r >= 0. ){
+      n_angular = twopi*the_r / distance_between_vertices;
+      distance_angular = twopi/n_angular;
+      
+      the_z = -semiheight;
+      
+      while( the_z <= semiheight){
+	
+	the_phi = 0.;
+	while( the_phi < twopi - distance_angular/2. ){
+	  
+	  n_test_vertices ++;
+	  
+	  if( the_r == 0. ) break;
+	  the_phi += distance_angular;
+	}
+
+
+	if( add_extra_layer ){
+	  if( the_z + semiheight < 0.3*distance_vertical ) // only true at bottom endcap
+	    the_z += distance_vertical/2.;
+	  else if( semiheight - the_z < 0.7*distance_vertical ) // only true near top endcap
+	    the_z += distance_vertical/2.;
+	  else
+	    the_z += distance_vertical;
+	}else{
+	  the_z += distance_vertical;
+	}
+      }
+      if( first ){
+	the_r -= distance_radial/2.;
+	first = false;
+      }
+      else{
+	the_r -= distance_radial;
+      }
+    }
+
+    vertex_x = (double *)malloc(n_test_vertices*sizeof(double));
+    vertex_y = (double *)malloc(n_test_vertices*sizeof(double));
+    vertex_z = (double *)malloc(n_test_vertices*sizeof(double));
+
+    first = add_extra_layer;
+    // 2: assign coordinates to test vertices
+    // water-like events
+    n_test_vertices = 0;
+
+    the_r = detector_radius;
+    while( the_r >= 0. ){
+
+      // skip sidewall region
+      if(the_r <= detector_radius - wall_like_distance*distance_between_vertices ){
+
+	n_angular = twopi*the_r / distance_between_vertices;
+	distance_angular = twopi/n_angular;
+	
+	the_z = -semiheight;
+	
+	while( the_z <= semiheight){
+	  
+	  // skip endcap region
+	  if( fabs(the_z) <= semiheight - wall_like_distance*distance_between_vertices ){
+
+	    the_phi = 0.;
+	    while( the_phi < twopi - distance_angular/2. ){
+	      
+	      vertex_x[n_test_vertices] = the_r*cos(the_phi);
+	      vertex_y[n_test_vertices] = the_r*sin(the_phi);
+	      vertex_z[n_test_vertices] = the_z;
+	      n_test_vertices ++;
+	      
+	      if( the_r == 0. ) break;
+	      the_phi += distance_angular;
+	    }
+	  }
+
+	  if( add_extra_layer ){
+	    if( the_z + semiheight < 0.3*distance_vertical ) // only true at bottom endcap
+	      the_z += distance_vertical/2.;
+	    else if( semiheight - the_z < 0.7*distance_vertical ) // only true near top endcap
+	      the_z += distance_vertical/2.;
+	    else
+	      the_z += distance_vertical;
+	  }else{
+	    the_z += distance_vertical;
+	  }
+	}
+
+      }
+      if( first ){
+	the_r -= distance_radial/2.;
+	first = false;
+      }
+      else{
+	the_r -= distance_radial;
+      }
+    }
+
+
+    n_water_like_test_vertices = n_test_vertices;
+
+    first = add_extra_layer;
+    // wall-like events
+    the_r = detector_radius;
+    while( the_r >= 0. ){
+
+      n_angular = twopi*the_r / distance_between_vertices;
+      distance_angular = twopi/n_angular;
+      
+      the_z = -semiheight;
+      
+      while( the_z <= semiheight){
+	
+	if( fabs(the_z) > semiheight - wall_like_distance*distance_between_vertices ||
+	    the_r > detector_radius - wall_like_distance*distance_between_vertices ){
+	  
+	  the_phi = 0.;
+	  while( the_phi < twopi - distance_angular/2. ){
+	    
+	    vertex_x[n_test_vertices] = the_r*cos(the_phi);
+	    vertex_y[n_test_vertices] = the_r*sin(the_phi);
+	    vertex_z[n_test_vertices] = the_z;
+	    n_test_vertices ++;
+	    
+	    if( the_r == 0. ) break;
+	    the_phi += distance_angular;
+	  }
+	}
+	if( add_extra_layer ){
+	  if( the_z + semiheight < 0.3*distance_vertical ) // only true at bottom endcap
+	    the_z += distance_vertical/2.;
+	  else if( semiheight - the_z < 0.7*distance_vertical ) // only true near top endcap
+	    the_z += distance_vertical/2.;
+	  else
+	    the_z += distance_vertical;
+	}else{
+	  the_z += distance_vertical;
+	}
+      }
+      if( first ){
+	the_r -= distance_radial/2.;
+	first = false;
+      }
+      else{
+	the_r -= distance_radial;
+      }
+    }
+    
+
+  }
+
+  printf(" [2] made %d test vertices \n", n_test_vertices);
+
+  return;
+
+}
+
+
+void test_vertices::make_table_of_tofs(){
+
+  printf(" [2] --- fill times_of_flight \n");
+  host_times_of_flight = (time_of_flight_t*)malloc(n_test_vertices*n_PMTs * sizeof(time_of_flight_t));
+  printf(" [2] speed_light_water %f \n", speed_light_water);
+  if( correct_mode == 10 ){
+    host_light_dx = (float*)malloc(n_test_vertices*n_PMTs * sizeof(double));
+    host_light_dy = (float*)malloc(n_test_vertices*n_PMTs * sizeof(double));
+    host_light_dz = (float*)malloc(n_test_vertices*n_PMTs * sizeof(double));
+    host_light_dr = (float*)malloc(n_test_vertices*n_PMTs * sizeof(double));
+  }
+  unsigned int distance_index;
+  time_offset = 0.;
+  for(unsigned int ip=0; ip<n_PMTs; ip++){
+    for(unsigned int iv=0; iv<n_test_vertices; iv++){
+      distance_index = get_distance_index(ip + 1, n_PMTs*iv);
+      host_times_of_flight[distance_index] = sqrt(pow(vertex_x[iv] - PMT_x[ip],2) + pow(vertex_y[iv] - PMT_y[ip],2) + pow(vertex_z[iv] - PMT_z[ip],2))/speed_light_water;
+      if( correct_mode == 10 ){
+	host_light_dx[distance_index] = PMT_x[ip] - vertex_x[iv];
+	host_light_dy[distance_index] = PMT_y[ip] - vertex_y[iv];
+	host_light_dz[distance_index] = PMT_z[ip] - vertex_z[iv];
+	host_light_dr[distance_index] = sqrt(pow(host_light_dx[distance_index],2) + pow(host_light_dy[distance_index],2) + pow(host_light_dz[distance_index],2));
+      }
+      if( host_times_of_flight[distance_index] > time_offset )
+	time_offset = host_times_of_flight[distance_index];
+
+    }
+  }
+  //print_times_of_flight();
+
+  return;
+}
+
+
+void test_vertices::make_table_of_directions(){
+
+  printf(" [2] --- fill directions \n");
+  printf(" [2] cerenkov_angle_water %f \n", cerenkov_angle_water);
+  host_directions_for_vertex_and_pmt = (bool*)malloc(n_test_vertices*n_PMTs*n_direction_bins * sizeof(bool));
+  float dx, dy, dz, dr, phi, cos_theta, sin_theta;
+  float phi2, cos_theta2, angle;
+  unsigned int dir_index_at_angles;
+  unsigned int dir_index_at_pmt;
+  for(unsigned int ip=0; ip<n_PMTs; ip++){
+    for(unsigned int iv=0; iv<n_test_vertices; iv++){
+      dx = PMT_x[ip] - vertex_x[iv];
+      dy = PMT_y[ip] - vertex_y[iv];
+      dz = PMT_z[ip] - vertex_z[iv];
+      dr = sqrt(pow(dx,2) + pow(dy,2) + pow(dz,2));
+      phi = atan2(dy,dx);
+      // light direction
+      cos_theta = dz/dr;
+      sin_theta = sqrt(1. - pow(cos_theta,2));
+      // particle direction
+      for(unsigned int itheta = 0; itheta < n_direction_bins_theta; itheta++){
+	cos_theta2 = -1. + 2.*itheta/(n_direction_bins_theta - 1);
+	for(unsigned int iphi = 0; iphi < n_direction_bins_phi; iphi++){
+	  phi2 = 0. + twopi*iphi/n_direction_bins_phi;
+
+	  if( (itheta == 0 || itheta + 1 == n_direction_bins_theta ) && iphi != 0 ) break;
+
+	  // angle between light direction and particle direction
+	  angle = acos( sin_theta*sqrt(1 - pow(cos_theta2,2)) * cos(phi - phi2) + cos_theta*cos_theta2 );
+
+	  dir_index_at_angles = get_direction_index_at_angles(iphi, itheta);
+	  dir_index_at_pmt = get_direction_index_at_pmt(ip, iv, dir_index_at_angles);
+
+	  //printf(" [2] phi %f ctheta %f phi' %f ctheta' %f angle %f dir_index_at_angles %d dir_index_at_pmt %d \n", 
+	  //	 phi, cos_theta, phi2, cos_theta2, angle, dir_index_at_angles, dir_index_at_pmt);
+
+	  host_directions_for_vertex_and_pmt[dir_index_at_pmt] 
+	    = (bool)(fabs(angle - cerenkov_angle_water) < twopi/(2.*n_direction_bins_phi));
+	}
+      }
+    }
+  }
+  //print_directions();
+
+  return;
+}
+
+
+
+
+unsigned int test_vertices::get_distance_index(unsigned int pmt_id, unsigned int vertex_block){
+  // block = (npmts) * (vertex index)
+
+  return pmt_id - 1 + vertex_block;
+
+}
+
+unsigned int test_vertices::get_time_index(unsigned int hit_index, unsigned int vertex_block){
+  // block = (n time bins) * (vertex index)
+
+  return hit_index + vertex_block;
+
+}
+
+ unsigned int test_vertices::get_direction_index_at_angles(unsigned int iphi, unsigned int itheta){
+
+   if( itheta == 0 ) return 0;
+   if( itheta + 1 == n_direction_bins_theta ) return n_direction_bins - 1;
+
+   return 1 + (itheta - 1) * n_direction_bins_phi + iphi;
+
+}
+
+unsigned int test_vertices::get_direction_index_at_pmt(unsigned int pmt_id, unsigned int vertex_index, unsigned int direction_index){
+
+  //                                                     pmt id 1                        ...        pmt id p
+  // [                      vertex 1                              vertex 2 ... vertex m] ... [vertex 1 ... vertex m]
+  // [(dir 1 ... dir n) (dir 1 ... dir n) ... (dir 1 ... dir n)] ...
+
+  return n_direction_bins * (pmt_id * n_test_vertices  + vertex_index) + direction_index ;
+
+}
+
+unsigned int test_vertices::get_direction_index_at_time(unsigned int time_bin, unsigned int vertex_index, unsigned int direction_index){
+
+  //                                                     time 1                        ...        time p
+  // [                      vertex 1                              vertex 2 ... vertex m] ... [vertex 1 ... vertex m]
+  // [(dir 1 ... dir n) (dir 1 ... dir n) ... (dir 1 ... dir n)] ...
+
+  return n_direction_bins* (time_bin * n_test_vertices  + vertex_index ) + direction_index ;
+
+}
+
+
+int test_vertices::CPU_test_vertices_finalize(){
+
+
+  //////////////////////////////
+  // deallocate global memory //
+  //////////////////////////////
+  if( use_verbose )
+    printf(" [2] --- deallocate tofs memory \n");
+  free_global_memories();
+
+
+
+  return 1;
+
+}
+
+void test_vertices::free_global_memories(){
+
+  if( correct_mode == 9 ){
+    free(host_directions_for_vertex_and_pmt);
+  }
+
+  free(PMT_x);
+  free(PMT_y);
+  free(PMT_z);
+  free(vertex_x);
+  free(vertex_y);
+  free(vertex_z);
+  free(host_times_of_flight);
+  if( correct_mode == 10 ){
+    free(host_light_dx);
+    free(host_light_dy);
+    free(host_light_dz);
+    free(host_light_dr);
+  }
+
+  return;
 }
