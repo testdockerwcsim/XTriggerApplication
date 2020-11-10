@@ -2,6 +2,7 @@
 #
 # Paths to files
 #
+# test_vertices trigger config file
 
  distance_between_vertices 500.
  wall_like_distance 0
