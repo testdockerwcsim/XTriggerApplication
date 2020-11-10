@@ -41,7 +41,6 @@ bool test_vertices_reconstruction::Execute(){
 
   if(m_stopwatch) m_stopwatch->Start();
 
-  //// YOUR CODE HERE
   float out_vertex[3]={0,0,0};
   float out_direction[6]={0,0,0,0,0,0};
   float out_cosine[3]={0,0,0};
