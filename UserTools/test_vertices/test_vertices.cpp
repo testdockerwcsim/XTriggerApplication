@@ -881,6 +881,7 @@ bool test_vertices::read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<
       if( time > max ) max = time;
       if( time < min ) min = time;
     }
+    //ensure there are no negatively underflowed `unsigned int` times
     if( min < 0 ){
       for(int i=0; i<PMTids.size(); i++){
 	host_times[i] -= min;
