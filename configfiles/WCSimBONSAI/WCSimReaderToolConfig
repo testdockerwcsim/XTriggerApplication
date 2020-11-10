@@ -1,8 +1,6 @@
 # WCSimReader config file
 
-#infile FILES/wcsim.root
-infile FILES/horizontal_neutrino.root
-#infile FILES/vertical_neutrino.root
+infile FILES/wcsim.root
 #filelist wcsimfilelist
 nevents -1
 first_event 0
