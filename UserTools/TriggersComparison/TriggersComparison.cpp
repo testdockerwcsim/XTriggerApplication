@@ -117,12 +117,12 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
   h_triggertime_2->SetLineColor(kRed);
   h_triggertime_2->SetLineWidth(2);
 
-  h_readouttime_1 = new TH1I("h_readouttime_1","h_readouttime_1; time [ns];",(int)((max_readout_time_1 - min_readout_time_1 + 1)/timebinsize), min_readout_time_1-timebinsize/2.,max_readout_time_1+timebinsize/2.);
-  h_readouttime_1->SetLineColor(kBlack);
-  h_readouttime_1->SetLineWidth(2);
-  h_readouttime_2 = new TH1I("h_readouttime_2","h_readouttime_2; time [ns];",(int)((max_readout_time_2 - min_readout_time_2 + 1)/timebinsize), min_readout_time_2-timebinsize/2.,max_readout_time_2+timebinsize/2.);
-  h_readouttime_2->SetLineColor(kRed);
-  h_readouttime_2->SetLineWidth(2);
+  h_acceptedtime_1 = new TH1I("h_acceptedtime_1","h_acceptedtime_1; time [ns];",(int)((max_readout_time_1 - min_readout_time_1 + 1)/timebinsize), min_readout_time_1-timebinsize/2.,max_readout_time_1+timebinsize/2.);
+  h_acceptedtime_1->SetLineColor(kBlack);
+  h_acceptedtime_1->SetLineWidth(2);
+  h_acceptedtime_2 = new TH1I("h_acceptedtime_2","h_acceptedtime_2; time [ns];",(int)((max_readout_time_2 - min_readout_time_2 + 1)/timebinsize), min_readout_time_2-timebinsize/2.,max_readout_time_2+timebinsize/2.);
+  h_acceptedtime_2->SetLineColor(kRed);
+  h_acceptedtime_2->SetLineWidth(2);
 
   h_selections_intersection = new TH1F("h_selections_intersection","h_selections_intersection",3,-1.5,1.5);
   h_selections_intersection->SetLineColor(kBlack);
@@ -144,15 +144,15 @@ bool TriggersComparison::Execute(){
   //get the digits
   if(m_triggers_tree1->GetEntry(m_current_event_num1)) {
     h_triggertime_1->Fill(the_trigger_time1);
-    for(int ibin = h_readouttime_1->GetXaxis()->FindBin(the_readout_start_time1); ibin <= h_readouttime_1->GetXaxis()->FindBin(the_readout_end_time1); ibin ++){
-      h_readouttime_1->SetBinContent(ibin,1);
+    for(int ibin = h_acceptedtime_1->GetXaxis()->FindBin(the_readout_start_time1); ibin <= h_acceptedtime_1->GetXaxis()->FindBin(the_readout_end_time1); ibin ++){
+      h_acceptedtime_1->SetBinContent(ibin,1);
     }
   }
 
   if(m_triggers_tree2->GetEntry(m_current_event_num2)) {
     h_triggertime_2->Fill(the_trigger_time2);
-    for(int ibin = h_readouttime_2->GetXaxis()->FindBin(the_readout_start_time2); ibin <= h_readouttime_2->GetXaxis()->FindBin(the_readout_end_time2); ibin ++){
-      h_readouttime_2->SetBinContent(ibin,1);
+    for(int ibin = h_acceptedtime_2->GetXaxis()->FindBin(the_readout_start_time2); ibin <= h_acceptedtime_2->GetXaxis()->FindBin(the_readout_end_time2); ibin ++){
+      h_acceptedtime_2->SetBinContent(ibin,1);
     }
   }
 
@@ -190,8 +190,8 @@ bool TriggersComparison::Finalise(){
 
   for(int itime = 0; itime <= (int)(time_max - time_min + 1)/timebinsize; itime ++){
     local_time = time_min + itime*timebinsize;
-    bool trigger1 = (bool)h_readouttime_1->GetBinContent(h_readouttime_1->FindBin(local_time));
-    bool trigger2 = (bool)h_readouttime_2->GetBinContent(h_readouttime_2->FindBin(local_time));
+    bool trigger1 = (bool)h_acceptedtime_1->GetBinContent(h_acceptedtime_1->FindBin(local_time));
+    bool trigger2 = (bool)h_acceptedtime_2->GetBinContent(h_acceptedtime_2->FindBin(local_time));
 
     if( trigger1 && trigger2 )
       h_selections_intersection->Fill(0.,timebinsize);
@@ -205,8 +205,8 @@ bool TriggersComparison::Finalise(){
 
   h_triggertime_1->Write();
   h_triggertime_2->Write();
-  h_readouttime_1->Write();
-  h_readouttime_2->Write();
+  h_acceptedtime_1->Write();
+  h_acceptedtime_2->Write();
   h_selections_intersection->Write();
 
   m_output_file->Close();

@@ -87,8 +87,8 @@ class TriggersComparison: public Tool {
   TH1F * h_triggertime_1;
   TH1F * h_triggertime_2;
 
-  TH1I * h_readouttime_1;
-  TH1I * h_readouttime_2;
+  TH1I * h_acceptedtime_1;
+  TH1I * h_acceptedtime_2;
 
   TH1F * h_selections_intersection;
 
