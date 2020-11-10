@@ -1,0 +1,6 @@
+
+outfilename FILES/trigger_output.root
+trigger_od 0
+use_stopwatch 1
+#stopwatch_file
+verbose 3
