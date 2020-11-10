@@ -164,36 +164,21 @@ bool test_vertices::Execute(){
   std::vector<SubSample> & samples = m_data->IDSamples;
 
   for( std::vector<SubSample>::const_iterator is=samples.begin(); is!=samples.end(); ++is){
-#ifdef GPU   
 
     std::vector<int> trigger_ns;
     std::vector<int> trigger_ts;
-    m_time_int.clear();
-    for(unsigned int i = 0; i < is->m_time.size(); i++) {
-      m_time_int.push_back(is->m_time[i]);
-    }
-    GPU_daq::test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
-    for(int i=0; i<trigger_ns.size(); i++){
-      m_data->IDTriggers.AddTrigger(kTriggerUndefined,
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
-				    TimeDelta(trigger_ts[i]) + is->m_timestamp,
-				    std::vector<float>(1, trigger_ns[i]));
-
-      m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
-    }
-#else
     //Copy the times from the `float` format in the DataModel to `int` format
     //This is not strictly required for the CPU version of the algorithm, but is done for consistency of results
-    std::vector<int> trigger_ns;
-    std::vector<int> trigger_ts;
     m_time_int.clear();
     for(unsigned int i = 0; i < is->m_time.size(); i++) {
       m_time_int.push_back(is->m_time[i]);
     }
+
+#ifdef GPU   
+    GPU_daq::test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
+#else
     CPU_test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
+#endif
     for(int i=0; i<trigger_ns.size(); i++){
       m_data->IDTriggers.AddTrigger(kTriggerUndefined,
 				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
@@ -205,8 +190,6 @@ bool test_vertices::Execute(){
 
       m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
     }
-
-#endif
   }
 
 
