@@ -185,7 +185,8 @@ bool test_vertices::Execute(){
       m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
     }
 #else
-
+    //Copy the times from the `float` format in the DataModel to `int` format
+    //This is not strictly required for the CPU version of the algorithm, but is done for consistency of results
     std::vector<int> trigger_ns;
     std::vector<int> trigger_ts;
     m_time_int.clear();
