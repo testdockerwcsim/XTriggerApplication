@@ -1,7 +1,7 @@
 wcsim1 WCSimReader configfiles/WCSimBONSAI/WCSimReaderToolConfig
 prepare1 PrepareSubSamples configfiles/WCSimBONSAI/PrepareSubSamplesConfig
 nhits1 NHits configfiles/WCSimBONSAI/NHitsToolConfig
-#test_vertices1 test_vertices configfiles/WCSimBONSAI/GPUProcessorConfig
+#test_vertices1 test_vertices configfiles/WCSimBONSAI/TestVerticesToolConfig
 out1 DataOut configfiles/WCSimBONSAI/DataOutToolConfig
 bonsai1 BONSAI configfiles/WCSimBONSAI/BONSAIToolConfig
 #test_vertices_reconstruction1 test_vertices_reconstruction configfiles/WCSimBONSAI/test_vertices_reconstruction_config
