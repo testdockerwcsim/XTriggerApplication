@@ -2,6 +2,9 @@
 
 test_vertices_reconstruction
 
+## stores the information from test_vertices_reconstruction
+## as a fast reconstruction algorithm (alternative to BONSAI)
+
 ## Data
 
 Describe any data formats test_vertices_reconstruction creates, destroys, changes, analyzes, or its usage.
