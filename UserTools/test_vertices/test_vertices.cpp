@@ -331,12 +331,6 @@ int test_vertices::CPU_test_vertices_initialize(){
   }
 
 
-  ///////////////////////
-  // initialize output //
-  ///////////////////////
-  //  initialize_output();
-
-
   return 1;
 
 }
