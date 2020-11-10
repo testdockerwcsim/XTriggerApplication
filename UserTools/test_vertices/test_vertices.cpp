@@ -5,6 +5,8 @@ test_vertices::test_vertices():Tool(){}
 
 bool test_vertices::Initialise(std::string configfile, DataModel &data){
 
+  float m_trigger_gate_up;
+  float m_trigger_gate_down;
 
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();

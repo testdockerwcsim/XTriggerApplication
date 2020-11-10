@@ -26,8 +26,6 @@ class test_vertices: public Tool {
   float m_water_like_threshold_number_of_pmts;
   float m_wall_like_threshold_number_of_pmts;
   float m_coalesce_time;
-  float m_trigger_gate_up;
-  float m_trigger_gate_down;
   int m_output_txt;
   int m_correct_mode;
   int m_n_direction_bins_theta;
