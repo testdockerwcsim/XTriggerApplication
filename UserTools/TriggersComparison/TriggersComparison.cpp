@@ -124,7 +124,7 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
   h_acceptedtime_2->SetLineColor(kRed);
   h_acceptedtime_2->SetLineWidth(2);
 
-  h_selections_intersection = new TH1F("h_selections_intersection","h_selections_intersection",3,-1.5,1.5);
+  h_selections_intersection = new TH1F("h_selections_intersection","h_selections_intersection",3,-2.5,1.5);
   h_selections_intersection->SetLineColor(kBlack);
   h_selections_intersection->SetLineWidth(2);
 
@@ -199,6 +199,8 @@ bool TriggersComparison::Finalise(){
       h_selections_intersection->Fill(-1.,timebinsize);
     else if( trigger2 )
       h_selections_intersection->Fill(1.,timebinsize);
+    else
+      h_selections_intersection->Fill(-2.,timebinsize);
   }
 
   m_output_file->cd();
