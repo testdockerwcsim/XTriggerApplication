@@ -23,6 +23,5 @@
  write_output_mode 1
  trigger_threshold_adjust_for_noise 1
 
-DetectorFile inputfiles/detector.txt
-ParameterFile inputfiles/parameters.txt
+
 
