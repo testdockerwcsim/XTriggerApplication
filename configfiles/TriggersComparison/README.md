@@ -1,4 +1,4 @@
-# WCSimBONSAI toolchain configuration files
+# TriggersComparison toolchain configuration files
 
 ***********************
 # Description
