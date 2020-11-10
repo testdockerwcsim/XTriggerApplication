@@ -21,17 +21,17 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
   if(m_stopwatch) m_stopwatch->Start();
 
   //open the output file
-  // Log("DEBUG: TriggersComparison::Initialise opening output file...", DEBUG2, m_verbose);
+  Log("DEBUG: TriggersComparison::Initialise opening output file...", DEBUG2, m_verbose);
   if(! m_variables.Get("outfilename", m_output_filename)) {
-  //   Log("ERROR: outfilename configuration not found. Cancelling initialisation", ERROR, m_verbose);
+    Log("ERROR: outfilename configuration not found. Cancelling initialisation", ERROR, m_verbose);
     return false;
   }
   m_output_file = new TFile(m_output_filename.c_str(), "RECREATE");
 
   //open the input files
-  //  Log("DEBUG: TriggersComparison::Initialise opening input file 1...", DEBUG2, m_verbose);
+  Log("DEBUG: TriggersComparison::Initialise opening input file 1...", DEBUG2, m_verbose);
   if(! m_variables.Get("inputfilename1", m_input_filename1)) {
-    //    Log("ERROR: inputfilename1 configuration not found. Cancelling initialisation", ERROR, m_verbose);
+    Log("ERROR: inputfilename1 configuration not found. Cancelling initialisation", ERROR, m_verbose);
     return false;
   }
   m_input_file1 = new TFile(m_input_filename1.c_str(), "READ");
@@ -43,9 +43,9 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
   m_triggers_tree1->SetBranchAddress("readout_start_time",&the_readout_start_time1);
   m_triggers_tree1->SetBranchAddress("readout_end_time",&the_readout_end_time1);
 
-  //  Log("DEBUG: TriggersComparison::Initialise opening input file 2...", DEBUG2, m_verbose);
+  Log("DEBUG: TriggersComparison::Initialise opening input file 2...", DEBUG2, m_verbose);
   if(! m_variables.Get("inputfilename2", m_input_filename2)) {
-    //    Log("ERROR: inputfilename2 configuration not found. Cancelling initialisation", ERROR, m_verbose);
+    Log("ERROR: inputfilename2 configuration not found. Cancelling initialisation", ERROR, m_verbose);
     return false;
   }
   m_input_file2 = new TFile(m_input_filename2.c_str(), "READ");
@@ -128,7 +128,7 @@ bool TriggersComparison::Initialise(std::string configfile, DataModel &data){
   h_selections_intersection->SetLineColor(kBlack);
   h_selections_intersection->SetLineWidth(2);
 
-  //  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
+  if(m_stopwatch) Log(m_stopwatch->Result("Initialise"), INFO, m_verbose);
 
   return true;
 }
@@ -180,7 +180,7 @@ bool TriggersComparison::Execute(){
 bool TriggersComparison::Finalise(){
 
   if(m_stopwatch) {
-    //    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
+    Log(m_stopwatch->Result("Execute", m_stopwatch_file), INFO, m_verbose);
     m_stopwatch->Start();
   }
 
@@ -219,7 +219,7 @@ bool TriggersComparison::Finalise(){
   delete m_output_file;
 
   if(m_stopwatch) {
-    //    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
+    Log(m_stopwatch->Result("Finalise"), INFO, m_verbose);
     delete m_stopwatch;
   }
   
