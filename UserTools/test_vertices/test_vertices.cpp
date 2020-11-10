@@ -865,6 +865,8 @@ bool test_vertices::read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<
   host_ids = (unsigned int *)malloc(n_hits*sizeof(unsigned int));
   host_times = (unsigned int *)malloc(n_hits*sizeof(unsigned int));
 
+  //copy all hit times from `int` to `unsigned int` arrays
+  // `unsigned int` operations are faster on GPU (done here for consistency)
   //  if( !read_input() ) return false;
   // read_input()
   {
