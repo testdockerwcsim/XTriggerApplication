@@ -11,7 +11,7 @@
 #include "TTree.h"
 #include "TH1F.h"
 #include "TH1I.h"
-
+#include <Stopwatch.h>
 
 class TriggersComparison: public Tool {
 
