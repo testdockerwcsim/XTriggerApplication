@@ -127,23 +127,17 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
  m_return_direction
 );
 
-  int npmts = m_data->IDNPMTs;
-  double dark_rate_kHZ = m_data->IDPMTDarkRate;
-  double dark_rate_Hz = dark_rate_kHZ * 1000;
-  double average_occupancy = dark_rate_Hz * m_coalesce_time * npmts;
-  m_time_int.reserve(2*(int)average_occupancy);
-
 #else
 
   CPU_test_vertices_initialize();
 
+#endif
+
   int npmts = m_data->IDNPMTs;
   double dark_rate_kHZ = m_data->IDPMTDarkRate;
   double dark_rate_Hz = dark_rate_kHZ * 1000;
   double average_occupancy = dark_rate_Hz * m_coalesce_time * npmts;
   m_time_int.reserve(2*(int)average_occupancy);
-
-#endif
 
   // can acess variables directly like this and would be good if you could impliment in your code
 
@@ -172,7 +166,6 @@ bool test_vertices::Execute(){
   std::vector<SubSample> & samples = m_data->IDSamples;
 
   for( std::vector<SubSample>::const_iterator is=samples.begin(); is!=samples.end(); ++is){
-#ifdef GPU   
 
     std::vector<int> trigger_ns;
     std::vector<int> trigger_ts;
@@ -182,15 +175,24 @@ bool test_vertices::Execute(){
     std::vector<double> trigger_dir_xs;
     std::vector<double> trigger_dir_ys;
     std::vector<double> trigger_dir_zs;
+    //Copy the times from the `float` format in the DataModel to `int` format
+    //This is not strictly required for the CPU version of the algorithm, but is done for consistency of results
     m_time_int.clear();
     for(unsigned int i = 0; i < is->m_time.size(); i++) {
       m_time_int.push_back(is->m_time[i]);
     }
+
+#ifdef GPU   
     if( m_time_int.size() )
       GPU_daq::test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts, &trigger_vtx_xs, &trigger_vtx_ys, &trigger_vtx_zs, &trigger_dir_xs, &trigger_dir_ys, &trigger_dir_zs);
+#else
+    CPU_test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
+#endif
+
     for(int i=0; i<trigger_ns.size(); i++){
       std::vector<float> info;
       info.push_back(trigger_ns[i]);
+#ifdef GPU   
       if( m_return_vertex ){
 	info.push_back(trigger_vtx_xs[i]);
 	info.push_back(trigger_vtx_ys[i]);
@@ -201,6 +203,7 @@ bool test_vertices::Execute(){
 	info.push_back(trigger_dir_ys[i]);
 	info.push_back(trigger_dir_zs[i]);
       }
+#endif
       m_data->IDTriggers.AddTrigger(kTriggerUndefined,
 				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
 				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
@@ -211,28 +214,7 @@ bool test_vertices::Execute(){
 
       m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
     }
-#else
 
-    std::vector<int> trigger_ns;
-    std::vector<int> trigger_ts;
-    m_time_int.clear();
-    for(unsigned int i = 0; i < is->m_time.size(); i++) {
-      m_time_int.push_back(is->m_time[i]);
-    }
-    CPU_test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
-    for(int i=0; i<trigger_ns.size(); i++){
-      m_data->IDTriggers.AddTrigger(kTriggerUndefined,
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
-				    TimeDelta(trigger_ts[i]) + is->m_timestamp,
-				    std::vector<float>(1, trigger_ns[i]));
-
-      m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
-    }
-
-#endif
   }
 
 
@@ -378,12 +360,6 @@ int test_vertices::CPU_test_vertices_initialize(){
     // malloc: host_directions_phi, host_directions_cos_theta
     make_table_of_directions();
   }
-
-
-  ///////////////////////
-  // initialize output //
-  ///////////////////////
-  //  initialize_output();
 
 
   return 1;
@@ -920,6 +896,8 @@ bool test_vertices::read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<
   host_ids = (unsigned int *)malloc(n_hits*sizeof(unsigned int));
   host_times = (unsigned int *)malloc(n_hits*sizeof(unsigned int));
 
+  //copy all hit times from `int` to `unsigned int` arrays
+  // `unsigned int` operations are faster on GPU (done here for consistency)
   //  if( !read_input() ) return false;
   // read_input()
   {
@@ -934,6 +912,7 @@ bool test_vertices::read_the_input_ToolDAQ(std::vector<int> PMTids, std::vector<
       if( time > max ) max = time;
       if( time < min ) min = time;
     }
+    //ensure there are no negatively underflowed `unsigned int` times
     if( min < 0 ){
       for(int i=0; i<PMTids.size(); i++){
 	host_times[i] -= min;
