@@ -140,8 +140,6 @@ bool TriggerOutput::Finalise(){
 
 float TriggerOutput::absolute_time(TimeDelta d){
 
-  float local_time = d.m_short_time + d.m_long_time*TimeDelta::s_long_time_unit;;
-
-  return local_time;
+  return d/TimeDelta::ns;
 
 }
