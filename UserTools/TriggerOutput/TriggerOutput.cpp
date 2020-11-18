@@ -37,11 +37,11 @@ bool TriggerOutput::Initialise(std::string configfile, DataModel &data){
   Log("DEBUG: TriggerOutput::Initialise setting up output trigger tree...", DEBUG2, m_verbose);
   m_triggers_tree = new TTree("triggers","triggers Tree");
   m_triggers_tree->Branch("type", &the_type, "type/I");
-  m_triggers_tree->Branch("readout_start_time", &the_readout_start_time, "readout_start_time/F");
-  m_triggers_tree->Branch("readout_end_time", &the_readout_end_time, "readout_end_time/F");
-  m_triggers_tree->Branch("mask_start_time", &the_mask_start_time, "mask_start_time/F");
-  m_triggers_tree->Branch("mask_end_time", &the_mask_end_time, "mask_end_time/F");
-  m_triggers_tree->Branch("trigger_time", &the_trigger_time, "trigger_time/F");
+  m_triggers_tree->Branch("readout_start_time", &the_readout_start_time, "readout_start_time/D");
+  m_triggers_tree->Branch("readout_end_time", &the_readout_end_time, "readout_end_time/D");
+  m_triggers_tree->Branch("mask_start_time", &the_mask_start_time, "mask_start_time/D");
+  m_triggers_tree->Branch("mask_end_time", &the_mask_end_time, "mask_end_time/D");
+  m_triggers_tree->Branch("trigger_time", &the_trigger_time, "trigger_time/D");
   m_triggers_tree->Branch("trigger_info", &the_trigger_info);
 
 
@@ -138,7 +138,7 @@ bool TriggerOutput::Finalise(){
 }
 
 
-float TriggerOutput::absolute_time(TimeDelta d){
+double TriggerOutput::absolute_time(TimeDelta d){
 
   return d/TimeDelta::ns;
 

@@ -43,15 +43,15 @@ class TriggerOutput: public Tool {
   /// The type of Trigger
   TriggerType_t the_type;
   /// The starting time of the trigger window
-  float the_readout_start_time;
+  double the_readout_start_time;
   /// The ending time of the trigger window
-  float the_readout_end_time;
+  double the_readout_end_time;
   /// The starting time of the hit mask
-  float the_mask_start_time;
+  double the_mask_start_time;
   /// The ending time of the hit mask
-  float the_mask_end_time;
+  double the_mask_end_time;
   /// The actual time of the trigger
-  float the_trigger_time;
+  double the_trigger_time;
   /// extra info from the trigger
   std::vector<float> the_trigger_info;
 
@@ -71,7 +71,7 @@ class TriggerOutput: public Tool {
 
   enum LogLevel {FATAL=-1, ERROR=0, WARN=1, INFO=2, DEBUG1=3, DEBUG2=4, DEBUG3=5};
 
-  float absolute_time(TimeDelta d);
+  double absolute_time(TimeDelta d);
 
 };
 
