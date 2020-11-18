@@ -12,6 +12,9 @@
 #include "TChain.h"
 
 #include "Tool.h"
+#include "TFile.h"
+#include "TVectorT.h"
+#include "Stopwatch.h"
 
 class WCSimReader: public Tool {
 
@@ -71,6 +74,7 @@ class WCSimReader: public Tool {
   // interpose an interval between events
   // this allows to convert simulated data, which always start at t = 0,
   // to look like real data in which events are separated over time
+  // have to be used with care: dark noise should be generated in WCSim for a given time window, not around physics hits
   // units: ns
   float m_interpose_interval;
 

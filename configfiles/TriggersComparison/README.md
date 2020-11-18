@@ -1,4 +1,8 @@
-# WCSimBONSAI toolchain configuration files
+# TriggersComparison toolchain configuration files
+
+## this tool is meant to be useful
+## to compare the output of two different triggers
+## running on the same data set
 
 ***********************
 # Description
