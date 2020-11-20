@@ -112,6 +112,11 @@ class DataModel {
   /// The original, unmodified `WCSimRootEvent` for the OD
   WCSimRootEvent * ODWCSimEvent_Raw;
 
+  // time artificially interposed between events
+  float m_interpose_interval;
+  void set_interpose_interval(float t){m_interpose_interval = t;}
+  float get_interpose_interval(){return m_interpose_interval;}
+
   /// Store the dimensionality, number of reconstructed vertices and the highest nclusters warning threshold passed
   std::vector<SNWarningParams> SupernovaWarningParameters;
 

@@ -6,5 +6,6 @@ out1 DataOut configfiles/WCSimBONSAI/DataOutToolConfig
 bonsai1 BONSAI configfiles/WCSimBONSAI/BONSAIToolConfig
 #test_vertices_reconstruction1 test_vertices_reconstruction configfiles/WCSimBONSAI/test_vertices_reconstruction_config
 flower1 FLOWERRecon configfiles/WCSimBONSAI/FLOWERReconToolConfig
+triggerout1 TriggerOutput configfiles/WCSimBONSAI/TriggerOutputToolConfig
 reconout ReconDataOut configfiles/WCSimBONSAI/ReconDataOutToolConfig
 reconreset ReconReset configfiles/WCSimBONSAI/ReconResetToolConfig

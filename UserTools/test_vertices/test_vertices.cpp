@@ -220,6 +220,7 @@ bool test_vertices::Execute(){
 
       m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
     }
+
   }
   //Now we have all the triggers, get the SubSample to determine
   // - which trigger readout windows each hit is associated with

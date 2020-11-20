@@ -71,6 +71,13 @@ class WCSimReader: public Tool {
   /// The total number of events in m_chain_event
   long int m_n_events;
 
+  // interpose an interval between events
+  // this allows to convert simulated data, which always start at t = 0,
+  // to look like real data in which events are separated over time
+  // have to be used with care: dark noise should be generated in WCSim for a given time window, not around physics hits
+  // units: ns
+  float m_interpose_interval;
+
   /// The input WCSim filename from config file (wildcards allowed)
   std::string m_input_filename;
   /// The input WCSim filelist filename from config file

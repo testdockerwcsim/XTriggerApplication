@@ -23,3 +23,4 @@
 #endif //FLOWEREXISTS
 #include "SupernovaDirectionCalculator.h"
 #include "test_vertices_reconstruction.h"
+#include "TriggersComparison.h"
