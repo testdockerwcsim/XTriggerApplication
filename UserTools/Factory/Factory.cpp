@@ -28,6 +28,7 @@ if (tool=="PrepareSubSamples") ret=new PrepareSubSamples;
 if (tool=="FLOWERRecon") ret=new FLOWERRecon;
 #endif //FLOWEREXISTS
 if (tool=="SupernovaDirectionCalculator") ret=new SupernovaDirectionCalculator;
+  if (tool=="TriggersComparison") ret=new TriggersComparison;
 return ret;
 }
 

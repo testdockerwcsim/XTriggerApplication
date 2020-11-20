@@ -1,4 +1,4 @@
-infilenames reconstructed.root
+infilenames FILES/reconstructed.root
 use_stopwatch 1
 #stopwatch_file recondatain_stopwatch.pdf
 verbose 3

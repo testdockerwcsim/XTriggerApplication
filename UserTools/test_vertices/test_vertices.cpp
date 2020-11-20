@@ -54,6 +54,10 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
   m_variables.Get("num_blocks_y",   m_num_blocks_y);
   m_variables.Get("num_threads_per_block_y",   m_num_threads_per_block_y);
   m_variables.Get("num_threads_per_block_x",   m_num_threads_per_block_x);
+  m_return_vertex = false;
+  m_variables.Get("return_vertex",   m_return_vertex);
+  m_return_direction = false;
+  m_variables.Get("return_direction",   m_return_direction);
 
   m_ss << " DetectorFile " << DetectorFile.c_str(); StreamToLog(INFO);
   m_ss << " ParameterFile " << ParameterFile.c_str() ; StreamToLog(INFO);
@@ -76,6 +80,8 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
   m_ss << " m_num_blocks_y " <<   m_num_blocks_y; StreamToLog(INFO);
   m_ss << " m_num_threads_per_block_y " <<   m_num_threads_per_block_y; StreamToLog(INFO);
   m_ss << " m_num_threads_per_block_x " <<   m_num_threads_per_block_x; StreamToLog(INFO);
+  m_ss << " m_return_vertex " <<   m_return_vertex; StreamToLog(INFO);
+  m_ss << " m_return_direction " <<   m_return_direction; StreamToLog(INFO);
 
 
   //  gpu_daq_initialize(PMTFile,DetectorFile,ParameterFile);
@@ -116,7 +122,9 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
  m_num_blocks_y,
  m_num_threads_per_block_y,
  m_num_threads_per_block_x,
- m_write_output_mode
+ m_write_output_mode,
+ m_return_vertex,
+ m_return_direction
 );
 
 #else
@@ -161,6 +169,12 @@ bool test_vertices::Execute(){
 
     std::vector<int> trigger_ns;
     std::vector<int> trigger_ts;
+    std::vector<double> trigger_vtx_xs;
+    std::vector<double> trigger_vtx_ys;
+    std::vector<double> trigger_vtx_zs;
+    std::vector<double> trigger_dir_xs;
+    std::vector<double> trigger_dir_ys;
+    std::vector<double> trigger_dir_zs;
     //Copy the times from the `float` format in the DataModel to `int` format
     //This is not strictly required for the CPU version of the algorithm, but is done for consistency of results
     m_time_int.clear();
@@ -169,21 +183,38 @@ bool test_vertices::Execute(){
     }
 
 #ifdef GPU   
-    GPU_daq::test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
+    if( m_time_int.size() )
+      GPU_daq::test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts, &trigger_vtx_xs, &trigger_vtx_ys, &trigger_vtx_zs, &trigger_dir_xs, &trigger_dir_ys, &trigger_dir_zs);
 #else
     CPU_test_vertices_execute(is->m_PMTid, m_time_int, &trigger_ns, &trigger_ts);
 #endif
+
     for(int i=0; i<trigger_ns.size(); i++){
+      std::vector<float> info;
+      info.push_back(trigger_ns[i]);
+#ifdef GPU   
+      if( m_return_vertex ){
+	info.push_back(trigger_vtx_xs[i]);
+	info.push_back(trigger_vtx_ys[i]);
+	info.push_back(trigger_vtx_zs[i]);
+      }
+      if( m_return_direction ){
+	info.push_back(trigger_dir_xs[i]);
+	info.push_back(trigger_dir_ys[i]);
+	info.push_back(trigger_dir_zs[i]);
+      }
+#endif
       m_data->IDTriggers.AddTrigger(kTriggerUndefined,
 				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
 				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
 				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
 				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
 				    TimeDelta(trigger_ts[i]) + is->m_timestamp,
-				    std::vector<float>(1, trigger_ns[i]));
+				    info);
 
       m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
     }
+
   }
 
 

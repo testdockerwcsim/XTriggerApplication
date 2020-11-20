@@ -41,6 +41,8 @@ class test_vertices: public Tool {
   int m_num_threads_per_block_y;
   int m_num_threads_per_block_x;
   int m_write_output_mode;
+  bool m_return_vertex;
+  bool m_return_direction;
 
   /// CPU version of the algorithm
   typedef unsigned short offset_t;
@@ -161,6 +163,8 @@ class test_vertices: public Tool {
   unsigned int the_max_time;
   unsigned int nhits_window;
   int n_events;
+
+
 
 
 #ifdef GPU   

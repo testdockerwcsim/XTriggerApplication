@@ -1,0 +1,19 @@
+
+use_stopwatch 1
+#stopwatch_file triggers_comparison_stopwatch.pdf
+
+inputfilename1 FILES/trigger_output1.root
+inputfilename2 FILES/trigger_output2.root
+
+first_event1 0
+first_event2 0
+
+nevents1 -1
+nevents2 -1
+
+outfilename FILES/triggers_comparison.root
+
+## time bin size in ns
+timebinsize 1
+
+verbose 3

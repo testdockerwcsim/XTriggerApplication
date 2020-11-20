@@ -22,7 +22,11 @@ bool WCSimReader::Initialise(std::string configfile, DataModel &data){
 
   if(m_stopwatch) m_stopwatch->Start();
 
+  m_interpose_interval = 0.;
+  m_variables.Get("interpose_interval", m_interpose_interval);
+
   m_data= &data;
+  m_data->set_interpose_interval(m_interpose_interval);
 
   //config reading
   if(! m_variables.Get("nevents",  m_n_events) ) {
@@ -478,7 +482,11 @@ SubSample WCSimReader::GetDigits()
   //
   // WCSim also adds a 950 ns offset to the digit times, if it no running in
   // the NoTrigger mode. But we should not care about that here.
-  TimeDelta timestamp = TimeDelta(m_wcsim_trigger->GetHeader()->GetDate()) + first_time;
+  //
+  // if interpose_interval is filled, events will be spaced by that many ns
+  // 
+  float event_offset = m_interpose_interval*m_wcsim_trigger->GetHeader()->GetEvtNum();
+  TimeDelta timestamp = TimeDelta(m_wcsim_trigger->GetHeader()->GetDate()) + first_time + event_offset;
   SubSample sub;
   if (not sub.Append(PMTid, time, charge, timestamp)){
     Log("ERROR: Appending hits failed!", ERROR, m_verbose);

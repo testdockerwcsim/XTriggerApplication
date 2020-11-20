@@ -25,10 +25,12 @@ int test_vertices_initialize();
   int f_num_blocks_y,
   int f_num_threads_per_block_y,
   int f_num_threads_per_block_x,
-  int f_write_output_mode
+  int f_write_output_mode,
+  bool f_return_vertex,
+  bool f_return_direction
 );
 int test_vertices_execute();
-int test_vertices_execute(std::vector<int> PMTid, std::vector<int> time, std::vector<int> * trigger_ns, std::vector<int> * trigger_ts);
+ int test_vertices_execute(std::vector<int> PMTid, std::vector<int> time, std::vector<int> * trigger_ns, std::vector<int> * trigger_ts, std::vector<double> * trigger_vtx_xs, std::vector<double> * trigger_vtx_ys, std::vector<double> * trigger_vtx_zs, std::vector<double> * trigger_dir_xs, std::vector<double> * trigger_dir_ys, std::vector<double> * trigger_dir_zs);
 int test_vertices_finalize();
 int nhits_initialize();
  int nhits_initialize_ToolDAQ(std::string ParameterFile, int nPMTs, int fTriggerSearchWindow, int fTriggerSearchWindowStep, int fTriggerThreshold, int fTriggerSaveWindowPre, int fTriggerSaveWindowPost);
