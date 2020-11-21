@@ -1,0 +1,4 @@
+use_stopwatch 1
+#stopwatch_file test_vertices_reconstruction_stopwatch.pdf
+verbose 3
+nhitsmax 1000

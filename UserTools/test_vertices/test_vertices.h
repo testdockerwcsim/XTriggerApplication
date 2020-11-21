@@ -27,8 +27,6 @@ class test_vertices: public Tool {
   float m_water_like_threshold_number_of_pmts;
   float m_wall_like_threshold_number_of_pmts;
   float m_coalesce_time;
-  float m_trigger_gate_up;
-  float m_trigger_gate_down;
   int m_output_txt;
   int m_correct_mode;
   int m_n_direction_bins_theta;
@@ -43,6 +41,15 @@ class test_vertices: public Tool {
   int m_write_output_mode;
   bool m_return_vertex;
   bool m_return_direction;
+
+  /// Pre-trigger time for saving digits
+  TimeDelta m_trigger_save_window_pre;
+  /// Post-trigger time for saving digits
+  TimeDelta m_trigger_save_window_post;
+  /// Pre-trigger time for masking digits from future tools
+  TimeDelta m_trigger_mask_window_pre;
+  /// Post-trigger time for masking digits from future tools
+  TimeDelta m_trigger_mask_window_post;
 
   /// CPU version of the algorithm
   typedef unsigned short offset_t;

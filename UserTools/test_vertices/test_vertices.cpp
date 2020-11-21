@@ -5,6 +5,8 @@ test_vertices::test_vertices():Tool(){}
 
 bool test_vertices::Initialise(std::string configfile, DataModel &data){
 
+  float m_trigger_gate_up;
+  float m_trigger_gate_down;
 
   if(configfile!="")  m_variables.Initialise(configfile);
   //m_variables.Print();
@@ -83,6 +85,8 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
   m_ss << " m_return_vertex " <<   m_return_vertex; StreamToLog(INFO);
   m_ss << " m_return_direction " <<   m_return_direction; StreamToLog(INFO);
 
+  m_trigger_save_window_pre = TimeDelta(-m_trigger_gate_down);
+  m_trigger_save_window_post = TimeDelta(m_trigger_gate_up);
 
   //  gpu_daq_initialize(PMTFile,DetectorFile,ParameterFile);
 
@@ -129,6 +133,8 @@ bool test_vertices::Initialise(std::string configfile, DataModel &data){
 
 #else
 
+  trigger_gate_up = m_trigger_gate_up; // ns
+  trigger_gate_down = m_trigger_gate_down; // ns
   CPU_test_vertices_initialize();
 
 #endif
@@ -205,17 +211,23 @@ bool test_vertices::Execute(){
       }
 #endif
       m_data->IDTriggers.AddTrigger(kTriggerUndefined,
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_down) + is->m_timestamp, 
-				    TimeDelta(trigger_ts[i] + m_trigger_gate_up) + is->m_timestamp,
-				    TimeDelta(trigger_ts[i]) + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) - m_trigger_save_window_pre + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) + m_trigger_save_window_post + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) - m_trigger_mask_window_pre + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) + m_trigger_mask_window_post + is->m_timestamp,
+                                    TimeDelta(trigger_ts[i]) + is->m_timestamp,
 				    info);
 
       m_ss << " trigger! time "<< trigger_ts[i] << " -> " << TimeDelta(trigger_ts[i] ) + is->m_timestamp << " nhits " <<  trigger_ns[i]; StreamToLog(INFO);
     }
 
   }
+  //Now we have all the triggers, get the SubSample to determine
+  // - which trigger readout windows each hit is associated with
+  // - which hits should be masked from future triggers
+  for( std::vector<SubSample>::iterator is=samples.begin(); is!=samples.end(); ++is) {
+    (*is).TellMeAboutTheTriggers(m_data->IDTriggers, m_verbose);
+  }//loop over SubSamples
 
 
   if(m_stopwatch) m_stopwatch->Stop();
@@ -287,8 +299,6 @@ int test_vertices::CPU_test_vertices_initialize(){
     water_like_threshold_number_of_pmts = m_water_like_threshold_number_of_pmts + extra_threshold;
     wall_like_threshold_number_of_pmts = m_wall_like_threshold_number_of_pmts + extra_threshold;
     coalesce_time = m_coalesce_time; // ns
-    trigger_gate_up = m_trigger_gate_up; // ns
-    trigger_gate_down = m_trigger_gate_down; // ns
     max_n_hits_per_job = m_max_n_hits_per_job;
     output_txt = m_output_txt;
     correct_mode = m_correct_mode;
